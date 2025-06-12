@@ -130,7 +130,13 @@ const Particle = ({ x, y, color, delay = 0 }) => (
   />
 )
 
-const OnlineTetris = ({ roomId, playerId, isPlayer1 }) => {
+interface OnlineTetrisProps {
+  roomId?: string;
+  playerId?: string;
+  isPlayer1?: boolean;
+}
+
+export default function OnlineTetris({ roomId, playerId, isPlayer1 }: OnlineTetrisProps = {}) {
   const [playerName, setPlayerName] = useState("")
   const [gameState, setGameState] = useState("lobby")
   const [board, setBoard] = useState(createEmptyBoard())
