@@ -130,8 +130,7 @@ const Particle = ({ x, y, color, delay = 0 }) => (
   />
 )
 
-export default function OnlineTetris() {
-  const [playerId] = useState(() => `player_${Math.random().toString(36).substr(2, 9)}`)
+const OnlineTetris = ({ roomId, playerId, isPlayer1 }) => {
   const [playerName, setPlayerName] = useState("")
   const [gameState, setGameState] = useState("lobby")
   const [board, setBoard] = useState(createEmptyBoard())
@@ -182,6 +181,11 @@ export default function OnlineTetris() {
   const lastUpdateTime = useRef(0)
   const gameContainerRef = useRef(null)
   const particleIdCounter = useRef(0)
+  const [fixedBlocks, setFixedBlocks] = useState([])
+  const [opponentState, setOpponentState] = useState(null)
+  const [lastSyncTimestamp, setLastSyncTimestamp] = useState(0)
+  const lastUpdateRef = useRef(Date.now())
+  const moveQueueRef = useRef([])
 
   // Generate background particles
   useEffect(() => {
@@ -639,6 +643,108 @@ export default function OnlineTetris() {
 
     fetchRooms()
   }
+
+  // 状態の同期を最適化
+  const syncGameState = useCallback(
+    throttle(async (state) => {
+      const now = Date.now()
+      if (now - lastUpdateRef.current < UPDATE_THROTTLE_MS) {
+        moveQueueRef.current.push(state)
+        return
+      }
+
+      const currentState = {
+        ...state,
+        fixedBlocks,
+        timestamp: now,
+      }
+
+      await updateGameState(roomId, playerId, currentState)
+      lastUpdateRef.current = now
+
+      // キューに溜まった更新を処理
+      if (moveQueueRef.current.length > 0) {
+        const nextState = moveQueueRef.current.pop()
+        moveQueueRef.current = []
+        if (nextState) {
+          syncGameState(nextState)
+        }
+      }
+    }, UPDATE_THROTTLE_MS),
+    [roomId, playerId, fixedBlocks],
+  )
+
+  // ブロックが固定された時の処理
+  const handleBlockFixed = useCallback(
+    (x: number, y: number, piece: any) => {
+      const newFixedBlocks = [...fixedBlocks]
+      piece.tetromino.shape.forEach((row, dy) => {
+        row.forEach((value, dx) => {
+          if (value !== 0) {
+            newFixedBlocks.push({
+              x: x + dx,
+              y: y + dy,
+              color: piece.tetromino.color,
+            })
+          }
+        })
+      })
+      setFixedBlocks(newFixedBlocks)
+
+      // 固定されたブロックを即座に同期
+      syncGameState({
+        board,
+        currentPiece: null,
+        fixedBlocks: newFixedBlocks,
+        score,
+        level,
+        isFixed: true,
+      })
+    },
+    [board, fixedBlocks, score, level],
+  )
+
+  // 相手の状態を受信した時の処理
+  const handleOpponentState = useCallback(
+    (state) => {
+      if (!state || state.timestamp <= lastSyncTimestamp) return
+
+      setLastSyncTimestamp(state.timestamp)
+
+      // 固定されたブロックの更新を優先
+      if (state.fixedBlocks && state.isFixed) {
+        setOpponentState((prev) => ({
+          ...prev,
+          ...state,
+          board: applyFixedBlocksToBoard(state.fixedBlocks),
+        }))
+      } else {
+        setOpponentState(state)
+      }
+    },
+    [lastSyncTimestamp],
+  )
+
+  // 固定ブロックをボードに適用
+  const applyFixedBlocksToBoard = useCallback(
+    (blocks) => {
+      const newBoard = createEmptyBoard()
+      blocks.forEach((block) => {
+        if (block.y >= 0 && block.y < BOARD_HEIGHT && block.x >= 0 && block.x < BOARD_WIDTH) {
+          newBoard[block.y][block.x] = block.color
+        }
+      })
+      return newBoard
+    },
+    [],
+  )
+
+  useEffect(() => {
+    const subscription = subscribeToGameStates(roomId, handleOpponentState)
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [roomId, handleOpponentState])
 
   // Game loop
   useEffect(() => {

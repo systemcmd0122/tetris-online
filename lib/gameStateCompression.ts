@@ -2,7 +2,8 @@ import { deflate, inflate } from 'pako';
 
 // ゲームステートの圧縮と最適化を行うユーティリティ
 export interface CompressedGameState {
-  b?: number[][]; // board
+  b?: string; // board (RLE圧縮)
+  f?: number[][]; // fixed blocks (最後に固定されたブロック)
   c?: {  // current piece
     x: number;
     y: number;
@@ -13,16 +14,65 @@ export interface CompressedGameState {
   l?: number; // level
   a?: number; // attack
   o?: boolean; // game over
+  t?: number; // timestamp
+  h?: string; // move hash
+}
+
+// ボードの状態をRLE圧縮
+function compressBoardRLE(board: number[][]): string {
+  let compressed = '';
+  let count = 0;
+  let lastCell = board[0][0];
+
+  for (let y = 0; y < board.length; y++) {
+    for (let x = 0; x < board[y].length; x++) {
+      const cell = board[y][x];
+      if (cell === lastCell) {
+        count++;
+      } else {
+        compressed += `${count},${lastCell};`;
+        count = 1;
+        lastCell = cell;
+      }
+    }
+  }
+  compressed += `${count},${lastCell}`;
+  return compressed;
+}
+
+// RLE圧縮されたボードを展開
+function decompressBoardRLE(compressed: string): number[][] {
+  const board = Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0));
+  let idx = 0;
+  let boardIdx = 0;
+
+  compressed.split(';').forEach(group => {
+    const [count, value] = group.split(',').map(Number);
+    for (let i = 0; i < count; i++) {
+      const y = Math.floor(boardIdx / BOARD_WIDTH);
+      const x = boardIdx % BOARD_WIDTH;
+      if (y < BOARD_HEIGHT && x < BOARD_WIDTH) {
+        board[y][x] = value;
+      }
+      boardIdx++;
+    }
+  });
+
+  return board;
 }
 
 export function compressGameState(gameState: any): string {
-  const minimalState: CompressedGameState = {};
+  const minimalState: CompressedGameState = {
+    t: Date.now(),
+    h: Math.random().toString(36).substring(7)
+  };
   
   if (gameState.board) {
-    // ボードの圧縮: 0以外の値のみを記録
-    minimalState.b = gameState.board.map(row => 
-      row.map(cell => cell === 0 ? 0 : 1)
-    );
+    minimalState.b = compressBoardRLE(gameState.board);
+  }
+
+  if (gameState.fixedBlocks) {
+    minimalState.f = gameState.fixedBlocks;
   }
 
   if (gameState.currentPiece) {
@@ -56,9 +106,9 @@ export function decompressGameState(compressed: string): any {
     const decompressed = inflate(atob(compressed), { to: 'string' });
     const minimalState: CompressedGameState = JSON.parse(decompressed);
     
-    // 完全なゲームステートに戻す
     return {
-      board: minimalState.b || [],
+      board: minimalState.b ? decompressBoardRLE(minimalState.b) : [],
+      fixedBlocks: minimalState.f || [],
       currentPiece: minimalState.c ? {
         x: minimalState.c.x,
         y: minimalState.c.y,
@@ -67,7 +117,9 @@ export function decompressGameState(compressed: string): any {
       score: minimalState.s || 0,
       level: minimalState.l || 1,
       attackSent: minimalState.a,
-      gameOver: minimalState.o
+      gameOver: minimalState.o,
+      timestamp: minimalState.t,
+      moveHash: minimalState.h
     };
   } catch (error) {
     console.error('Decompression error:', error);
