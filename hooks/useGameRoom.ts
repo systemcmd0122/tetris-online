@@ -159,41 +159,36 @@ export function useGameRoom() {
         .select("id")
         .eq("room_id", roomId)
         .eq("player_id", playerId)
-        .single()
+        .single();
 
+      // 圧縮された状態を生成
+      const compressedState = compressGameState(gameState);
+      
       const updateData = {
-        board_state: gameState.board,
-        current_piece: gameState.currentPiece,
-        score: gameState.score,
-        level: gameState.level,
-        lines_cleared: gameState.linesCleared,
+        compressed_state: compressedState,
         updated_at: new Date().toISOString(),
-      }
-
-      // Add optional fields if they exist
-      if (gameState.attackSent !== undefined) {
-        updateData["attackSent"] = gameState.attackSent
-      }
-
-      if (gameState.gameOver !== undefined) {
-        updateData["gameOver"] = gameState.gameOver
-      }
+      };
 
       if (existingData) {
-        const { error: updateError } = await supabase.from("game_states").update(updateData).eq("id", existingData.id)
+        const { error: updateError } = await supabase
+          .from("game_states")
+          .update(updateData)
+          .eq("id", existingData.id);
 
-        if (updateError) throw updateError
+        if (updateError) throw updateError;
       } else {
-        const { error: insertError } = await supabase.from("game_states").insert({
-          room_id: roomId,
-          player_id: playerId,
-          ...updateData,
-        })
+        const { error: insertError } = await supabase
+          .from("game_states")
+          .insert({
+            room_id: roomId,
+            player_id: playerId,
+            ...updateData,
+          });
 
-        if (insertError) throw insertError
+        if (insertError) throw insertError;
       }
     } catch (err) {
-      console.error("Error updating game state:", err)
+      console.error("Error updating game state:", err);
     }
   }
 
@@ -261,13 +256,22 @@ export function useGameRoom() {
         },
         (payload) => {
           if (payload.new) {
-            callback(payload.new as GameState)
+            const compressedState = payload.new.compressed_state;
+            if (compressedState) {
+              const decompressedState = decompressGameState(compressedState);
+              if (decompressedState) {
+                callback({
+                  ...payload.new,
+                  ...decompressedState
+                } as GameState);
+              }
+            }
           }
         },
       )
-      .subscribe()
+      .subscribe();
 
-    return subscription
+    return subscription;
   }
 
   useEffect(() => {
