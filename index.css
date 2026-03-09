@@ -1,0 +1,98 @@
+/* ════════════════════════════════════════
+   index.css — Landing / top-menu page
+   ════════════════════════════════════════ */
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--tx);
+  font-family: 'Orbitron', monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(28px, 5vw, 48px);
+  color: var(--acc);
+  text-shadow: 0 0 20px rgba(0, 245, 255, .5), 0 0 60px rgba(0, 245, 255, .3);
+  letter-spacing: 8px;
+  margin-bottom: 12px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { text-shadow: 0 0 20px rgba(0, 245, 255, .5), 0 0 60px rgba(0, 245, 255, .3); }
+  50%       { text-shadow: 0 0 40px rgba(0, 245, 255, .9), 0 0 80px rgba(0, 245, 255, .5); }
+}
+
+.subtitle {
+  font-size: 10px;
+  color: var(--acc2);
+  letter-spacing: 4px;
+  margin-bottom: 50px;
+  text-shadow: 0 0 20px rgba(255, 0, 128, .5);
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.menu-btn {
+  background: linear-gradient(135deg, var(--acc), #0080ff);
+  color: #000;
+  border: none;
+  padding: 18px 30px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  font-family: 'Orbitron', monospace;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all .2s;
+  text-decoration: none;
+  display: inline-block;
+  text-transform: uppercase;
+}
+
+.menu-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(0, 245, 255, .6);
+}
+
+.menu-btn.secondary {
+  background: transparent;
+  color: var(--acc2);
+  border: 2px solid var(--acc2);
+}
+
+.menu-btn.secondary:hover {
+  background: rgba(255, 0, 128, .1);
+  box-shadow: 0 0 30px rgba(255, 0, 128, .4);
+}
+
+.footer {
+  margin-top: 60px;
+  font-size: 8px;
+  color: var(--dim);
+  letter-spacing: 2px;
+}
