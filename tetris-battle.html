@@ -60,7 +60,7 @@
 
       <div class="input-group">
         <label>ROOM CODE</label>
-        <input type="text" id="roomCodeInput" placeholder="- - - -" maxlength="4" class="code-input">
+        <input type="text" id="roomCodeInput" placeholder="0000" maxlength="4" class="code-input" inputmode="numeric" pattern="[0-9]*">
       </div>
 
       <button class="btn btn-secondary" onclick="joinRoom()">

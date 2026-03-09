@@ -250,30 +250,32 @@ class TetrisGame {
 let roomCode=null, myRole=null, game=null, gameRunning=false, animId=null;
 let oppName='FOE', endedOnce=false;
 let forceStopped = false;
+
+// Generate 4-digit numeric room code
 const genCode = () => Math.floor(1000+Math.random()*9000).toString();
 
-let unsubOpp=null, unsubRoom=null, unsubGarb=null, unsubWaitRoom=null;
+// Active Firebase listeners (stored as refs for cleanup)
+let _oppRef=null, _roomRef=null, _garbRef=null, _waitRef=null;
+// onDisconnect handles
+let _dcHandle=null;
 
 function offAll() {
-  if(unsubOpp)    {try{off(ref(db,`rooms/${roomCode}/game/${myRole==='p1'?'p2':'p1'}`));}catch(e){} unsubOpp=null;}
-  if(unsubRoom)   {try{off(ref(db,`rooms/${roomCode}`));}catch(e){} unsubRoom=null;}
-  if(unsubGarb)   {try{off(ref(db,`rooms/${roomCode}/garb/${myRole}`));}catch(e){} unsubGarb=null;}
-  if(unsubWaitRoom){try{off(ref(db,`rooms/${roomCode}`));}catch(e){} unsubWaitRoom=null;}
+  if(_oppRef)  { try{off(_oppRef);}catch(e){}  _oppRef=null; }
+  if(_roomRef) { try{off(_roomRef);}catch(e){} _roomRef=null; }
+  if(_garbRef) { try{off(_garbRef);}catch(e){} _garbRef=null; }
+  if(_waitRef) { try{off(_waitRef);}catch(e){} _waitRef=null; }
 }
 
 // ── FORCE STOP ────────────────────────────────────────────────
 function showForceStop(msg) {
   if (forceStopped) return;
   forceStopped = true;
-  // Stop game if running
   gameRunning = false;
   endedOnce = true;
   if (animId) { cancelAnimationFrame(animId); animId=null; }
   offAll();
-  // Hide all overlays
   document.getElementById('resultOverlay').classList.remove('show');
   document.getElementById('countdownOverlay').classList.remove('show');
-  // Show force stop screen
   document.getElementById('forceStopMsg').textContent =
     msg || '管理者によってこのルームは強制終了されました。';
   document.getElementById('forceStopOverlay').classList.add('show');
@@ -304,29 +306,35 @@ window.copyRoomCode = () => {
 window.createRoom = async () => {
   const name = document.getElementById('playerName').value.trim()||'PLAYER';
   myRole='p1'; roomCode=genCode(); endedOnce=false; forceStopped=false;
+  lastSysMsgTs=0;
+
   const rRef = ref(db, `rooms/${roomCode}`);
   await set(rRef, { p1:{name}, status:'waiting', ts:Date.now() });
+
+  // Auto-remove room if p1 disconnects while waiting
   onDisconnect(rRef).remove();
+
   showScreen('waitingScreen');
   document.getElementById('displayRoomCode').textContent = roomCode;
   document.getElementById('statusRoom').textContent = `ROOM: ${roomCode}`;
 
-  // ★ KEY FIX: listen to FULL room node to detect force_ended during wait
-  const waitRef = ref(db, `rooms/${roomCode}`);
-  unsubWaitRoom = waitRef;
-  onValue(waitRef, snap => {
+  // Listen to full room node: catches force_ended AND ready
+  _waitRef = ref(db, `rooms/${roomCode}`);
+  onValue(_waitRef, snap => {
     const d = snap.val();
-    if (!d) return;
-    // Detect system messages
+    if (!d) {
+      // Room was deleted externally
+      off(_waitRef); _waitRef=null;
+      return;
+    }
     handleSysMsg(d);
-    // ★ Detect admin force stop
     if (d.status === 'force_ended') {
-      off(waitRef); unsubWaitRoom = null;
+      off(_waitRef); _waitRef=null;
       showForceStop(d.forceMsg);
       return;
     }
     if (d.status === 'ready') {
-      off(waitRef); unsubWaitRoom = null;
+      off(_waitRef); _waitRef=null;
       startGame();
     }
   });
@@ -334,18 +342,35 @@ window.createRoom = async () => {
 
 // ── JOIN ROOM ─────────────────────────────────────────────────
 window.joinRoom = async () => {
-  const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-  if (code.length!==4) { showToast('4桁のコードを入力してください'); return; }
+  const raw = document.getElementById('roomCodeInput').value.trim();
+  const code = raw.replace(/\D/g, ''); // digits only
+  if (code.length !== 4) { showToast('4桁の数字コードを入力してください'); return; }
   const name = document.getElementById('playerName').value.trim()||'PLAYER2';
-  const rRef = ref(db,`rooms/${code}`);
-  const snap = await get(rRef);
+  const rRef = ref(db, `rooms/${code}`);
+
+  let snap;
+  try {
+    snap = await get(rRef);
+  } catch(e) {
+    showToast('接続エラーが発生しました');
+    return;
+  }
+
   if (!snap.exists()) { showToast('ルームが見つかりません'); return; }
   const d = snap.val();
   if (d.status === 'force_ended') { showToast('このルームは強制終了されています'); return; }
-  if (d.status !== 'waiting') { showToast('このルームは満員か既に開始しています'); return; }
-  myRole='p2'; roomCode=code; endedOnce=false; forceStopped=false;
+  if (d.status === 'ready')       { showToast('このルームは既にゲーム中です'); return; }
+  if (d.status !== 'waiting')     { showToast('このルームには参加できません'); return; }
+  if (d.p2)                       { showToast('このルームは満員です'); return; }
+
+  myRole='p2'; roomCode=code; endedOnce=false; forceStopped=false; lastSysMsgTs=0;
+
+  // Set p2 data and mark as ready atomically
   await update(rRef, { p2:{name}, status:'ready' });
-  onDisconnect(ref(db,`rooms/${roomCode}/p2`)).remove();
+
+  // Auto-cleanup p2 slot on disconnect
+  onDisconnect(ref(db, `rooms/${roomCode}/p2`)).remove();
+
   document.getElementById('statusRoom').textContent = `ROOM: ${roomCode}`;
   startGame();
 };
@@ -353,18 +378,19 @@ window.joinRoom = async () => {
 // ── LEAVE ROOM ────────────────────────────────────────────────
 window.leaveRoom = () => {
   offAll();
-  gameRunning=false;
-  forceStopped=false;
+  gameRunning = false;
+  forceStopped = false;
   if (animId) { cancelAnimationFrame(animId); animId=null; }
   if (roomCode && db) {
     try {
-      if (myRole==='p1') remove(ref(db,`rooms/${roomCode}`));
-      else               update(ref(db,`rooms/${roomCode}`), {status:'ended'});
+      if (myRole==='p1') remove(ref(db, `rooms/${roomCode}`));
+      else               update(ref(db, `rooms/${roomCode}`), {status:'ended'});
     } catch(e){}
   }
   document.getElementById('resultOverlay').classList.remove('show');
   document.getElementById('forceStopOverlay').classList.remove('show');
   document.getElementById('sysMsgBanner').classList.remove('show');
+  document.getElementById('countdownOverlay').classList.remove('show');
   roomCode=null; myRole=null; game=null; endedOnce=false;
   showScreen('lobbyScreen');
 };
@@ -373,11 +399,25 @@ window.leaveRoom = () => {
 async function startGame() {
   showScreen('gameScreen');
   const oppRole = myRole==='p1'?'p2':'p1';
-  const snap = await get(ref(db,`rooms/${roomCode}`));
-  const data  = snap.val();
+
+  let snap;
+  try {
+    snap = await get(ref(db, `rooms/${roomCode}`));
+  } catch(e) {
+    showToast('接続エラー');
+    showScreen('lobbyScreen');
+    return;
+  }
+  const data = snap.val();
+
+  if (!data) {
+    showToast('ルームが存在しません');
+    showScreen('lobbyScreen');
+    return;
+  }
 
   // Check if force stopped before game even loads
-  if (data?.status === 'force_ended') {
+  if (data.status === 'force_ended') {
     showForceStop(data.forceMsg);
     return;
   }
@@ -393,48 +433,50 @@ async function startGame() {
   gameRunning = true; endedOnce = false;
 
   // ── Listen: opponent board ──
-  const oppRef = ref(db, `rooms/${roomCode}/game/${oppRole}`);
-  unsubOpp = oppRef;
-  onValue(oppRef, snap => {
+  _oppRef = ref(db, `rooms/${roomCode}/game/${oppRole}`);
+  onValue(_oppRef, snap => {
     const d = snap.val(); if (!d) return;
     TetrisGame.drawOpponent(document.getElementById('opponentCanvas'), d);
     document.getElementById('oppNameTag').textContent = `${oppName} (${d.score||0})`;
     if (d.gameOver && !game?.gameOver && gameRunning) endGame('WIN');
   });
 
-  // ★ KEY FIX: Listen to FULL room node to catch force_ended + sysMsg during game
-  const roomRef = ref(db, `rooms/${roomCode}`);
-  unsubRoom = roomRef;
-  onValue(roomRef, snap => {
+  // ── Listen: full room node (force_ended + sysMsg + disconnection) ──
+  _roomRef = ref(db, `rooms/${roomCode}`);
+  onValue(_roomRef, snap => {
     const d = snap.val();
-    if (!d) { if (gameRunning) endGame('DISCONNECT'); return; }
-    // System message
+    if (!d) {
+      if (gameRunning) endGame('DISCONNECT');
+      return;
+    }
     handleSysMsg(d);
-    // ★ Force stop detection
     if (d.status === 'force_ended' && !forceStopped) {
-      off(roomRef); unsubRoom = null;
+      off(_roomRef); _roomRef=null;
       showForceStop(d.forceMsg);
       return;
     }
     if (d.status === 'ended' && gameRunning) {
       endGame('DISCONNECT');
     }
+    // Detect opponent disconnect: their player slot removed
+    if (gameRunning && !d[oppRole] && !endedOnce) {
+      endGame('DISCONNECT');
+    }
   });
 
   // ── Listen: incoming garbage ──
-  const myGRef = ref(db, `rooms/${roomCode}/garb/${myRole}`);
-  unsubGarb = myGRef;
-  onValue(myGRef, snap => {
-    const v = snap.val(); if (!v || !v.n) return;
+  _garbRef = ref(db, `rooms/${roomCode}/garb/${myRole}`);
+  const oppGRef = ref(db, `rooms/${roomCode}/garb/${oppRole}`);
+  onValue(_garbRef, snap => {
+    const v = snap.val(); if (!v || !v.n || v.n <= 0) return;
     game.pendingGarbage += v.n;
-    set(myGRef, {n:0});
+    set(_garbRef, {n:0});
     flashAttack();
     playSound('attack');
   });
 
-  const oppGRef = ref(db, `rooms/${roomCode}/garb/${oppRole}`);
   let lastPushTs = 0;
-  const PUSH_RATE = 66;
+  const PUSH_RATE = 66; // ~15fps for network updates
 
   // ── Game loop ──
   const loop = ts => {
@@ -445,6 +487,7 @@ async function startGame() {
     document.getElementById('levelDisplay').textContent = game.level;
     document.getElementById('linesDisplay').textContent = game.lines;
     if (result && result.actionLabel) showActionPopup(result.actionLabel);
+
     if (ts - lastPushTs > PUSH_RATE) {
       lastPushTs = ts;
       const serial = game.serialize();
@@ -457,7 +500,9 @@ async function startGame() {
         });
       }
     }
+
     if (game.gameOver) {
+      // Push final state before ending
       set(ref(db, `rooms/${roomCode}/game/${myRole}`), game.serialize()).catch(()=>{});
       endGame('LOSE');
       return;
@@ -474,12 +519,24 @@ function endGame(result) {
   if (animId) { cancelAnimationFrame(animId); animId=null; }
   const title = document.getElementById('resultTitle');
   const sub   = document.getElementById('resultSub');
+  const icon  = document.getElementById('resultIcon');
   const score = game?.score || 0;
   const lvl   = game?.level || 1;
   const lines = game?.lines || 0;
-  if (result==='WIN')       { title.className='overlay-title win';  title.textContent='YOU WIN!'; playSound('win'); }
-  else if (result==='LOSE') { title.className='overlay-title lose'; title.textContent='YOU LOSE'; }
-  else                      { title.className='overlay-title draw'; title.textContent='OPPONENT LEFT'; }
+  if (result==='WIN') {
+    title.className='overlay-title win';
+    title.textContent='YOU WIN!';
+    icon.textContent='🏆';
+    playSound('win');
+  } else if (result==='LOSE') {
+    title.className='overlay-title lose';
+    title.textContent='YOU LOSE';
+    icon.textContent='💀';
+  } else {
+    title.className='overlay-title draw';
+    title.textContent='OPPONENT LEFT';
+    icon.textContent='🚪';
+  }
   sub.innerHTML = `SCORE: ${score}&nbsp;&nbsp;|&nbsp;&nbsp;LEVEL: ${lvl}&nbsp;&nbsp;|&nbsp;&nbsp;LINES: ${lines}`;
   document.getElementById('resultOverlay').classList.add('show');
 }
@@ -493,8 +550,15 @@ function countdown() {
     const tick = () => {
       num.style.animation='none'; num.offsetHeight;
       num.style.animation='countAnim .85s ease-out forwards';
-      if(n>0){num.textContent=n;n--;setTimeout(tick,850);}
-      else{num.textContent='GO!';setTimeout(()=>{ov.classList.remove('show');resolve();},850);}
+      if(n>0){
+        num.textContent=n;
+        if(typeof window.launchCountdownBurst==='function') window.launchCountdownBurst(n);
+        n--;
+        setTimeout(tick,850);
+      } else {
+        num.textContent='GO!';
+        setTimeout(()=>{ov.classList.remove('show');resolve();},850);
+      }
     };
     tick();
   });
@@ -523,10 +587,11 @@ document.addEventListener('keydown',e=>{
     case'ArrowUp':    e.preventDefault();game.rotate(1);break;
     case'KeyX':       e.preventDefault();game.rotate(1);break;
     case'KeyZ':       e.preventDefault();game.rotate(-1);break;
-    case'ArrowDown':  e.preventDefault();game.softDrop();break;
+    case'ArrowDown':  e.preventDefault();break; // handled by interval below
     case'Space':      e.preventDefault();game.hardDrop();break;
     case'KeyC':       e.preventDefault();game.hold();break;
     case'ShiftLeft':  e.preventDefault();game.hold();break;
+    case'ShiftRight': e.preventDefault();game.hold();break;
   }
 });
 document.addEventListener('keyup',e=>{
@@ -535,9 +600,18 @@ document.addEventListener('keyup',e=>{
   if(e.code==='ArrowRight'&&dasDir===1)dasStop();
 });
 
+// Soft drop: separate interval for smooth repeat
 let softDropInterval=null;
-document.addEventListener('keydown',e=>{if(e.code==='ArrowDown'&&!softDropInterval&&game&&gameRunning){softDropInterval=setInterval(()=>{game?.softDrop();},50);}});
-document.addEventListener('keyup',e=>{if(e.code==='ArrowDown'){clearInterval(softDropInterval);softDropInterval=null;}});
+document.addEventListener('keydown',e=>{
+  if(e.code==='ArrowDown'&&!softDropInterval&&game&&gameRunning){
+    e.preventDefault();
+    game.softDrop();
+    softDropInterval=setInterval(()=>{if(game&&gameRunning)game.softDrop();},50);
+  }
+});
+document.addEventListener('keyup',e=>{
+  if(e.code==='ArrowDown'){clearInterval(softDropInterval);softDropInterval=null;}
+});
 
 function setupMobile(id,fn,repeat=false){
   const btn=document.getElementById(id);if(!btn)return;
@@ -546,6 +620,7 @@ function setupMobile(id,fn,repeat=false){
   const stop=()=>{clearInterval(iv);iv=null;};
   btn.addEventListener('touchstart',start,{passive:false});
   btn.addEventListener('touchend',stop);
+  btn.addEventListener('touchcancel',stop);
   btn.addEventListener('mousedown',start);
   btn.addEventListener('mouseup',stop);
   btn.addEventListener('mouseleave',stop);
@@ -558,20 +633,59 @@ setupMobile('btnRotateL',()=>game?.rotate(-1),false);
 setupMobile('btnHardDrop',()=>game?.hardDrop(),false);
 setupMobile('btnHold',()=>game?.hold(),false);
 
+// Swipe-down hard drop on canvas
 (function(){
   let tx0=0,ty0=0;
   const cvs=document.getElementById('myCanvas');
   cvs.addEventListener('touchstart',e=>{tx0=e.touches[0].clientX;ty0=e.touches[0].clientY;},{passive:true});
-  cvs.addEventListener('touchend',e=>{if(!game||!gameRunning)return;const dx=e.changedTouches[0].clientX-tx0,dy=e.changedTouches[0].clientY-ty0;if(Math.abs(dy)>50&&dy>0&&Math.abs(dy)>Math.abs(dx)*1.5)game.hardDrop();},{passive:true});
+  cvs.addEventListener('touchend',e=>{
+    if(!game||!gameRunning)return;
+    const dx=e.changedTouches[0].clientX-tx0,dy=e.changedTouches[0].clientY-ty0;
+    if(Math.abs(dy)>50&&dy>0&&Math.abs(dy)>Math.abs(dx)*1.5)game.hardDrop();
+  },{passive:true});
 })();
 
 // ═══════════════════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════════
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
-function showToast(msg, type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.classList.remove('show');t.offsetHeight;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-function flashAttack(){const f=document.getElementById('attackFlash');f.classList.add('show');setTimeout(()=>f.classList.remove('show'),280);}
-function showActionPopup(label){const p=document.getElementById('actionPopup');p.textContent=label.replace('\n',' / ');p.classList.remove('show');p.offsetHeight;p.classList.add('show');}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showToast(msg, type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast'+(type?' '+type:'');
+  t.classList.remove('show');
+  t.offsetHeight;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+function flashAttack(){
+  const f=document.getElementById('attackFlash');
+  f.classList.add('show');
+  setTimeout(()=>f.classList.remove('show'),280);
+}
+function showActionPopup(label){
+  const p=document.getElementById('actionPopup');
+  p.textContent=label.replace('\n',' / ');
+  p.classList.remove('show');
+  p.offsetHeight;
+  p.classList.add('show');
+}
 
-document.getElementById('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')window.joinRoom();});
-document.getElementById('roomCodeInput').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^0-9]/g,'');});
+// ── Input event: digits only, no toUpperCase needed ──
+document.getElementById('roomCodeInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter') window.joinRoom();
+});
+document.getElementById('roomCodeInput').addEventListener('input',e=>{
+  // Allow only digits
+  e.target.value = e.target.value.replace(/\D/g,'').slice(0,4);
+});
+document.getElementById('playerName').addEventListener('keydown',e=>{
+  if(e.key==='Enter') {
+    const code = document.getElementById('roomCodeInput').value.trim();
+    if(code.length===4) window.joinRoom();
+    else window.createRoom();
+  }
+});
