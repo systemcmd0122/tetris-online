@@ -1,25 +1,75 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TETRIS BATTLE — オンライン対戦</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="assets/css/common.css">
   <link rel="stylesheet" href="assets/css/index.css">
 </head>
-<body>
-  <div class="container">
-    <div class="logo">TETRIS BATTLE</div>
-    <div class="subtitle">&gt;&gt; ONLINE MODE &lt;&lt;&lt;</div>
 
-    <div class="menu">
-      <a href="tetris-battle.html" class="menu-btn">▶ 対戦開始</a>
-      <a href="admin.html"         class="menu-btn secondary">⚙ 管理画面</a>
+<body>
+
+  <!-- ══ BACKGROUND LAYERS ══ -->
+  <canvas id="bgCanvas"></canvas>
+  <div class="scanline-wrap">
+    <div class="scanline"></div>
+  </div>
+  <div class="vignette"></div>
+
+  <!-- ══ MAIN UI ══ -->
+  <div class="ui-wrap">
+
+    <!-- score ticker -->
+    <div class="ticker">
+      <span class="ticker-label">HI-SCORE</span>
+      <span class="ticker-val" id="tickerScore">000000</span>
     </div>
 
-    <div class="footer">
-      <p>© 2024 TETRIS BATTLE ONLINE</p>
+    <!-- centre hero -->
+    <div class="hero">
+      <div class="hero-eyebrow">▸ ONLINE MULTIPLAYER ◂</div>
+      <h1 class="logo">
+        <span class="l-t">T</span><span class="l-e">E</span><span class="l-t2">T</span><span class="l-r">R</span><span
+          class="l-i">I</span><span class="l-s">S</span>
+        <br>
+        <span class="l-b">BATTLE</span>
+      </h1>
+      <div class="tagline"><span class="bracket">[</span> リアルタイム対戦モード <span class="bracket">]</span></div>
+
+      <div class="menu">
+        <a href="tetris-battle.html" class="menu-btn primary">
+          <span class="btn-icon">▶</span>
+          <span class="btn-body"><span class="btn-main">対戦開始</span><span class="btn-sub">PLAY NOW</span></span>
+        </a>
+        <a href="admin.html" class="menu-btn secondary">
+          <span class="btn-icon">⚙</span>
+          <span class="btn-body"><span class="btn-main">管理画面</span><span class="btn-sub">ADMIN CONSOLE</span></span>
+        </a>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat"><span class="stat-val" id="sOnline">--</span><span class="stat-lbl">ONLINE</span></div>
+        <div class="stat-sep"></div>
+        <div class="stat"><span class="stat-val" id="sRooms">--</span><span class="stat-lbl">ROOMS</span></div>
+        <div class="stat-sep"></div>
+        <div class="stat"><span class="stat-val">∞</span><span class="stat-lbl">SPEED</span></div>
+      </div>
+    </div>
+
+    <div class="footer-strip">
+      <span>© 2024 TETRIS BATTLE ONLINE</span>
+      <span class="footer-keys"><kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> CONTROLS</span>
+      <span>v2.0.0</span>
     </div>
   </div>
+
+  <script src="assets/js/index.js"></script>
 </body>
+
 </html>
