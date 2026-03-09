@@ -13,13 +13,37 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'Orbitron', monospace; min-height: 100vh; overflow-x: hidden; }
-  body::before {
-    content: ''; position: fixed; inset: 0;
-    background-image: linear-gradient(rgba(0,245,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,245,255,0.025) 1px, transparent 1px);
-    background-size: 40px 40px; pointer-events: none; z-index: 0;
-  }
-  .scanline { position: fixed; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(0,245,255,0.3), transparent); animation: scan 4s linear infinite; pointer-events: none; z-index: 100; }
+
+  /* Tetris falling-piece BG */
+  #bgCanvas { position: fixed; inset: 0; z-index: 0; opacity: .16; pointer-events: none; }
+
+  /* Scanlines */
+  .scanlines-overlay { position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.13) 2px, rgba(0,0,0,0.13) 4px); }
+  .scanline { position: fixed; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(0,245,255,0.3), transparent); animation: scan 4s linear infinite; pointer-events: none; z-index: 2; }
   @keyframes scan { 0%{top:-2px} 100%{top:100vh} }
+
+  /* Page loader bar */
+  #pageLoader {
+    position: fixed; inset: 0; background: #020408; z-index: 500;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px;
+    transition: opacity .45s ease;
+  }
+  #pageLoader.hide { opacity: 0; pointer-events: none; }
+  .pl-logo { font-family: 'Press Start 2P', monospace; font-size: 16px; color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,245,255,.8); letter-spacing: 4px; }
+  .pl-bar { display: flex; gap: 4px; }
+  .pl-b { width: 20px; height: 20px; border-radius: 3px; background: #0d1525; border: 1px solid #1a2540;
+    position: relative; transition: background .08s, box-shadow .08s; }
+  .pl-b.lit::after { content:''; position:absolute; top:2px; left:2px; right:2px; height:4px;
+    background:rgba(255,255,255,.3); border-radius:1px; }
+  .pl-text { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--dim);
+    letter-spacing: 3px; animation: plBlink 1s step-end infinite; }
+  @keyframes plBlink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+  /* Pixel corner deco on cards */
+  .px-corner { position:absolute; width:9px; height:9px; background:var(--accent); box-shadow:0 0 7px var(--accent); }
+  .px-corner.tl{top:0;left:0} .px-corner.tr{top:0;right:0} .px-corner.bl{bottom:0;left:0} .px-corner.br{bottom:0;right:0}
 
   .screen { display: none; position: relative; z-index: 1; }
   .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
@@ -27,18 +51,18 @@
   /* ══ LOBBY ══ */
   .logo { font-family: 'Press Start 2P', monospace; font-size: clamp(22px,5vw,46px); color: var(--accent); text-shadow: 0 0 20px rgba(0,245,255,0.5),0 0 60px rgba(0,245,255,0.3); letter-spacing: 8px; margin-bottom: 6px; animation: pulse 2s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{text-shadow:0 0 20px rgba(0,245,255,0.5),0 0 60px rgba(0,245,255,0.3)} 50%{text-shadow:0 0 40px rgba(0,245,255,0.9),0 0 80px rgba(0,245,255,0.5)} }
-  .subtitle { font-size: 9px; color: var(--accent2); letter-spacing: 4px; margin-bottom: 44px; text-shadow: 0 0 20px rgba(255,0,128,0.5); }
+  .subtitle { font-size: 12px; color: var(--accent2); letter-spacing: 4px; margin-bottom: 44px; text-shadow: 0 0 20px rgba(255,0,128,0.5); }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 32px; width: 100%; max-width: 400px; position: relative; }
   .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
-  .card-title { font-size: 10px; color: var(--accent); letter-spacing: 3px; margin-bottom: 22px; }
+  .card-title { font-size: 12px; color: var(--accent); letter-spacing: 3px; margin-bottom: 22px; }
 
   .input-group { margin-bottom: 18px; }
-  .input-group label { display: block; font-size: 8px; color: var(--dim); letter-spacing: 2px; margin-bottom: 7px; }
+  .input-group label { display: block; font-size: 11px; color: var(--dim); letter-spacing: 2px; margin-bottom: 7px; }
   input[type="text"] { width: 100%; background: rgba(0,245,255,0.03); border: 1px solid var(--border); border-radius: 2px; color: var(--text); font-family: 'Orbitron', monospace; font-size: 13px; padding: 11px 14px; outline: none; transition: border-color .2s, box-shadow .2s; }
   input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(0,245,255,0.3); }
 
-  .btn { display: block; width: 100%; padding: 13px; border: none; border-radius: 2px; cursor: pointer; font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; transition: all .2s; }
+  .btn { display: block; width: 100%; padding: 13px; border: none; border-radius: 2px; cursor: pointer; font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; transition: all .2s; }
   .btn-primary { background: linear-gradient(135deg, var(--accent), #0080ff); color: #000; }
   .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 20px rgba(0,245,255,0.5); }
   .btn-secondary { background: transparent; border: 1px solid var(--accent2); color: var(--accent2); margin-top: 8px; }
@@ -46,16 +70,16 @@
   .btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); margin-top: 8px; }
   .btn-danger:hover { background: rgba(255,51,85,0.1); box-shadow: 0 0 20px rgba(255,51,85,0.3); }
 
-  .divider { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: var(--dim); font-size: 8px; letter-spacing: 2px; }
+  .divider { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: var(--dim); font-size: 11px; letter-spacing: 2px; }
   .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
   /* ══ WAITING ══ */
   .room-code-display { text-align: center; padding: 16px; background: rgba(0,245,255,0.05); border: 1px dashed var(--accent); border-radius: 2px; margin-bottom: 14px; cursor: pointer; transition: background .2s; position: relative; }
   .room-code-display:hover { background: rgba(0,245,255,0.10); }
-  .room-code-display .code-label { font-size: 8px; color: var(--dim); letter-spacing: 3px; }
+  .room-code-display .code-label { font-size: 11px; color: var(--dim); letter-spacing: 3px; }
   .room-code-display .code { font-family: 'Press Start 2P', monospace; font-size: 28px; color: var(--accent); text-shadow: 0 0 20px rgba(0,245,255,0.5); letter-spacing: 10px; display: block; margin-top: 8px; }
-  .copy-hint { font-size: 7px; color: var(--dim); letter-spacing: 2px; margin-top: 8px; }
-  .waiting-indicator { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--accent3); font-size: 8px; letter-spacing: 2px; margin-top: 14px; }
+  .copy-hint { font-size: 11px; color: var(--dim); letter-spacing: 2px; margin-top: 8px; }
+  .waiting-indicator { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--accent3); font-size: 11px; letter-spacing: 2px; margin-top: 14px; }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); animation: blink 1s ease-in-out infinite; }
   .dot:nth-child(2){animation-delay:.3s} .dot:nth-child(3){animation-delay:.6s}
   @keyframes blink { 0%,100%{opacity:.2;transform:scale(.8)} 50%{opacity:1;transform:scale(1)} }
@@ -67,10 +91,10 @@
   .game-header-right { display: flex; gap: 8px; align-items: center; }
   .game-layout { display: flex; gap: 10px; align-items: flex-start; }
   .player-section { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .player-label { font-size: 8px; letter-spacing: 3px; padding: 3px 12px; border-radius: 2px; }
+  .player-label { font-size: 11px; letter-spacing: 3px; padding: 3px 12px; border-radius: 2px; }
   .player-label.you { background: rgba(0,245,255,0.1); border: 1px solid var(--accent); color: var(--accent); }
   .player-label.opp { background: rgba(255,0,128,0.1); border: 1px solid var(--accent2); color: var(--accent2); }
-  .player-name-tag { font-size: 8px; color: var(--dim); letter-spacing: 1px; }
+  .player-name-tag { font-size: 11px; color: var(--dim); letter-spacing: 1px; }
 
   canvas { display: block; image-rendering: pixelated; }
   #myCanvas       { border: 1px solid var(--accent);  box-shadow: 0 0 20px rgba(0,245,255,0.4); }
@@ -81,15 +105,15 @@
 
   .side-panel { display: flex; flex-direction: column; gap: 8px; min-width: 88px; }
   .panel-box { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 9px; }
-  .panel-box-title { font-size: 7px; color: var(--dim); letter-spacing: 2px; margin-bottom: 6px; }
+  .panel-box-title { font-size: 10px; color: var(--dim); letter-spacing: 2px; margin-bottom: 6px; }
   .score-value  { font-family: 'Press Start 2P', monospace; font-size: 11px; color: var(--accent3); text-shadow: 0 0 15px rgba(170,255,0,0.5); word-break: break-all; }
   .level-value  { font-family: 'Press Start 2P', monospace; font-size: 18px; color: var(--accent); text-shadow: 0 0 20px rgba(0,245,255,0.5); }
   .lines-value  { font-family: 'Press Start 2P', monospace; font-size: 13px; color: var(--text); }
   #nextCanvas, #holdCanvas { border: none; background: rgba(0,0,0,0.4); }
 
   .controls-hint { width: 100%; max-width: 720px; display: flex; justify-content: center; gap: 14px; margin-top: 8px; flex-wrap: wrap; }
-  .key-hint { display: flex; align-items: center; gap: 5px; font-size: 7px; color: var(--dim); letter-spacing: 1px; }
-  .key { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 2px 6px; font-size: 8px; color: var(--text); font-family: monospace; }
+  .key-hint { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--dim); letter-spacing: 1px; }
+  .key { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 2px 6px; font-size: 11px; color: var(--text); font-family: monospace; }
 
   /* Combo/action popup */
   .action-popup {
@@ -122,7 +146,7 @@
   .overlay-title.lose { color: var(--accent2); text-shadow: 0 0 30px rgba(255,0,128,.5); }
   .overlay-title.draw { color: var(--accent);  text-shadow: 0 0 20px rgba(0,245,255,.5); }
   .overlay-title.admin-stop { color: var(--red); text-shadow: 0 0 30px rgba(255,51,85,.8); }
-  .overlay-sub { font-size: 9px; color: var(--dim); letter-spacing: 3px; text-align: center; line-height: 2; }
+  .overlay-sub { font-size: 12px; color: var(--dim); letter-spacing: 3px; text-align: center; line-height: 2; }
 
   /* ══ FORCE STOP OVERLAY ══ */
   #forceStopOverlay {
@@ -149,7 +173,7 @@
     animation: fsFlicker 3s ease-in-out infinite;
   }
   @keyframes fsFlicker { 0%,90%,100%{opacity:1} 92%{opacity:.7} 95%{opacity:1} 97%{opacity:.8} }
-  .fs-subtitle { font-size: 10px; color: rgba(255,136,136,0.8); letter-spacing: 4px; text-align: center; }
+  .fs-subtitle { font-size: 13px; color: rgba(255,136,136,0.8); letter-spacing: 4px; text-align: center; }
   .fs-msg-box {
     max-width: 460px; width: 90%;
     background: rgba(255,51,85,0.07);
@@ -158,8 +182,8 @@
     padding: 16px 24px;
     text-align: center;
   }
-  .fs-msg-label { font-size: 7px; color: var(--dim); letter-spacing: 3px; margin-bottom: 10px; }
-  .fs-msg-text { font-size: 11px; color: rgba(255,170,170,0.9); letter-spacing: 1px; line-height: 2; word-break: break-word; }
+  .fs-msg-label { font-size: 11px; color: var(--dim); letter-spacing: 3px; margin-bottom: 10px; }
+  .fs-msg-text { font-size: 13px; color: rgba(255,170,170,0.9); letter-spacing: 1px; line-height: 2; word-break: break-word; }
   .fs-divider { width: 200px; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,51,85,.4), transparent); }
   .fs-back-btn {
     padding: 14px 36px; border: 1px solid var(--red); color: var(--red);
@@ -177,10 +201,10 @@
   .attack-flash { position: fixed; inset: 0; background: rgba(255,0,128,.18); pointer-events: none; opacity: 0; z-index: 30; transition: opacity .08s; }
   .attack-flash.show { opacity: 1; }
 
-  .status-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 5px 14px; font-size: 7px; color: var(--dim); letter-spacing: 2px; display: flex; justify-content: space-between; z-index: 10; }
+  .status-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 5px 14px; font-size: 11px; color: var(--dim); letter-spacing: 2px; display: flex; justify-content: space-between; z-index: 10; }
   .status-online { color: var(--accent3); }
 
-  .toast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--accent2); color: var(--accent2); font-size: 8px; letter-spacing: 2px; padding: 9px 18px; border-radius: 2px; z-index: 200; display: none; white-space: nowrap; }
+  .toast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--accent2); color: var(--accent2); font-size: 12px; letter-spacing: 2px; padding: 9px 18px; border-radius: 2px; z-index: 200; display: none; white-space: nowrap; }
   .toast.show { display: block; animation: toastIn .25s ease; }
   @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(-8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
   .toast.warn { border-color: var(--warn); color: var(--warn); }
@@ -205,7 +229,7 @@
   #sysMsgBanner {
     display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 180;
     background: rgba(255,170,0,.12); border-bottom: 1px solid var(--warn);
-    padding: 10px 20px; text-align: center; font-size: 8px;
+    padding: 10px 20px; text-align: center; font-size: 12px;
     color: var(--warn); letter-spacing: 2px;
     animation: bannerIn .3s ease;
   }
@@ -214,11 +238,20 @@
 </style>
 </head>
 <body>
+<canvas id="bgCanvas"></canvas>
+<div class="scanlines-overlay"></div>
 <div class="scanline"></div>
 <div class="attack-flash" id="attackFlash"></div>
 
+<!-- PAGE LOADER -->
+<div id="pageLoader">
+  <div class="pl-logo">CONNECTING...</div>
+  <div class="pl-bar" id="plBar"></div>
+  <div class="pl-text" id="plText">INITIALIZING</div>
+</div>
+
 <!-- ══ SYSTEM MESSAGE BANNER ══ -->
-<div id="sysMsgBanner" id="sysMsgBanner">
+<div id="sysMsgBanner">
   <span id="sysMsgText"></span>
   <button onclick="document.getElementById('sysMsgBanner').classList.remove('show')" style="margin-left:20px;background:transparent;border:1px solid var(--warn);color:var(--warn);font-family:'Orbitron',monospace;font-size:7px;padding:2px 8px;cursor:pointer;border-radius:2px;">✕</button>
 </div>
@@ -227,7 +260,9 @@
 <div class="screen active" id="lobbyScreen">
   <div class="logo">TETRIS</div>
   <div class="subtitle">BATTLE — REAL-TIME PVP</div>
-  <div class="card">
+  <div class="card" style="position:relative;">
+    <div class="px-corner tl"></div><div class="px-corner tr"></div>
+    <div class="px-corner bl"></div><div class="px-corner br"></div>
     <div class="card-title">▶ PLAYER SETUP</div>
     <div class="input-group">
       <label>PLAYER NAME</label>
@@ -247,7 +282,9 @@
 <div class="screen" id="waitingScreen">
   <div class="logo" style="font-size:22px;margin-bottom:4px;">WAITING</div>
   <div class="subtitle">FOR OPPONENT</div>
-  <div class="card">
+  <div class="card" style="position:relative;">
+    <div class="px-corner tl"></div><div class="px-corner tr"></div>
+    <div class="px-corner bl"></div><div class="px-corner br"></div>
     <div class="card-title">▶ ROOM CODE</div>
     <div class="room-code-display" onclick="copyRoomCode()" title="クリックでコピー">
       <span class="code-label">SHARE THIS CODE</span>
@@ -258,7 +295,7 @@
       <div class="dot"></div><div class="dot"></div><div class="dot"></div>
       <span>WAITING FOR OPPONENT</span>
     </div>
-    <button class="btn btn-danger" style="margin-top:18px;" onclick="leaveRoom()">← CANCEL</button>
+    <button class="btn btn-danger" style="margin-top:18px;" onclick="cancelWaiting()">← CANCEL</button>
   </div>
 </div>
 
@@ -361,7 +398,7 @@
     <div class="fs-msg-label">管理者からのメッセージ</div>
     <div class="fs-msg-text" id="forceStopMsg">このルームは強制終了されました。</div>
   </div>
-  <button class="fs-back-btn" onclick="leaveRoom()">← BACK TO LOBBY</button>
+  <button class="fs-back-btn" onclick="returnToLobbyFromForceStop()">← BACK TO LOBBY</button>
 </div>
 
 <!-- ══ COUNTDOWN ══ -->
@@ -625,139 +662,247 @@ class TetrisGame {
 // ═══════════════════════════════════════════════════════════════
 // MULTIPLAYER STATE
 // ═══════════════════════════════════════════════════════════════
-let roomCode=null, myRole=null, game=null, gameRunning=false, animId=null;
-let oppName='FOE', endedOnce=false;
-let forceStopped = false;
-const genCode = () => Math.floor(1000+Math.random()*9000).toString();
+let roomCode = null, myRole = null, game = null, gameRunning = false, animId = null;
+let oppName = 'FOE', endedOnce = false, forceStopped = false;
+const genCode = () => Math.floor(1000 + Math.random() * 9000).toString();
 
-let unsubOpp=null, unsubRoom=null, unsubGarb=null, unsubWaitRoom=null;
+// Firebase listener refs (stored so we can properly unsubscribe)
+const _listeners = { opp: null, room: null, garb: null, wait: null };
 
+// ─────────────────────────────────────────────────────────────
+// offAll — detach ALL firebase listeners safely
+// ─────────────────────────────────────────────────────────────
 function offAll() {
-  if(unsubOpp)    {try{off(ref(db,`rooms/${roomCode}/game/${myRole==='p1'?'p2':'p1'}`));}catch(e){} unsubOpp=null;}
-  if(unsubRoom)   {try{off(ref(db,`rooms/${roomCode}`));}catch(e){} unsubRoom=null;}
-  if(unsubGarb)   {try{off(ref(db,`rooms/${roomCode}/garb/${myRole}`));}catch(e){} unsubGarb=null;}
-  if(unsubWaitRoom){try{off(ref(db,`rooms/${roomCode}`));}catch(e){} unsubWaitRoom=null;}
+  for (const [key, r] of Object.entries(_listeners)) {
+    if (r) { try { off(r); } catch(e) {} _listeners[key] = null; }
+  }
 }
 
-// ── FORCE STOP ────────────────────────────────────────────────
-function showForceStop(msg) {
-  if (forceStopped) return;
-  forceStopped = true;
-  // Stop game if running
-  gameRunning = false;
-  endedOnce = true;
-  if (animId) { cancelAnimationFrame(animId); animId=null; }
+// ─────────────────────────────────────────────────────────────
+// resetState — clean up everything for lobby return
+// ─────────────────────────────────────────────────────────────
+function resetState() {
   offAll();
-  // Hide all overlays
+  gameRunning = false;
+  forceStopped = false;
+  endedOnce = false;
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  roomCode = null;
+  myRole = null;
+  game = null;
+  // Clear interval timers
+  dasStop();
+  clearInterval(softDropInterval); softDropInterval = null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// FORCE STOP — called when admin terminates the room
+// ─────────────────────────────────────────────────────────────
+function showForceStop(msg) {
+  if (forceStopped) return;   // guard: only trigger once
+  forceStopped = true;
+  endedOnce   = true;
+  gameRunning = false;
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  offAll();
+
+  // Hide every other overlay first
   document.getElementById('resultOverlay').classList.remove('show');
   document.getElementById('countdownOverlay').classList.remove('show');
-  // Show force stop screen
-  document.getElementById('forceStopMsg').textContent =
-    msg || '管理者によってこのルームは強制終了されました。';
+
+  // Show force-stop screen with message
+  const m = (msg || '管理者によってこのルームは強制終了されました。').trim();
+  document.getElementById('forceStopMsg').textContent = m;
   document.getElementById('forceStopOverlay').classList.add('show');
 }
 
-// ── SYS MSG BANNER ────────────────────────────────────────────
-let lastSysMsgTs = 0;
+// ─────────────────────────────────────────────────────────────
+// SYS MSG BANNER
+// ─────────────────────────────────────────────────────────────
+let _lastSysMsgTs = 0;
 function handleSysMsg(data) {
-  if (!data || !data.sysMsg || !data.sysMsgTs) return;
-  if (data.sysMsgTs <= lastSysMsgTs) return;
-  lastSysMsgTs = data.sysMsgTs;
+  if (!data?.sysMsg || !data?.sysMsgTs) return;
+  if (data.sysMsgTs <= _lastSysMsgTs) return;
+  _lastSysMsgTs = data.sysMsgTs;
   document.getElementById('sysMsgText').textContent = '📢 ' + data.sysMsg;
-  document.getElementById('sysMsgBanner').classList.add('show');
-  setTimeout(() => document.getElementById('sysMsgBanner').classList.remove('show'), 8000);
+  const banner = document.getElementById('sysMsgBanner');
+  banner.classList.add('show');
+  setTimeout(() => banner.classList.remove('show'), 8000);
 }
 
-// ── COPY ROOM CODE ────────────────────────────────────────────
-window.copyRoomCode = () => {
-  if (!roomCode) return;
-  navigator.clipboard?.writeText(roomCode).then(()=>{
-    showToast('コードをコピーしました！', 'ok');
-  }).catch(()=>{
-    showToast('コード: ' + roomCode);
-  });
+// ─────────────────────────────────────────────────────────────
+// COPY ROOM CODE
+// ─────────────────────────────────────────────────────────────
+// Return from force-stop screen without trying to write to (already-deleted) Firebase
+window.returnToLobbyFromForceStop = () => {
+  const code = roomCode;
+  const role = myRole;
+  document.getElementById('forceStopOverlay').classList.remove('show');
+  document.getElementById('resultOverlay').classList.remove('show');
+  document.getElementById('sysMsgBanner').classList.remove('show');
+  document.getElementById('countdownOverlay').classList.remove('show');
+  resetState();
+  // Room is already deleted by admin — no Firebase write needed
+  showScreen('lobbyScreen');
 };
 
-// ── CREATE ROOM ───────────────────────────────────────────────
+window.cancelWaiting = async () => {
+  const code = roomCode;
+  // Clear waiting listener first
+  if (_listeners.wait) { try { off(_listeners.wait); } catch(e) {} _listeners.wait = null; }
+  resetState();
+  // P1 owns the room — delete it so onDisconnect / p2 both get notified
+  if (code && db) {
+    try { await remove(ref(db, `rooms/${code}`)); } catch(e) {}
+  }
+  document.getElementById('sysMsgBanner').classList.remove('show');
+  showScreen('lobbyScreen');
+};
+
+window.copyRoomCode = () => {
+  if (!roomCode) return;
+  navigator.clipboard?.writeText(roomCode)
+    .then(() => showToast('コードをコピーしました！', 'ok'))
+    .catch(() => showToast('コード: ' + roomCode));
+};
+
+// ─────────────────────────────────────────────────────────────
+// CREATE ROOM (P1)
+// ─────────────────────────────────────────────────────────────
 window.createRoom = async () => {
-  const name = document.getElementById('playerName').value.trim()||'PLAYER';
-  myRole='p1'; roomCode=genCode(); endedOnce=false; forceStopped=false;
+  const name = document.getElementById('playerName').value.trim() || 'PLAYER';
+  myRole = 'p1';
+  roomCode = genCode();
+  endedOnce = false;
+  forceStopped = false;
+
   const rRef = ref(db, `rooms/${roomCode}`);
-  await set(rRef, { p1:{name}, status:'waiting', ts:Date.now() });
-  onDisconnect(rRef).remove();
+
+  // Write room data
+  await set(rRef, { p1: { name }, status: 'waiting', ts: Date.now() });
+
+  // onDisconnect for p1: mark as p1_left so p2 sees a graceful disconnect message
+  // (firebase will auto-remove after both sides disconnect anyway)
+  onDisconnect(ref(db, `rooms/${roomCode}/status`)).set('p1_left');
+
   showScreen('waitingScreen');
   document.getElementById('displayRoomCode').textContent = roomCode;
   document.getElementById('statusRoom').textContent = `ROOM: ${roomCode}`;
 
-  // ★ KEY FIX: listen to FULL room node to detect force_ended during wait
+  // Watch the room for: p2 joining, force_ended, sysMsg
   const waitRef = ref(db, `rooms/${roomCode}`);
-  unsubWaitRoom = waitRef;
+  _listeners.wait = waitRef;
   onValue(waitRef, snap => {
     const d = snap.val();
-    if (!d) return;
-    // Detect system messages
+
+    // Room deleted (p2 joined and disconnected before ready, or admin deleted)
+    if (!d) {
+      if (!forceStopped && !endedOnce) {
+        off(waitRef); _listeners.wait = null;
+        showScreen('lobbyScreen');
+        showToast('ルームが削除されました', 'warn');
+      }
+      return;
+    }
+
     handleSysMsg(d);
-    // ★ Detect admin force stop
-    if (d.status === 'force_ended') {
-      off(waitRef); unsubWaitRoom = null;
+
+    if (d.status === 'force_ended' && !forceStopped) {
+      off(waitRef); _listeners.wait = null;
       showForceStop(d.forceMsg);
       return;
     }
-    if (d.status === 'ready') {
-      off(waitRef); unsubWaitRoom = null;
+
+    // p2 joined → start game
+    if (d.status === 'ready' && !endedOnce && !forceStopped) {
+      off(waitRef); _listeners.wait = null;
       startGame();
     }
   });
 };
 
-// ── JOIN ROOM ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// JOIN ROOM (P2)
+// ─────────────────────────────────────────────────────────────
 window.joinRoom = async () => {
   const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-  if (code.length!==4) { showToast('4桁のコードを入力してください'); return; }
-  const name = document.getElementById('playerName').value.trim()||'PLAYER2';
-  const rRef = ref(db,`rooms/${code}`);
-  const snap = await get(rRef);
-  if (!snap.exists()) { showToast('ルームが見つかりません'); return; }
+  if (code.length !== 4 || !/^[0-9]{4}$/.test(code)) {
+    showToast('4桁の数字コードを入力してください', 'warn'); return;
+  }
+  const name = document.getElementById('playerName').value.trim() || 'PLAYER2';
+  const rRef = ref(db, `rooms/${code}`);
+
+  let snap;
+  try { snap = await get(rRef); }
+  catch(e) { showToast('接続エラー: ' + e.message, 'warn'); return; }
+
+  if (!snap.exists())              { showToast('ルームが見つかりません', 'warn'); return; }
   const d = snap.val();
-  if (d.status === 'force_ended') { showToast('このルームは強制終了されています'); return; }
-  if (d.status !== 'waiting') { showToast('このルームは満員か既に開始しています'); return; }
-  myRole='p2'; roomCode=code; endedOnce=false; forceStopped=false;
-  await update(rRef, { p2:{name}, status:'ready' });
-  onDisconnect(ref(db,`rooms/${roomCode}/p2`)).remove();
+  if (d.status === 'force_ended')  { showToast('このルームは強制終了されています', 'warn'); return; }
+  if (d.status !== 'waiting')      { showToast('このルームは満員か既に開始しています', 'warn'); return; }
+
+  myRole = 'p2'; roomCode = code; endedOnce = false; forceStopped = false;
+
+  // Write p2 info and flip to ready
+  await update(rRef, { p2: { name }, status: 'ready' });
+
+  // onDisconnect for p2: set status to 'p2_left' so p1 gets notified
+  onDisconnect(ref(db, `rooms/${roomCode}/status`)).set('p2_left');
+
   document.getElementById('statusRoom').textContent = `ROOM: ${roomCode}`;
   startGame();
 };
 
-// ── LEAVE ROOM ────────────────────────────────────────────────
-window.leaveRoom = () => {
-  offAll();
-  gameRunning=false;
-  forceStopped=false;
-  if (animId) { cancelAnimationFrame(animId); animId=null; }
-  if (roomCode && db) {
-    try {
-      if (myRole==='p1') remove(ref(db,`rooms/${roomCode}`));
-      else               update(ref(db,`rooms/${roomCode}`), {status:'ended'});
-    } catch(e){}
-  }
+// ─────────────────────────────────────────────────────────────
+// LEAVE ROOM — user-initiated quit
+// ─────────────────────────────────────────────────────────────
+window.leaveRoom = async () => {
+  const code = roomCode;
+  const role = myRole;
+
+  // Clear all overlays
   document.getElementById('resultOverlay').classList.remove('show');
   document.getElementById('forceStopOverlay').classList.remove('show');
   document.getElementById('sysMsgBanner').classList.remove('show');
-  roomCode=null; myRole=null; game=null; endedOnce=false;
+  document.getElementById('countdownOverlay').classList.remove('show');
+
+  resetState();
+
+  // Notify Firebase AFTER state is cleared
+  if (code && db) {
+    try {
+      if (role === 'p1') {
+        // p1 owns the room — delete it entirely (this notifies p2 via null snap)
+        await remove(ref(db, `rooms/${code}`));
+      } else {
+        // p2 left — write 'p2_left' so p1 sees it via onValue
+        await update(ref(db, `rooms/${code}`), { status: 'p2_left' });
+      }
+    } catch(e) { /* best-effort */ }
+  }
+
   showScreen('lobbyScreen');
 };
 
-// ── START GAME ────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// START GAME — both players, after ready
+// ─────────────────────────────────────────────────────────────
 async function startGame() {
   showScreen('gameScreen');
-  const oppRole = myRole==='p1'?'p2':'p1';
-  const snap = await get(ref(db,`rooms/${roomCode}`));
-  const data  = snap.val();
+  const oppRole = myRole === 'p1' ? 'p2' : 'p1';
 
-  // Check if force stopped before game even loads
-  if (data?.status === 'force_ended') {
-    showForceStop(data.forceMsg);
-    return;
+  let snap;
+  try { snap = await get(ref(db, `rooms/${roomCode}`)); }
+  catch(e) { showToast('接続エラー', 'warn'); showScreen('lobbyScreen'); return; }
+
+  const data = snap.val();
+  if (!data) { showScreen('lobbyScreen'); return; }
+
+  // Force-stopped before game loaded
+  if (data.status === 'force_ended') { showForceStop(data.forceMsg); return; }
+  // Opponent already left
+  if (data.status === 'p2_left' || data.status === 'ended') {
+    showScreen('lobbyScreen'); showToast('相手がいません', 'warn'); return;
   }
 
   const myName = data[myRole]?.name || 'YOU';
@@ -765,47 +910,72 @@ async function startGame() {
   document.getElementById('myNameTag').textContent  = myName;
   document.getElementById('oppNameTag').textContent = oppName;
 
-  await countdown();
-
-  game = new TetrisGame('myCanvas','holdCanvas','nextCanvas');
-  gameRunning = true; endedOnce = false;
-
-  // ── Listen: opponent board ──
-  const oppRef = ref(db, `rooms/${roomCode}/game/${oppRole}`);
-  unsubOpp = oppRef;
-  onValue(oppRef, snap => {
-    const d = snap.val(); if (!d) return;
-    TetrisGame.drawOpponent(document.getElementById('opponentCanvas'), d);
-    document.getElementById('oppNameTag').textContent = `${oppName} (${d.score||0})`;
-    if (d.gameOver && !game?.gameOver && gameRunning) endGame('WIN');
-  });
-
-  // ★ KEY FIX: Listen to FULL room node to catch force_ended + sysMsg during game
+  // ── Watch room for force_ended / opponent leaving / sysMsg ──
   const roomRef = ref(db, `rooms/${roomCode}`);
-  unsubRoom = roomRef;
+  _listeners.room = roomRef;
   onValue(roomRef, snap => {
     const d = snap.val();
-    if (!d) { if (gameRunning) endGame('DISCONNECT'); return; }
-    // System message
+
+    // Room deleted entirely (p1 disconnected / admin deleted)
+    if (!d) {
+      if (!endedOnce && !forceStopped) endGame('OPPONENT_LEFT');
+      return;
+    }
+
     handleSysMsg(d);
-    // ★ Force stop detection
+
+    // Admin force stop
     if (d.status === 'force_ended' && !forceStopped) {
-      off(roomRef); unsubRoom = null;
+      off(roomRef); _listeners.room = null;
       showForceStop(d.forceMsg);
       return;
     }
-    if (d.status === 'ended' && gameRunning) {
-      endGame('DISCONNECT');
+
+    // Opponent left voluntarily
+    if (!endedOnce && !forceStopped) {
+      if (myRole === 'p1' && d.status === 'p2_left') {
+        endGame('OPPONENT_LEFT');
+        return;
+      }
+      if (myRole === 'p2' && d.status === 'p1_left') {
+        endGame('OPPONENT_LEFT');
+        return;
+      }
+      if (d.status === 'ended') {
+        endGame('OPPONENT_LEFT');
+        return;
+      }
     }
   });
 
-  // ── Listen: incoming garbage ──
+  // Run countdown (interruptable by forceStop)
+  const aborted = await countdown();
+  if (aborted) return;   // was force-stopped during countdown
+
+  game = new TetrisGame('myCanvas', 'holdCanvas', 'nextCanvas');
+  gameRunning = true;
+  endedOnce   = false;
+
+  // ── Watch opponent board ──
+  const oppRef = ref(db, `rooms/${roomCode}/game/${oppRole}`);
+  _listeners.opp = oppRef;
+  onValue(oppRef, snap => {
+    const d = snap.val();
+    if (!d) return;
+    TetrisGame.drawOpponent(document.getElementById('opponentCanvas'), d);
+    document.getElementById('oppNameTag').textContent = `${oppName} (${d.score || 0})`;
+    // Opponent topped out → we win
+    if (d.gameOver && !game?.gameOver && gameRunning && !endedOnce) endGame('WIN');
+  });
+
+  // ── Watch incoming garbage ──
   const myGRef = ref(db, `rooms/${roomCode}/garb/${myRole}`);
-  unsubGarb = myGRef;
+  _listeners.garb = myGRef;
   onValue(myGRef, snap => {
-    const v = snap.val(); if (!v || !v.n) return;
+    const v = snap.val();
+    if (!v || !v.n || !game) return;
     game.pendingGarbage += v.n;
-    set(myGRef, {n:0});
+    set(myGRef, { n: 0 });
     flashAttack();
     playSound('attack');
   });
@@ -819,60 +989,115 @@ async function startGame() {
     if (!gameRunning) return;
     const result = game.update(ts);
     game.draw();
+
     document.getElementById('scoreDisplay').textContent = game.score;
     document.getElementById('levelDisplay').textContent = game.level;
     document.getElementById('linesDisplay').textContent = game.lines;
-    if (result && result.actionLabel) showActionPopup(result.actionLabel);
+
+    if (result?.actionLabel) showActionPopup(result.actionLabel);
+
     if (ts - lastPushTs > PUSH_RATE) {
       lastPushTs = ts;
-      const serial = game.serialize();
-      set(ref(db, `rooms/${roomCode}/game/${myRole}`), serial).catch(()=>{});
-      if (result && result.garbageOut > 0) {
+      set(ref(db, `rooms/${roomCode}/game/${myRole}`), game.serialize()).catch(() => {});
+      if (result?.garbageOut > 0) {
         const gn = result.garbageOut;
         get(oppGRef).then(s => {
           const ex = s.val()?.n || 0;
-          set(oppGRef, {n: ex + gn}).catch(()=>{});
+          set(oppGRef, { n: ex + gn }).catch(() => {});
         });
       }
     }
+
     if (game.gameOver) {
-      set(ref(db, `rooms/${roomCode}/game/${myRole}`), game.serialize()).catch(()=>{});
+      // Push final board state then end
+      set(ref(db, `rooms/${roomCode}/game/${myRole}`), game.serialize()).catch(() => {});
       endGame('LOSE');
       return;
     }
+
     animId = requestAnimationFrame(loop);
   };
   animId = requestAnimationFrame(loop);
 }
 
-// ── END GAME ──────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// END GAME
+// ─────────────────────────────────────────────────────────────
 function endGame(result) {
   if (endedOnce) return;
-  endedOnce = true; gameRunning = false;
-  if (animId) { cancelAnimationFrame(animId); animId=null; }
+  endedOnce   = true;
+  gameRunning = false;
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  offAll();
+
   const title = document.getElementById('resultTitle');
   const sub   = document.getElementById('resultSub');
   const score = game?.score || 0;
   const lvl   = game?.level || 1;
   const lines = game?.lines || 0;
-  if (result==='WIN')       { title.className='overlay-title win';  title.textContent='YOU WIN!'; playSound('win'); }
-  else if (result==='LOSE') { title.className='overlay-title lose'; title.textContent='YOU LOSE'; }
-  else                      { title.className='overlay-title draw'; title.textContent='OPPONENT LEFT'; }
+
+  if (result === 'WIN') {
+    title.className = 'overlay-title win';
+    title.textContent = 'YOU WIN!';
+    playSound('win');
+    // Mark room as ended cleanly
+    if (roomCode) update(ref(db, `rooms/${roomCode}`), { status: 'ended' }).catch(() => {});
+  } else if (result === 'LOSE') {
+    title.className = 'overlay-title lose';
+    title.textContent = 'YOU LOSE';
+  } else if (result === 'OPPONENT_LEFT') {
+    title.className = 'overlay-title draw';
+    title.textContent = 'OPPONENT LEFT';
+    // If we're p1, clean up the room
+    if (myRole === 'p1' && roomCode) {
+      remove(ref(db, `rooms/${roomCode}`)).catch(() => {});
+    }
+  }
+
   sub.innerHTML = `SCORE: ${score}&nbsp;&nbsp;|&nbsp;&nbsp;LEVEL: ${lvl}&nbsp;&nbsp;|&nbsp;&nbsp;LINES: ${lines}`;
   document.getElementById('resultOverlay').classList.add('show');
 }
 
-// ── COUNTDOWN ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// COUNTDOWN — returns true if aborted by force-stop
+// ─────────────────────────────────────────────────────────────
 function countdown() {
   return new Promise(resolve => {
-    const ov=document.getElementById('countdownOverlay');
-    const num=document.getElementById('countdownNum');
-    ov.classList.add('show'); let n=3;
+    const ov  = document.getElementById('countdownOverlay');
+    const num = document.getElementById('countdownNum');
+    ov.classList.add('show');
+    let n = 3;
+    let resolved = false;
+
+    // If force-stopped during countdown, abort immediately
+    const checkAbort = () => {
+      if (forceStopped && !resolved) {
+        resolved = true;
+        ov.classList.remove('show');
+        resolve(true);   // true = aborted
+      }
+    };
+    const abortPoll = setInterval(checkAbort, 100);
+
     const tick = () => {
-      num.style.animation='none'; num.offsetHeight;
-      num.style.animation='countAnim .85s ease-out forwards';
-      if(n>0){num.textContent=n;n--;setTimeout(tick,850);}
-      else{num.textContent='GO!';setTimeout(()=>{ov.classList.remove('show');resolve();},850);}
+      if (resolved) return;
+      num.style.animation = 'none';
+      num.offsetHeight;   // reflow
+      num.style.animation = 'countAnim .85s ease-out forwards';
+      if (n > 0) {
+        num.textContent = n; n--;
+        setTimeout(tick, 850);
+      } else {
+        num.textContent = 'GO!';
+        setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            clearInterval(abortPoll);
+            ov.classList.remove('show');
+            resolve(false);   // false = normal finish
+          }
+        }, 850);
+      }
     };
     tick();
   });
@@ -953,6 +1178,83 @@ function showActionPopup(label){const p=document.getElementById('actionPopup');p
 
 document.getElementById('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')window.joinRoom();});
 document.getElementById('roomCodeInput').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^0-9]/g,'');});
+
+// ═══ TETRIS FALLING BG ═══
+(function(){
+  const canvas=document.getElementById('bgCanvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const _COLORS={I:'#00f5ff',O:'#ffff00',T:'#cc00ff',S:'#aaff00',Z:'#ff0040',J:'#0066ff',L:'#ff8800'};
+  const _CNAMES=Object.keys(_COLORS);
+  const CELL=28;
+  const PMATS={
+    I:[[[1,1,1,1]],[[1],[1],[1],[1]]],
+    O:[[[1,1],[1,1]]],
+    T:[[[0,1,0],[1,1,1]],[[1,0],[1,1],[1,0]]],
+    S:[[[0,1,1],[1,1,0]]],Z:[[[1,1,0],[0,1,1]]],
+    J:[[[1,0,0],[1,1,1]]],L:[[[0,0,1],[1,1,1]]]
+  };
+  let W,H; const pieces=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  resize(); window.addEventListener('resize',resize);
+  function spawn(){
+    const name=_CNAMES[Math.random()*_CNAMES.length|0];
+    const rots=PMATS[name];const mat=rots[Math.random()*rots.length|0];
+    return{mat,color:_COLORS[name],x:Math.random()*W,y:-CELL*4,
+      vy:.4+Math.random()*1.2,rot:Math.random()*360,vr:(Math.random()-.5)*.7,
+      sc:.5+Math.random()*.9,alpha:.1+Math.random()*.4};
+  }
+  for(let i=0;i<18;i++){const p=spawn();p.y=Math.random()*H;pieces.push(p);}
+  function drawBlock(bx,by,color){
+    ctx.fillStyle=color+'aa';ctx.fillRect(bx+1,by+1,CELL-2,CELL-2);
+    ctx.fillStyle='rgba(255,255,255,.2)';ctx.fillRect(bx+1,by+1,CELL-2,5);ctx.fillRect(bx+1,by+1,5,CELL-2);
+    ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(bx+2,by+CELL-4,CELL-3,3);
+    ctx.strokeStyle=color;ctx.lineWidth=.7;ctx.strokeRect(bx+.5,by+.5,CELL-1,CELL-1);
+  }
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    pieces.forEach((p,i)=>{
+      p.y+=p.vy;p.rot+=p.vr;
+      if(p.y>H+CELL*p.sc*4)pieces[i]=spawn();
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.scale(p.sc,p.sc);ctx.globalAlpha=p.alpha;
+      const mw=p.mat[0].length,mh=p.mat.length,ox=-mw*CELL/2,oy=-mh*CELL/2;
+      p.mat.forEach((row,r)=>row.forEach((cell,c)=>{if(cell)drawBlock(ox+c*CELL,oy+r*CELL,p.color);}));
+      ctx.restore();
+    });
+    if(Math.random()<.012&&pieces.length<22)pieces.push(spawn());
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+// ═══ PAGE LOADER ═══
+(function(){
+  const loader=document.getElementById('pageLoader');
+  const bar=document.getElementById('plBar');
+  const txt=document.getElementById('plText');
+  if(!loader||!bar)return;
+  const bColors=['#00f5ff','#ffff00','#cc00ff','#aaff00','#ff0040','#0066ff','#ff8800','#00f5ff','#ffff00','#cc00ff'];
+  const N=10;
+  for(let i=0;i<N;i++){const b=document.createElement('div');b.className='pl-b';bar.appendChild(b);}
+  let f=0;
+  const next=()=>{
+    if(f>=N){
+      // flash white then hide
+      Array.from(bar.children).forEach(b=>{b.style.background='rgba(255,255,255,.9)';b.style.boxShadow='0 0 20px #fff';});
+      setTimeout(()=>{loader.classList.add('hide');setTimeout(()=>{try{loader.remove();}catch(e){}},500);},150);
+      return;
+    }
+    const b=bar.children[f];
+    b.classList.add('lit');b.style.background=bColors[f];
+    b.style.boxShadow=`0 0 14px ${bColors[f]}`;b.style.borderColor=bColors[f];
+    f++;
+    if(f===4)txt.textContent='CONNECTING...';
+    if(f===8)txt.textContent='READY!';
+    setTimeout(next,55+Math.random()*75);
+  };
+  setTimeout(next,200);
+})();
+
 </script>
 </body>
 </html>

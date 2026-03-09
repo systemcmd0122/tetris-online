@@ -1,163 +1,424 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TETRIS BATTLE — オンライン対戦</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TETRIS BATTLE — オンライン対戦</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+    :root {
+      --bg: #04060f; --s0: #080d18;
+      --acc: #00f5ff; --acc2: #ff0080; --acc3: #aaff00;
+      --tx: #e0f0ff; --dim: #4a6080;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background: var(--bg); color: var(--tx);
+      font-family: 'Orbitron', monospace;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; min-height: 100vh;
+    }
 
-        :root {
-            --bg: #010306;
-            --s0: #080d18;
-            --s1: #0d1525;
-            --s2: #111a2e;
-            --b0: #1a2540;
-            --b1: #243050;
-            --acc: #00f5ff;
-            --acc2: #ff0080;
-            --acc3: #aaff00;
-            --tx: #e0f0ff;
-            --dim: #4a6080;
-        }
+    /* TETRIS BG */
+    #bgCanvas { position: fixed; inset: 0; z-index: 0; }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    /* SCANLINES */
+    .scanlines {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background: repeating-linear-gradient(0deg,
+        transparent, transparent 2px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
+    }
+    .scan-beam {
+      position: fixed; left: 0; right: 0; height: 140px; z-index: 2; pointer-events: none;
+      background: linear-gradient(180deg, transparent, rgba(0,245,255,0.04) 40%, rgba(0,245,255,0.07) 50%, rgba(0,245,255,0.04) 60%, transparent);
+      animation: scanBeam 7s linear infinite;
+    }
+    @keyframes scanBeam { 0%{top:-140px} 100%{top:100vh} }
 
-        html,
-        body {
-            height: 100%;
-            overflow: hidden;
-        }
+    /* MAIN */
+    .container {
+      position: relative; z-index: 10;
+      text-align: center; display: flex;
+      flex-direction: column; align-items: center; padding: 20px;
+    }
 
-        body {
-            background: var(--bg);
-            color: var(--tx);
-            font-family: 'Orbitron', monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
+    /* PIXEL DECO */
+    .pixel-deco { display: flex; flex-direction: column; align-items: center; gap: 3px; margin-bottom: 14px; }
+    .px-row { display: flex; gap: 4px; }
+    .px {
+      width: 13px; height: 13px; border-radius: 2px;
+      animation: pxFloat 3s ease-in-out infinite;
+    }
+    .px:nth-child(odd)  { animation-delay: .15s; }
+    .px:nth-child(even) { animation-delay: .3s; }
+    @keyframes pxFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+    .px-I { background:#00f5ff; box-shadow:0 0 6px #00f5ff; }
+    .px-O { background:#ffff00; box-shadow:0 0 6px #ffff00; }
+    .px-T { background:#cc00ff; box-shadow:0 0 6px #cc00ff; }
+    .px-S { background:#aaff00; box-shadow:0 0 6px #aaff00; }
+    .px-Z { background:#ff0040; box-shadow:0 0 6px #ff0040; }
+    .px-J { background:#0066ff; box-shadow:0 0 6px #0066ff; }
+    .px-L { background:#ff8800; box-shadow:0 0 6px #ff8800; }
 
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image: linear-gradient(rgba(0, 245, 255, .015) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 245, 255, .015) 1px, transparent 1px);
-            background-size: 40px 40px;
-            pointer-events: none;
-            z-index: 0;
-        }
+    /* LOGO */
+    .logo {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(22px, 5vw, 44px);
+      color: var(--acc);
+      text-shadow: 0 0 10px rgba(0,245,255,.9), 0 0 30px rgba(0,245,255,.5), 0 0 80px rgba(0,245,255,.3), 3px 3px 0 rgba(0,60,100,.9);
+      letter-spacing: 6px; margin-bottom: 10px;
+      animation: logoFlicker 5s ease-in-out infinite;
+    }
+    @keyframes logoFlicker { 0%,94%,100%{opacity:1} 95%{opacity:.82} 97%{opacity:1} 98%{opacity:.9} }
 
-        .container {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-        }
+    .subtitle {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(8px, 1.5vw, 10px);
+      color: var(--acc2); letter-spacing: 3px; margin-bottom: 40px;
+      text-shadow: 0 0 15px rgba(255,0,128,.7);
+      animation: subPulse 2.5s ease-in-out infinite;
+    }
+    @keyframes subPulse { 0%,100%{opacity:.7} 50%{opacity:1;text-shadow:0 0 25px rgba(255,0,128,1),0 0 50px rgba(255,0,128,.4)} }
 
-        .logo {
-            font-family: 'Press Start 2P', monospace;
-            font-size: clamp(28px, 5vw, 48px);
-            color: var(--acc);
-            text-shadow: 0 0 20px rgba(0, 245, 255, .5), 0 0 60px rgba(0, 245, 255, .3);
-            letter-spacing: 8px;
-            margin-bottom: 12px;
-            animation: pulse 2s ease-in-out infinite;
-        }
+    /* MENU CARD */
+    .menu-card {
+      background: rgba(4,6,15,0.88);
+      border: 2px solid rgba(0,245,255,0.22);
+      border-radius: 2px; padding: 32px 36px;
+      width: 100%; max-width: 320px;
+      position: relative; overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+    /* Rainbow top border */
+    .menu-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: linear-gradient(90deg,#cc00ff,#0066ff,#00f5ff,#aaff00,#ff8800,#ff0040,#cc00ff);
+      background-size: 300% 100%;
+      animation: rainbowShift 3s linear infinite;
+    }
+    @keyframes rainbowShift { 0%{background-position:0% 0} 100%{background-position:300% 0} }
 
-        @keyframes pulse {
+    /* Pixel corner accents */
+    .card-corner {
+      position: absolute; width: 10px; height: 10px;
+      background: var(--acc); box-shadow: 0 0 8px var(--acc);
+    }
+    .card-corner.tl { top: 4px; left: 0; }
+    .card-corner.tr { top: 4px; right: 0; }
+    .card-corner.bl { bottom: 0; left: 0; }
+    .card-corner.br { bottom: 0; right: 0; }
 
-            0%,
-            100% {
-                text-shadow: 0 0 20px rgba(0, 245, 255, .5), 0 0 60px rgba(0, 245, 255, .3);
-            }
+    .menu { display: flex; flex-direction: column; gap: 14px; width: 100%; }
 
-            50% {
-                text-shadow: 0 0 40px rgba(0, 245, 255, .9), 0 0 80px rgba(0, 245, 255, .5);
-            }
-        }
+    /* BLOCK BUTTONS */
+    .menu-btn {
+      display: block; width: 100%; padding: 15px 20px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px; letter-spacing: 2px;
+      text-decoration: none; text-align: center;
+      border: none; cursor: pointer; transition: all .12s;
+      position: relative; overflow: hidden; border-radius: 2px;
+    }
+    .menu-btn.primary {
+      background: var(--acc); color: #000;
+      box-shadow: 0 5px 0 rgba(0,80,100,.9), inset 0 1px 0 rgba(255,255,255,.4);
+    }
+    .menu-btn.primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 0 rgba(0,80,100,.9), 0 0 35px rgba(0,245,255,.7), inset 0 1px 0 rgba(255,255,255,.4);
+    }
+    .menu-btn.primary:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,80,100,.9); }
+    .menu-btn.primary::before {
+      content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
+      transition: left .5s;
+    }
+    .menu-btn.primary:hover::before { left: 160%; }
 
-        .subtitle {
-            font-size: 10px;
-            color: var(--acc2);
-            letter-spacing: 4px;
-            margin-bottom: 50px;
-            text-shadow: 0 0 20px rgba(255, 0, 128, .5);
-        }
+    .menu-btn.secondary {
+      background: rgba(255,0,128,0.05); color: var(--acc2);
+      border: 2px solid var(--acc2);
+      box-shadow: 0 5px 0 rgba(100,0,50,.9);
+    }
+    .menu-btn.secondary:hover {
+      background: rgba(255,0,128,.1);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 0 rgba(100,0,50,.9), 0 0 25px rgba(255,0,128,.6);
+    }
+    .menu-btn.secondary:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(100,0,50,.9); }
 
-        .menu {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            width: 100%;
-            max-width: 320px;
-        }
+    /* FOOTER */
+    .footer {
+      margin-top: 22px; font-size: 9px; color: var(--dim);
+      letter-spacing: 2px; position: relative; z-index: 10;
+    }
 
-        .menu-btn {
-            background: linear-gradient(135deg, var(--acc), #0080ff);
-            color: #000;
-            border: none;
-            padding: 18px 30px;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 3px;
-            font-family: 'Orbitron', monospace;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all .2s;
-            text-decoration: none;
-            display: inline-block;
-            text-transform: uppercase;
-        }
+    /* LOADING SCREEN */
+    #loadingScreen {
+      position: fixed; inset: 0; background: #04060f;
+      z-index: 200; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 36px;
+      transition: opacity .6s ease;
+    }
+    #loadingScreen.fade-out { opacity: 0; pointer-events: none; }
 
-        .menu-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(0, 245, 255, .6);
-        }
+    .ld-logo {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(16px, 4vw, 28px);
+      color: var(--acc);
+      text-shadow: 0 0 20px rgba(0,245,255,.8), 3px 3px 0 rgba(0,40,80,.9);
+      letter-spacing: 4px;
+    }
+    .ld-sub {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px; color: var(--acc2); letter-spacing: 3px;
+      margin-top: -20px;
+    }
 
-        .menu-btn.secondary {
-            background: transparent;
-            color: var(--acc2);
-            border: 2px solid var(--acc2);
-        }
+    /* TETROMINO LOADER */
+    .tetro-loader { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .tetro-bar { display: flex; gap: 5px; align-items: flex-end; }
+    .tb-col { display: flex; flex-direction: column; gap: 2px; }
+    .tb-block {
+      width: 24px; height: 24px; border-radius: 3px;
+      background: #0d1525; border: 1px solid #1a2540;
+      transition: background .1s, box-shadow .1s;
+      position: relative;
+    }
+    .tb-block.lit {
+      border-color: transparent;
+    }
+    .tb-block.lit::after {
+      content: ''; position: absolute;
+      top: 3px; left: 3px; right: 3px; height: 5px;
+      background: rgba(255,255,255,0.3); border-radius: 1px;
+    }
+    .ld-text {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px; color: var(--dim); letter-spacing: 3px;
+      animation: ldBlink 1.2s step-end infinite;
+    }
+    @keyframes ldBlink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
-        .menu-btn.secondary:hover {
-            background: rgba(255, 0, 128, .1);
-            box-shadow: 0 0 30px rgba(255, 0, 128, .4);
-        }
-
-        .footer {
-            margin-top: 60px;
-            font-size: 8px;
-            color: var(--dim);
-            letter-spacing: 2px;
-            text-align: center;
-        }
-    </style>
+    /* LOAD FALLING PIECES */
+    .ld-piece {
+      position: fixed; pointer-events: none;
+      display: grid; gap: 2px;
+      animation: ldFall linear infinite;
+      z-index: 199;
+    }
+    .ld-pb { width: 12px; height: 12px; border-radius: 2px; }
+    @keyframes ldFall {
+      0%   { transform: translateY(-60px) rotate(0deg); opacity:0; }
+      8%   { opacity: .8; }
+      92%  { opacity: .8; }
+      100% { transform: translateY(105vh) rotate(270deg); opacity:0; }
+    }
+  </style>
 </head>
-
 <body>
-    <div class="container">
-        <div class="logo">TETRIS BATTLE</div>
-        <div class="subtitle">>> ONLINE MODE <<< /div>
 
-                <div class="menu">
-                    <a href="tetris-battle.html" class="menu-btn">▶ 対戦開始</a>
-                    <a href="admin.html" class="menu-btn secondary">⚙ 管理画面</a>
-                </div>
+<!-- LOADING SCREEN -->
+<div id="loadingScreen">
+  <div>
+    <div class="ld-logo">TETRIS BATTLE</div>
+    <div class="ld-sub" style="margin-top:10px;">ONLINE MODE</div>
+  </div>
+  <div class="tetro-loader">
+    <div class="tetro-bar" id="tetroBar"></div>
+    <div class="ld-text" id="ldText">LOADING...</div>
+  </div>
+</div>
 
-                <div class="footer">
-                    <p>© 2024 TETRIS BATTLE ONLINE</p>
-                </div>
-        </div>
+<!-- BG -->
+<canvas id="bgCanvas"></canvas>
+<div class="scanlines"></div>
+<div class="scan-beam"></div>
+
+<!-- MAIN -->
+<div class="container">
+  <div class="pixel-deco" id="pixelDeco"></div>
+  <div class="logo">TETRIS BATTLE</div>
+  <div class="subtitle">▶ ONLINE MODE ◀</div>
+  <div class="menu-card">
+    <div class="card-corner tl"></div>
+    <div class="card-corner tr"></div>
+    <div class="card-corner bl"></div>
+    <div class="card-corner br"></div>
+    <div class="menu">
+      <a href="tetris-battle.html" class="menu-btn primary">▶ 対戦開始</a>
+      <a href="admin.html" class="menu-btn secondary">⚙ 管理画面</a>
+    </div>
+  </div>
+</div>
+<div class="footer">© 2024 TETRIS BATTLE ONLINE</div>
+
+<script>
+const COLORS = {I:'#00f5ff',O:'#ffff00',T:'#cc00ff',S:'#aaff00',Z:'#ff0040',J:'#0066ff',L:'#ff8800'};
+const CNAMES = Object.keys(COLORS);
+
+// ═══ PIXEL DECO ═══
+(function(){
+  const wrap = document.getElementById('pixelDeco');
+  // I-piece row + T-piece row
+  const rows = [
+    ['I','I','I','I'],
+    [null,'T','T','T',null],
+    [null,null,'T',null,null]
+  ];
+  rows.forEach(row => {
+    const div = document.createElement('div');
+    div.className = 'px-row';
+    row.forEach(c => {
+      const px = document.createElement('div');
+      if(c) { px.className = `px px-${c}`; } else { px.style.width='13px'; px.style.height='13px'; }
+      div.appendChild(px);
+    });
+    wrap.appendChild(div);
+  });
+})();
+
+// ═══ TETROMINO LOADER ═══
+(function(){
+  // Build an L-shaped and S-shaped composite (2 rows × 5 cols for visual)
+  // Actually build a simple colorful row of blocks (T-tetromino blocks)
+  const bar = document.getElementById('tetroBar');
+  const ld = document.getElementById('ldText');
+  // 12 blocks in a row = a complete line like tetris
+  const N = 12;
+  const bColors = [COLORS.I,COLORS.J,COLORS.T,COLORS.S,COLORS.O,COLORS.Z,COLORS.L,
+                   COLORS.I,COLORS.J,COLORS.T,COLORS.S,COLORS.O];
+  const blocks = [];
+  for(let i=0;i<N;i++){
+    const b = document.createElement('div');
+    b.className='tb-block';
+    bar.appendChild(b);
+    blocks.push(b);
+  }
+
+  let filled = 0;
+  const msgs = ['LOADING...','CONNECTING...','INITIALIZING...','READY!'];
+  const fillNext = () => {
+    if(filled >= N){
+      ld.textContent = 'READY!';
+      ld.style.color = '#aaff00';
+      setTimeout(()=>{
+        const ls = document.getElementById('loadingScreen');
+        ls.classList.add('fade-out');
+        setTimeout(()=>ls.remove(),700);
+      },350);
+      return;
+    }
+    const b = blocks[filled];
+    const col = bColors[filled];
+    b.classList.add('lit');
+    b.style.background = col;
+    b.style.boxShadow = `0 0 14px ${col}, 0 0 5px ${col}`;
+    b.style.borderColor = col;
+    filled++;
+    if(filled===4)  ld.textContent=msgs[1];
+    if(filled===8)  ld.textContent=msgs[2];
+    if(filled===N)  ld.textContent=msgs[3];
+    // Line clear flash when complete
+    if(filled===N){
+      setTimeout(()=>{
+        blocks.forEach(b=>{ b.style.background='rgba(255,255,255,0.9)'; b.style.boxShadow='0 0 20px #fff'; });
+        setTimeout(()=>{ blocks.forEach(b=>{ b.style.background=''; b.style.boxShadow=''; b.classList.remove('lit'); }); },120);
+      },0);
+    }
+    setTimeout(fillNext, 60 + Math.random()*80);
+  };
+  setTimeout(fillNext, 500);
+
+  // Falling pieces during loading
+  const PIECE_MATS = {
+    I:[[1,1,1,1]], O:[[1,1],[1,1]], T:[[0,1,0],[1,1,1]],
+    S:[[0,1,1],[1,1,0]], Z:[[1,1,0],[0,1,1]], J:[[1,0,0],[1,1,1]], L:[[0,0,1],[1,1,1]]
+  };
+  for(let i=0;i<8;i++){
+    const name = CNAMES[i%CNAMES.length];
+    const mat = PIECE_MATS[name];
+    const div = document.createElement('div');
+    div.className='ld-piece';
+    div.style.gridTemplateColumns=`repeat(${mat[0].length},12px)`;
+    div.style.left = (8+Math.random()*84)+'%';
+    div.style.animationDuration = (3+Math.random()*4)+'s';
+    div.style.animationDelay = (Math.random()*3)+'s';
+    mat.flat().forEach(cell=>{
+      const b=document.createElement('div');
+      b.className='ld-pb';
+      b.style.background = cell ? COLORS[name]+'cc' : 'transparent';
+      if(cell) b.style.boxShadow=`0 0 5px ${COLORS[name]}`;
+      div.appendChild(b);
+    });
+    document.getElementById('loadingScreen').appendChild(div);
+  }
+})();
+
+// ═══ FALLING BG ═══
+(function(){
+  const canvas=document.getElementById('bgCanvas');
+  const ctx=canvas.getContext('2d');
+  const CELL=30;
+  const PIECE_MATS={
+    I:[[[1,1,1,1]],[[1],[1],[1],[1]]],
+    O:[[[1,1],[1,1]]],
+    T:[[[0,1,0],[1,1,1]],[[1,0],[1,1],[1,0]],[[1,1,1],[0,1,0]],[[0,1],[1,1],[0,1]]],
+    S:[[[0,1,1],[1,1,0]],[[1,0],[1,1],[0,1]]],
+    Z:[[[1,1,0],[0,1,1]],[[0,1],[1,1],[1,0]]],
+    J:[[[1,0,0],[1,1,1]],[[1,1],[1,0],[1,0]],[[1,1,1],[0,0,1]],[[0,1],[0,1],[1,1]]],
+    L:[[[0,0,1],[1,1,1]],[[1,0],[1,0],[1,1]],[[1,1,1],[1,0,0]],[[1,1],[0,1],[0,1]]]
+  };
+  let W,H; const pieces=[];
+  function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
+  resize(); window.addEventListener('resize',resize);
+
+  function spawn(){
+    const name=CNAMES[Math.random()*CNAMES.length|0];
+    const rots=PIECE_MATS[name];
+    const mat=rots[Math.random()*rots.length|0];
+    return {
+      mat, color:COLORS[name],
+      x: Math.random()*W, y:-CELL*4,
+      vy: 0.5+Math.random()*1.5,
+      rot: Math.random()*360,
+      vr: (Math.random()-.5)*0.8,
+      sc: 0.55+Math.random()*0.9,
+      alpha: 0.12+Math.random()*0.45
+    };
+  }
+  for(let i=0;i<20;i++){ const p=spawn(); p.y=Math.random()*H; pieces.push(p); }
+
+  function drawBlock(bx,by,color){
+    ctx.fillStyle=color+'bb'; ctx.fillRect(bx+1,by+1,CELL-2,CELL-2);
+    ctx.fillStyle='rgba(255,255,255,.22)'; ctx.fillRect(bx+1,by+1,CELL-2,5);
+    ctx.fillRect(bx+1,by+1,5,CELL-2);
+    ctx.fillStyle='rgba(0,0,0,.28)'; ctx.fillRect(bx+2,by+CELL-4,CELL-3,3);
+    ctx.strokeStyle=color; ctx.lineWidth=.8; ctx.strokeRect(bx+.5,by+.5,CELL-1,CELL-1);
+  }
+
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    pieces.forEach((p,i)=>{
+      p.y+=p.vy; p.rot+=p.vr;
+      const mh=p.mat.length*CELL*p.sc;
+      if(p.y>H+mh*2) pieces[i]=spawn();
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.scale(p.sc,p.sc);
+      ctx.globalAlpha=p.alpha;
+      const mw=p.mat[0].length,mhh=p.mat.length;
+      const ox=-mw*CELL/2, oy=-mhh*CELL/2;
+      p.mat.forEach((row,r)=>row.forEach((cell,c)=>{ if(cell) drawBlock(ox+c*CELL,oy+r*CELL,p.color); }));
+      ctx.restore();
+    });
+    if(Math.random()<.015 && pieces.length<24) pieces.push(spawn());
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+</script>
 </body>
-
 </html>
