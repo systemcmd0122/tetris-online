@@ -196,6 +196,62 @@
   .match-flash.show{display:flex}
   .match-text{font-family:'Press Start 2P',monospace;font-size:clamp(14px,3vw,24px);color:var(--accent3);text-shadow:0 0 20px rgba(170,255,0,.8);letter-spacing:4px;animation:matchIn .4s ease-out forwards}
   @keyframes matchIn{0%{opacity:0;transform:scale(.5)}60%{opacity:1;transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+
+  /* ── Garbage bar (left side of board) ── */
+  .board-with-garb{display:flex;gap:3px;align-items:flex-end}
+  .garbage-bar{width:10px;height:400px;display:flex;flex-direction:column-reverse;gap:1px;padding:1px 0}
+  .garb-cell{width:10px;height:18px;border-radius:1px;background:rgba(255,51,85,.85);box-shadow:0 0 4px rgba(255,51,85,.6);transition:all .15s;flex-shrink:0}
+  .garb-cell.warn{background:rgba(255,170,0,.9);box-shadow:0 0 6px rgba(255,170,0,.7);animation:garbWarn .4s ease-in-out infinite alternate}
+  @keyframes garbWarn{0%{opacity:.7}100%{opacity:1;transform:scaleX(1.2)}}
+
+  /* ── Incoming attack flash overlay on board ── */
+  .attack-count-badge{position:absolute;top:4px;left:4px;background:rgba(255,51,85,.9);color:#fff;font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 5px;border-radius:2px;letter-spacing:1px;opacity:0;transition:opacity .2s;z-index:6;pointer-events:none}
+  .attack-count-badge.show{opacity:1;animation:badgePop .3s ease-out}
+  @keyframes badgePop{0%{transform:scale(1.8)}100%{transform:scale(1)}}
+
+  /* ── Enhanced side panel ── */
+  .panel-box.combo-box{border-color:rgba(170,255,0,.35);background:rgba(170,255,0,.04)}
+  .combo-value{font-family:'Press Start 2P',monospace;font-size:20px;color:var(--accent3);text-shadow:0 0 20px rgba(170,255,0,.8);transition:transform .1s;line-height:1.1}
+  .combo-value.pop{animation:comboPop .3s ease-out}
+  @keyframes comboPop{0%{transform:scale(1.8);color:#fff}100%{transform:scale(1)}}
+  .combo-label-inline{font-size:7px;color:rgba(170,255,0,.6);letter-spacing:2px;margin-top:2px}
+
+  .b2b-badge{display:inline-block;font-size:7px;letter-spacing:1px;padding:2px 5px;border-radius:2px;border:1px solid;margin-top:4px;transition:all .2s}
+  .b2b-badge.off{border-color:var(--border);color:var(--dim);background:transparent}
+  .b2b-badge.on{border-color:#ff8800;color:#ff8800;background:rgba(255,136,0,.1);box-shadow:0 0 8px rgba(255,136,0,.4);animation:b2bGlow 1s ease-in-out infinite alternate}
+  @keyframes b2bGlow{0%{box-shadow:0 0 4px rgba(255,136,0,.3)}100%{box-shadow:0 0 14px rgba(255,136,0,.7)}}
+
+  .panel-box.atk-box{border-color:rgba(255,51,85,.3);background:rgba(255,51,85,.03)}
+  .atk-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+  .atk-label{font-size:8px;color:var(--dim);letter-spacing:1px}
+  .atk-val{font-family:'Press Start 2P',monospace;font-size:9px}
+  .atk-val.sent{color:var(--accent3)}
+  .atk-val.recv{color:var(--red)}
+  .pending-garb-row{display:flex;align-items:center;gap:3px;margin-top:4px;flex-wrap:wrap}
+  .pg-cell{width:8px;height:8px;background:rgba(255,51,85,.8);border-radius:1px;box-shadow:0 0 3px rgba(255,51,85,.5)}
+  .pg-cell.warn{background:rgba(255,170,0,.9);box-shadow:0 0 4px rgba(255,170,0,.6);animation:pgWarn .3s ease-in-out infinite alternate}
+
+  /* ── Score animation ── */
+  .score-value{transition:color .1s}
+  .score-value.score-pop{animation:scorePop .35s ease-out}
+  @keyframes scorePop{0%{transform:scale(1.25);color:#fff}100%{transform:scale(1)}}
+
+  /* ── Enhanced result overlay ── */
+  .result-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin:10px 0;max-width:320px}
+  .rs-cell{text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:2px;padding:8px}
+  .rs-cell-label{font-size:8px;color:var(--dim);letter-spacing:2px;margin-bottom:4px}
+  .rs-cell-val{font-family:'Press Start 2P',monospace;font-size:13px;color:var(--accent3)}
+
+  /* ── Match flash ── */
+  .match-flash{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:38;pointer-events:none}
+  .match-flash.show{display:flex}
+
+  /* ── Countdown overlay tweak ── */
+  .countdown-overlay{background:rgba(2,4,8,.6)}
+
+  /* ── Attack animation on board ── */
+  @keyframes boardShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+  .board-wrap.shake{animation:boardShake .25s ease-out}
 </style>
 </head>
 <body>
@@ -279,15 +335,23 @@
     </div>
   </div>
   <div class="game-layout">
+    <!-- ── YOUR BOARD ── -->
     <div class="player-section">
       <div class="player-label you">YOU</div>
       <div class="player-name-tag" id="myNameTag">PLAYER</div>
-      <div class="board-wrap">
-        <canvas id="myCanvas" width="200" height="400"></canvas>
-        <div class="lock-flash" id="lockFlash"></div>
-        <div class="action-popup" id="actionPopup"></div>
+      <div class="board-with-garb">
+        <!-- Garbage incoming bar -->
+        <div class="garbage-bar" id="garbBar"></div>
+        <div class="board-wrap">
+          <canvas id="myCanvas" width="200" height="400"></canvas>
+          <div class="lock-flash" id="lockFlash"></div>
+          <div class="action-popup" id="actionPopup"></div>
+          <div class="attack-count-badge" id="attackBadge">+0 ⚠</div>
+        </div>
       </div>
     </div>
+
+    <!-- ── CENTER PANEL ── -->
     <div class="center-col">
       <div class="vs-text">VS</div>
       <div class="side-panel">
@@ -299,20 +363,52 @@
           <div class="panel-box-title">NEXT</div>
           <canvas id="nextCanvas" width="80" height="80"></canvas>
         </div>
+        <!-- SCORE -->
         <div class="panel-box">
           <div class="panel-box-title">SCORE</div>
           <div class="score-value" id="scoreDisplay">0</div>
         </div>
-        <div class="panel-box">
-          <div class="panel-box-title">LEVEL</div>
-          <div class="level-value" id="levelDisplay">1</div>
+        <!-- LEVEL + LINES -->
+        <div class="panel-box" style="padding:7px 9px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <div>
+              <div class="panel-box-title">LEVEL</div>
+              <div class="level-value" id="levelDisplay">1</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="panel-box-title">LINES</div>
+              <div class="lines-value" id="linesDisplay">0</div>
+            </div>
+          </div>
         </div>
-        <div class="panel-box">
-          <div class="panel-box-title">LINES</div>
-          <div class="lines-value" id="linesDisplay">0</div>
+        <!-- COMBO -->
+        <div class="panel-box combo-box">
+          <div class="panel-box-title">COMBO</div>
+          <div class="combo-value" id="comboDisplay">0</div>
+          <div class="combo-label-inline">× COMBO</div>
+          <div class="b2b-badge off" id="b2bBadge">BACK-TO-BACK</div>
+        </div>
+        <!-- ATTACK -->
+        <div class="panel-box atk-box">
+          <div class="panel-box-title">ATTACK</div>
+          <div class="atk-row">
+            <span class="atk-label">SENT</span>
+            <span class="atk-val sent" id="atkSentDisplay">0</span>
+          </div>
+          <div class="atk-row">
+            <span class="atk-label">RECV</span>
+            <span class="atk-val recv" id="atkRecvDisplay">0</span>
+          </div>
+          <div class="atk-row">
+            <span class="atk-label">⚠ NEXT</span>
+            <span class="atk-val recv" id="pendGarbDisplay">0</span>
+          </div>
+          <div class="pending-garb-row" id="pendGarbCells"></div>
         </div>
       </div>
     </div>
+
+    <!-- ── OPPONENT BOARD ── -->
     <div class="player-section">
       <div class="player-label opp" id="oppLabel">FOE</div>
       <div class="player-name-tag" id="oppNameTag">PLAYER 2</div>
@@ -347,6 +443,14 @@
 <!-- ══ RESULT ══ -->
 <div class="overlay" id="resultOverlay">
   <div class="overlay-title" id="resultTitle">YOU WIN!</div>
+  <div class="result-stats-grid" id="resultStatsGrid">
+    <div class="rs-cell"><div class="rs-cell-label">SCORE</div><div class="rs-cell-val" id="rs-score">0</div></div>
+    <div class="rs-cell"><div class="rs-cell-label">LEVEL</div><div class="rs-cell-val" id="rs-level">1</div></div>
+    <div class="rs-cell"><div class="rs-cell-label">LINES</div><div class="rs-cell-val" id="rs-lines">0</div></div>
+    <div class="rs-cell"><div class="rs-cell-label">MAX COMBO</div><div class="rs-cell-val" id="rs-combo">0</div></div>
+    <div class="rs-cell"><div class="rs-cell-label">ATK SENT</div><div class="rs-cell-val" id="rs-atk">0</div></div>
+    <div class="rs-cell"><div class="rs-cell-label">TETRIS</div><div class="rs-cell-val" id="rs-tetris">0</div></div>
+  </div>
   <div class="overlay-sub" id="resultSub"></div>
   <button class="btn btn-primary" style="width:220px;margin-top:10px;" onclick="leaveRoom()">BACK TO LOBBY</button>
 </div>
@@ -681,8 +785,30 @@ class BotController{
 let roomCode=null,myRole=null,game=null,gameRunning=false,animId=null;
 let oppName='FOE',endedOnce=false,forceStopped=false;
 let botMode=false,botGame=null,botCtrl=null;
+// ── Stat trackers ──
+let statMaxCombo=0,statAtkSent=0,statAtkRecv=0,statTetris=0;
 const genCode=()=>Math.floor(1000+Math.random()*9000).toString();
 const _listeners={opp:null,room:null,garb:null,wait:null};
+
+// ── Clear canvases before countdown so old board isn't shown ──
+function clearBoards(){
+  ['myCanvas','opponentCanvas','holdCanvas','nextCanvas'].forEach(id=>{
+    const c=document.getElementById(id);if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}
+  });
+  // Reset all UI stats
+  document.getElementById('scoreDisplay').textContent='0';
+  document.getElementById('levelDisplay').textContent='1';
+  document.getElementById('linesDisplay').textContent='0';
+  document.getElementById('comboDisplay').textContent='0';
+  document.getElementById('b2bBadge').className='b2b-badge off';
+  document.getElementById('atkSentDisplay').textContent='0';
+  document.getElementById('atkRecvDisplay').textContent='0';
+  document.getElementById('pendGarbDisplay').textContent='0';
+  document.getElementById('pendGarbCells').innerHTML='';
+  document.getElementById('garbBar').innerHTML='';
+  document.getElementById('attackBadge').classList.remove('show');
+  statMaxCombo=0;statAtkSent=0;statAtkRecv=0;statTetris=0;
+}
 
 function offAll(){for(const[k,r]of Object.entries(_listeners)){if(r){try{off(r);}catch(e){}_listeners[k]=null;}}}
 
@@ -691,6 +817,7 @@ function resetState(){
   if(animId){cancelAnimationFrame(animId);animId=null;}
   roomCode=null;myRole=null;game=null;botGame=null;botCtrl=null;botMode=false;
   dasStop();clearInterval(softDropInterval);softDropInterval=null;
+  _prevScore=0;_prevCombo=-1;
 }
 
 function showForceStop(msg){
@@ -760,12 +887,14 @@ window.startBotGame=async(difficulty)=>{
 
   // Setup UI
   showScreen('gameScreen');
+  clearBoards(); // ← clear old board immediately
   document.getElementById('myNameTag').textContent=name;
   document.getElementById('oppNameTag').textContent=oppName;
   document.getElementById('oppLabel').textContent='BOT';
   document.getElementById('oppLabel').className='player-label bot';
   document.getElementById('opponentCanvas').className='bot-canvas';
   document.getElementById('statusRoom').textContent='BOT MODE';
+  _prevScore=0;_prevCombo=-1;
 
   // Run countdown (local, ~4 seconds)
   const aborted=await countdown(Date.now()+4000);
@@ -785,16 +914,27 @@ window.startBotGame=async(difficulty)=>{
     const botResult=botGame.update(ts);
     botGame.draw();
 
-    document.getElementById('scoreDisplay').textContent=game.score;
-    document.getElementById('levelDisplay').textContent=game.level;
-    document.getElementById('linesDisplay').textContent=game.lines;
+    // Track stats
+    if(result?.garbageOut>0){statAtkSent+=result.garbageOut;}
+    if(result?.cleared===4)statTetris++;
+
+    updateGameUI();
     document.getElementById('oppNameTag').textContent=`${oppName} (${botGame.score})`;
 
     if(result?.actionLabel)showActionPopup(result.actionLabel);
 
     // Garbage exchange
     if(result?.garbageOut>0){botGame.pendingGarbage+=result.garbageOut;}
-    if(botResult?.garbageOut>0){game.pendingGarbage+=botResult.garbageOut;flashAttack();playSound('attack');}
+    if(botResult?.garbageOut>0){
+      game.pendingGarbage+=botResult.garbageOut;
+      statAtkRecv+=botResult.garbageOut;
+      // Show attack badge
+      const badge=document.getElementById('attackBadge');
+      badge.textContent=`+${botResult.garbageOut} ⚠`;
+      badge.classList.remove('show');void badge.offsetWidth;badge.classList.add('show');
+      setTimeout(()=>badge.classList.remove('show'),1200);
+      flashAttack();playSound('attack');
+    }
 
     if(game.gameOver&&!endedOnce){endGame('LOSE');return;}
     if(botGame.gameOver&&!game.gameOver&&!endedOnce){endGame('WIN');return;}
@@ -882,6 +1022,8 @@ window.leaveRoom=async()=>{
 // ─────────────────────────────────────────────────────────────
 async function startGame(preloadedData){
   showScreen('gameScreen');
+  clearBoards(); // ← clear old board immediately
+  _prevScore=0;_prevCombo=-1;
   // Reset opponent label for online mode
   document.getElementById('oppLabel').textContent='FOE';
   document.getElementById('oppLabel').className='player-label opp';
@@ -954,7 +1096,16 @@ async function startGame(preloadedData){
   _listeners.garb=myGRef;
   onValue(myGRef,snap=>{
     const v=snap.val();if(!v||!v.n||!game)return;
-    if(v.n>0){game.pendingGarbage+=v.n;set(myGRef,{n:0});flashAttack();playSound('attack');}
+    if(v.n>0){
+      statAtkRecv+=v.n;
+      game.pendingGarbage+=v.n;
+      set(myGRef,{n:0});
+      const badge=document.getElementById('attackBadge');
+      badge.textContent=`+${v.n} ⚠`;
+      badge.classList.remove('show');void badge.offsetWidth;badge.classList.add('show');
+      setTimeout(()=>badge.classList.remove('show'),1200);
+      flashAttack();playSound('attack');
+    }
   });
 
   const oppGRef=ref(db,`rooms/${roomCode}/garb/${oppRole}`);
@@ -967,9 +1118,11 @@ async function startGame(preloadedData){
     const result=game.update(ts);
     game.draw();
 
-    document.getElementById('scoreDisplay').textContent=game.score;
-    document.getElementById('levelDisplay').textContent=game.level;
-    document.getElementById('linesDisplay').textContent=game.lines;
+    // Track stats
+    if(result?.garbageOut>0){statAtkSent+=result.garbageOut;}
+    if(result?.cleared===4)statTetris++;
+
+    updateGameUI();
 
     if(result?.actionLabel)showActionPopup(result.actionLabel);
     // Accumulate garbage to send (fix: always capture even if push rate not met)
@@ -1016,7 +1169,14 @@ function endGame(result){
     title.className='overlay-title draw';title.textContent='OPPONENT LEFT';
     if(!botMode&&myRole==='p1'&&roomCode)remove(ref(db,`rooms/${roomCode}`)).catch(()=>{});
   }
-  sub.innerHTML=`SCORE: ${score}&nbsp;&nbsp;|&nbsp;&nbsp;LEVEL: ${lvl}&nbsp;&nbsp;|&nbsp;&nbsp;LINES: ${lines}`;
+  // Populate stats grid
+  document.getElementById('rs-score').textContent=score;
+  document.getElementById('rs-level').textContent=lvl;
+  document.getElementById('rs-lines').textContent=lines;
+  document.getElementById('rs-combo').textContent=statMaxCombo;
+  document.getElementById('rs-atk').textContent=statAtkSent;
+  document.getElementById('rs-tetris').textContent=statTetris;
+  sub.innerHTML='';
   document.getElementById('resultOverlay').classList.add('show');
 }
 
@@ -1146,8 +1306,45 @@ setupMobile('btnHold',()=>game?.hold(),false);
 // ═══════════════════════════════════════════════════════════════
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.classList.remove('show');t.offsetHeight;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-function flashAttack(){const f=document.getElementById('attackFlash');f.classList.add('show');setTimeout(()=>f.classList.remove('show'),280);}
+function flashAttack(){const f=document.getElementById('attackFlash');f.classList.add('show');setTimeout(()=>f.classList.remove('show'),280);const bw=document.querySelector('.board-wrap');if(bw){bw.classList.remove('shake');void bw.offsetWidth;bw.classList.add('shake');setTimeout(()=>bw.classList.remove('shake'),260);}}
 function showActionPopup(label){const p=document.getElementById('actionPopup');p.textContent=label.replace('\n',' / ');p.classList.remove('show');p.offsetHeight;p.classList.add('show');}
+
+let _prevScore=0,_prevCombo=-1;
+function updateGameUI(){
+  if(!game)return;
+  // Score
+  const sd=document.getElementById('scoreDisplay');
+  if(game.score!==_prevScore){sd.classList.remove('score-pop');void sd.offsetWidth;sd.classList.add('score-pop');_prevScore=game.score;}
+  sd.textContent=game.score;
+  document.getElementById('levelDisplay').textContent=game.level;
+  document.getElementById('linesDisplay').textContent=game.lines;
+  // Combo
+  const cd=document.getElementById('comboDisplay');
+  if(game.combo!==_prevCombo){
+    if(game.combo>1){cd.classList.remove('pop');void cd.offsetWidth;cd.classList.add('pop');}
+    _prevCombo=game.combo;
+  }
+  cd.textContent=game.combo>1?game.combo:0;
+  if(game.combo>statMaxCombo)statMaxCombo=game.combo;
+  // B2B
+  document.getElementById('b2bBadge').className='b2b-badge '+(game.b2b?'on':'off');
+  // Attack stats
+  document.getElementById('atkSentDisplay').textContent=statAtkSent;
+  document.getElementById('atkRecvDisplay').textContent=statAtkRecv;
+  // Pending garbage display
+  const pg=game.pendingGarbage||0;
+  document.getElementById('pendGarbDisplay').textContent=pg;
+  // Mini cells
+  const pgc=document.getElementById('pendGarbCells');
+  pgc.innerHTML='';
+  const showN=Math.min(pg,10);
+  for(let i=0;i<showN;i++){const d=document.createElement('div');d.className='pg-cell'+(pg>=8?' warn':'');pgc.appendChild(d);}
+  // Garbage bar on side
+  const gb=document.getElementById('garbBar');
+  gb.innerHTML='';
+  const barN=Math.min(pg,20);
+  for(let i=0;i<barN;i++){const d=document.createElement('div');d.className='garb-cell'+(pg>=10?' warn':'');gb.appendChild(d);}
+}
 
 document.getElementById('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')window.joinRoom();});
 document.getElementById('roomCodeInput').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^0-9]/g,'');});
