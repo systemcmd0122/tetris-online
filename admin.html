@@ -14,8 +14,8 @@
   --tx:#e0f0ff;--dim:#4a6080;--dim2:#2a3a55;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;}
-body{background:var(--bg);color:var(--tx);font-family:'Orbitron',monospace; overflow-x: hidden;}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--tx);font-family:'Orbitron',monospace}
 body::before{content:'';position:fixed;inset:0;
   background-image:linear-gradient(rgba(0,245,255,.015) 1px,transparent 1px),
     linear-gradient(90deg,rgba(0,245,255,.015) 1px,transparent 1px);
@@ -61,12 +61,6 @@ body::before{content:'';position:fixed;inset:0;
 .topbar-right{display:flex;align-items:center;gap:12px}
 .badge-online{font-size:7px;padding:4px 10px;border-radius:2px;letter-spacing:2px;
   border:1px solid var(--green);color:var(--green);background:rgba(0,255,136,.07)}
-
-.hamburger {
-  display: none; flex-direction: column; gap: 4px; cursor: pointer; padding: 10px;
-}
-.hamburger div { width: 20px; height: 2px; background: var(--acc); border-radius: 2px; }
-
 .topbar-btn{background:transparent;border:1px solid var(--b1);color:var(--dim);
   font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;padding:5px 12px;
   border-radius:2px;cursor:pointer;transition:all .2s}
@@ -77,7 +71,7 @@ body::before{content:'';position:fixed;inset:0;
 
 /* Sidebar */
 .sidebar{width:210px;background:var(--s0);border-right:1px solid var(--b0);
-  display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0; transition: width 0.3s ease;}
+  display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
 .sb-section{padding:14px 16px 4px;font-size:10px;color:var(--dim2);letter-spacing:4px;
   text-transform:uppercase;border-bottom:1px solid var(--dim2)}
 .nav-item{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;
@@ -88,22 +82,11 @@ body::before{content:'';position:fixed;inset:0;
 .nav-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
 .nav-badge{margin-left:auto;background:var(--acc2);color:#fff;font-size:9px;
   padding:2px 6px;border-radius:10px;font-family:'Press Start 2P',monospace;flex-shrink:0}
-@media(max-width:900px) and (min-width:601px){
-  .sidebar{width:160px}
-  .nav-item span:not(.nav-icon){display:inline; font-size: 11px;}
-  .sb-section{font-size:8px; letter-spacing:2px;}
-}
-@media(max-width:600px){
-  .sidebar{
-    position: fixed; top: 52px; left: 0; bottom: 0; width: 200px;
-    z-index: 100; transform: translateX(-100%); transition: transform 0.3s ease;
-  }
-  .sidebar.open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
-  .nav-item span:not(.nav-icon){display:inline}
-  .nav-item{justify-content:flex-start;padding:12px 16px}
-  .nav-badge,.sb-section{display:flex}
-  .topbar-logo { font-size: 8px; }
-  .hamburger { display: flex; }
+@media(max-width:900px){
+  .sidebar{width:52px}
+  .nav-item span:not(.nav-icon){display:none}
+  .nav-item{justify-content:center;padding:13px}
+  .nav-badge,.sb-section{display:none}
 }
 
 /* Main */
@@ -145,8 +128,7 @@ tr:hover td{background:rgba(0,245,255,.02)}
 
 /* Badges */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:2px;font-size:10px;letter-spacing:1px}
-.badge-wait{background:rgba(255,170,0,.1);border:1px solid var(--warn);color:var(--warn); animation: badgePulse 1.5s ease-in-out infinite;}
-@keyframes badgePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+.badge-wait{background:rgba(255,170,0,.1);border:1px solid var(--warn);color:var(--warn)}
 .badge-live{background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green)}
 .badge-end{background:rgba(80,80,80,.1);border:1px solid #444;color:#555}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:ldot 1s ease-in-out infinite}
@@ -170,7 +152,7 @@ tr:hover td{background:rgba(0,245,255,.02)}
 .sbtn-warn{border-color:rgba(255,170,0,.4);color:var(--warn)}.sbtn-warn:hover{background:rgba(255,170,0,.1)}
 
 /* Spectate */
-.spec-arena{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;justify-content:center;margin-top:16px; min-height: 450px;}
+.spec-arena{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;justify-content:center;margin-top:16px}
 .spec-col{display:flex;flex-direction:column;align-items:center;gap:7px}
 .spec-badge{font-size:11px;letter-spacing:3px;padding:4px 14px;border-radius:2px}
 .spec-badge.p1{background:rgba(0,245,255,.1);border:1px solid var(--acc);color:var(--acc)}
@@ -194,9 +176,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
 
 /* Log */
 .log-box{background:var(--s1);border:1px solid var(--b0);border-radius:4px;padding:14px;
-  max-height:calc(100vh - 280px); overflow-y:auto; font-size:11px; line-height:2;
-  position: relative;
-}
+  max-height:calc(100vh - 240px);overflow-y:auto;font-size:11px;line-height:2}
 .log-entry{display:flex;gap:12px;padding:3px 0;border-bottom:1px solid var(--dim2)}
 .log-entry:last-child{border-bottom:none}
 .log-ts{color:var(--dim);white-space:nowrap;flex-shrink:0;font-family:monospace}
@@ -356,12 +336,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
 <!-- ══ ADMIN SHELL ══ -->
 <div id="shell">
   <div class="topbar">
-    <div style="display:flex; align-items:center;">
-      <div class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">
-        <div></div><div></div><div></div>
-      </div>
-      <div class="topbar-logo">⬡ ADMIN CONSOLE</div>
-    </div>
+    <div class="topbar-logo">⬡ ADMIN CONSOLE</div>
     <div class="topbar-right">
       <span class="badge-online" id="connBadge">● CONNECTED</span>
       <div style="font-size:7px;color:var(--dim);letter-spacing:1px" id="clockDisp"></div>
@@ -373,24 +348,24 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
     <!-- Sidebar -->
     <nav class="sidebar">
       <div class="sb-section">MONITOR</div>
-      <div class="nav-item active" onclick="gotoPanel('dashboard',this); document.querySelector('.sidebar').classList.remove('open');">
+      <div class="nav-item active" onclick="gotoPanel('dashboard',this)">
         <span class="nav-icon">📊</span><span>Dashboard</span>
         <span class="nav-badge" id="navBadge">0</span>
       </div>
-      <div class="nav-item" onclick="gotoPanel('rooms',this); document.querySelector('.sidebar').classList.remove('open');">
+      <div class="nav-item" onclick="gotoPanel('rooms',this)">
         <span class="nav-icon">🎮</span><span>Room List</span>
       </div>
-      <div class="nav-item" onclick="gotoPanel('spectate',this); document.querySelector('.sidebar').classList.remove('open');">
+      <div class="nav-item" onclick="gotoPanel('spectate',this)">
         <span class="nav-icon">👁</span><span>Spectate</span>
       </div>
       <div class="sb-section">TOOLS</div>
-      <div class="nav-item" onclick="gotoPanel('broadcast',this); document.querySelector('.sidebar').classList.remove('open');">
+      <div class="nav-item" onclick="gotoPanel('broadcast',this)">
         <span class="nav-icon">📢</span><span>Broadcast</span>
       </div>
-      <div class="nav-item" onclick="gotoPanel('log',this); document.querySelector('.sidebar').classList.remove('open');">
+      <div class="nav-item" onclick="gotoPanel('log',this)">
         <span class="nav-icon">📋</span><span>Event Log</span>
       </div>
-      <div class="nav-item" onclick="gotoPanel('settings',this); document.querySelector('.sidebar').classList.remove('open');">
+      <div class="nav-item" onclick="gotoPanel('settings',this)">
         <span class="nav-icon">⚙</span><span>Settings</span>
       </div>
     </nav>
@@ -408,25 +383,10 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
           <button class="sbtn" onclick="refreshAll()">↻ 更新</button>
         </div>
         <div class="stats-grid">
-          <div class="sc c1">
-            <div class="sc-label">ACTIVE BATTLES</div>
-            <div class="sc-val c1" id="st-active">0</div>
-            <canvas id="spark-active" width="150" height="30" style="margin-top:10px; opacity:0.6;"></canvas>
-          </div>
-          <div class="sc c2">
-            <div class="sc-label">WAITING ROOMS</div>
-            <div class="sc-val c2" id="st-wait">0</div>
-            <canvas id="spark-wait" width="150" height="30" style="margin-top:10px; opacity:0.6;"></canvas>
-          </div>
-          <div class="sc c3">
-            <div class="sc-label">ONLINE PLAYERS</div>
-            <div class="sc-val c3" id="st-players">0</div>
-            <canvas id="spark-players" width="150" height="30" style="margin-top:10px; opacity:0.6;"></canvas>
-          </div>
-          <div class="sc c4">
-            <div class="sc-label">TOTAL ROOMS</div>
-            <div class="sc-val c4" id="st-total">0</div>
-          </div>
+          <div class="sc c1"><div class="sc-label">ACTIVE BATTLES</div><div class="sc-val c1" id="st-active">0</div></div>
+          <div class="sc c2"><div class="sc-label">WAITING ROOMS</div><div class="sc-val c2" id="st-wait">0</div></div>
+          <div class="sc c3"><div class="sc-label">ONLINE PLAYERS</div><div class="sc-val c3" id="st-players">0</div></div>
+          <div class="sc c4"><div class="sc-label">TOTAL ROOMS</div><div class="sc-val c4" id="st-total">0</div></div>
         </div>
         <div class="tbl-wrap">
           <div class="tbl-head">
@@ -444,14 +404,11 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
       <div class="panel" id="panel-rooms">
         <div class="ph">
           <div class="ph-left"><div class="ph-title">ROOM LIST</div><div class="ph-sub">全ルームの詳細管理</div></div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <input type="text" id="roomSearch" class="pw-input" placeholder="Search..." style="margin:0; width:180px; padding:8px 12px; font-size:12px; letter-spacing:1px;" oninput="renderTables()">
-            <button class="sbtn" onclick="refreshAll()">↻ 更新</button>
-          </div>
+          <button class="sbtn" onclick="refreshAll()">↻ 更新</button>
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>CODE</th><th>STATUS</th><th>P1 NAME</th><th>P1 SCORE</th><th>P2 NAME</th><th>P2 SCORE</th><th>DURATION</th><th>CREATED</th><th>ACTIONS</th></tr></thead>
+            <thead><tr><th>CODE</th><th>STATUS</th><th>P1 NAME</th><th>P1 SCORE</th><th>P2 NAME</th><th>P2 SCORE</th><th>LEVEL</th><th>CREATED</th><th>ACTIONS</th></tr></thead>
             <tbody id="roomsTbody"><tr><td class="empty-td" colspan="9">読み込み中...</td></tr></tbody>
           </table>
         </div>
@@ -459,11 +416,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
 
       <!-- ── SPECTATE ── -->
       <div class="panel" id="panel-spectate">
-        <div id="spectateEmpty" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; opacity:0.4;">
-            <div style="width:180px; height:260px; border:2px dashed var(--dim); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:10px; text-align:center; line-height:2;">ROOM NOT<br>SELECTED</div>
-            <div style="margin-top:24px; font-size:11px; letter-spacing:2px;">観戦するルームを選択してください</div>
-        </div>
-        <div id="spectateList" style="display:none">
+        <div id="spectateList">
           <div class="ph">
             <div class="ph-left"><div class="ph-title">SPECTATE</div><div class="ph-sub">対戦をリアルタイム観戦</div></div>
             <button class="sbtn" onclick="refreshAll()">↻ 更新</button>
@@ -478,11 +431,8 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
         <div id="spectateView" style="display:none">
           <div class="ph">
             <div class="ph-left">
-              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:10px">
                 <div class="live-label"><div class="live-dot"></div>LIVE</div>
-                <select id="specSelector" class="pw-input" style="width:auto; margin:0; padding:6px 10px; font-size:11px; height:auto; letter-spacing:1px;" onchange="if(this.value) startSpec(this.value)">
-                  <option value="">Switch Room...</option>
-                </select>
                 <div class="ph-title" style="font-size:10px">ROOM <span id="specCode">----</span></div>
               </div>
               <div class="ph-sub" id="specTimer">--:--</div>
@@ -565,39 +515,6 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
       <div class="panel" id="panel-settings">
         <div class="ph"><div class="ph-left"><div class="ph-title">SETTINGS</div><div class="ph-sub">危険な操作 — 慎重に実行してください</div></div></div>
         <div class="settings-grid">
-          <!-- Main Config -->
-          <div class="setting-item">
-            <div class="si-info">
-              <div class="si-name">GAME CONFIG</div>
-              <div class="si-desc">最大ルーム数とメンテナンスモードの設定</div>
-            </div>
-            <div style="margin-top:16px; display:flex; gap:20px; align-items:center;">
-              <div>
-                <label class="pw-label">MAX ROOMS</label>
-                <input type="number" id="maxRoomsIn" class="wf-input" value="50" min="1" max="100" style="width:80px; margin:0;">
-              </div>
-              <div>
-                <label class="pw-label">MAINTENANCE</label>
-                <button id="maintToggle" class="sbtn" onclick="toggleMaint()">OFF</button>
-              </div>
-              <button class="sbtn" onclick="saveConfig()" style="margin-top:20px;">SAVE</button>
-            </div>
-          </div>
-
-          <!-- Password Change -->
-          <div class="setting-item">
-            <div class="si-info">
-              <div class="si-name">CHANGE PASSWORD</div>
-              <div class="si-desc">管理者パスワードを変更します</div>
-            </div>
-            <div style="margin-top:16px; display:grid; gap:10px; max-width:300px;">
-              <input type="password" id="oldPw" class="pw-input" placeholder="Current Password" style="font-size:12px; padding:10px;">
-              <input type="password" id="newPw" class="pw-input" placeholder="New Password" style="font-size:12px; padding:10px;">
-              <input type="password" id="confirmPw" class="pw-input" placeholder="Confirm Password" style="font-size:12px; padding:10px;">
-              <button class="sbtn" onclick="changePassword()">UPDATE PASSWORD</button>
-            </div>
-          </div>
-
           <!-- Nuke -->
           <div class="setting-item">
             <div class="si-header">
@@ -681,41 +598,30 @@ import{getDatabase,ref,set,get,onValue,off,update,remove}
   from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const fbApp=initializeApp({
-  apiKey:            "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
-  authDomain:        "tetris-online-9c827.firebaseapp.com",
-  databaseURL:       "https://tetris-online-9c827-default-rtdb.firebaseio.com",
-  projectId:         "tetris-online-9c827",
-  storageBucket:     "tetris-online-9c827.firebasestorage.app",
-  messagingSenderId: "1045054992314",
-  appId:             "1:1045054992314:web:7fea20b9be543d7cab3783"
+  apiKey:"AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
+  authDomain:"tetris-online-9c827.firebaseapp.com",
+  databaseURL:"https://tetris-online-9c827-default-rtdb.firebaseio.com",
+  projectId:"tetris-online-9c827",
+  storageBucket:"tetris-online-9c827.firebasestorage.app",
+  messagingSenderId:"1045054992314",
+  appId:"1:1045054992314:web:7fea20b9be543d7cab3783"
 });
 const db=getDatabase(fbApp);
 
 // ══ AUTH ══
-let cachedAdminPw = null;
-
-window.doLogin = async () => {
-  const pw = document.getElementById('pwIn').value;
-  const err = document.getElementById('pwErr');
-
-  try {
-    if (!cachedAdminPw) {
-      const snap = await get(ref(db, 'config/adminPassword'));
-      cachedAdminPw = snap.val() || 'Runa1124';
-    }
-
-    if (pw === cachedAdminPw) {
-      document.getElementById('loginWrap').classList.add('hidden');
-      document.getElementById('shell').classList.add('active');
-      initAdmin();
-    } else {
-      err.textContent = '✗ パスワードが違います';
-      document.getElementById('pwIn').value = '';
-      document.getElementById('pwIn').focus();
-      setTimeout(() => err.textContent = '', 3000);
-    }
-  } catch (e) {
-    err.textContent = '✗ 認証エラー: ' + e.message;
+const ADMIN_PW='Runa1124';
+window.doLogin=()=>{
+  const pw=document.getElementById('pwIn').value;
+  if(pw===ADMIN_PW){
+    document.getElementById('loginWrap').classList.add('hidden');
+    document.getElementById('shell').classList.add('active');
+    initAdmin();
+  }else{
+    const err=document.getElementById('pwErr');
+    err.textContent='✗ パスワードが違います';
+    document.getElementById('pwIn').value='';
+    document.getElementById('pwIn').focus();
+    setTimeout(()=>err.textContent='',3000);
   }
 };
 document.getElementById('pwIn').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
@@ -739,9 +645,8 @@ const PIECES={
   L:[[[0,0,1],[1,1,1],[0,0,0]],[[0,1,0],[0,1,0],[0,1,1]],[[0,0,0],[1,1,1],[1,0,0]],[[1,1,0],[0,1,0],[0,1,0]]]
 };
 function drawBoard(cv,d){
-  const cx=cv.getContext('2d');
-  cx.clearRect(0,0,cv.width,cv.height);
   if(!d||!d.board)return;
+  const cx=cv.getContext('2d');cx.clearRect(0,0,cv.width,cv.height);
   cx.strokeStyle='rgba(255,255,255,.035)';cx.lineWidth=.5;
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)cx.strokeRect(c*CELL,r*CELL,CELL,CELL);
   const cl=d.clRows||[];
@@ -759,54 +664,14 @@ function drawBoard(cv,d){
 }
 
 // ══ ADMIN STATE ══
-let roomsData={};let specRoom=null,specUnsub={p1:null,p2:null},specStartTs=null;
+let roomsData={};let specRoom=null,specUnsub={p1:null,p2:null},specStartTs=null,specTimerIv=null;
 let roomsListener=null;let defaultForceMsg='管理者によってこのルームは強制終了されました';
 let totalRooms=0;
-const history = { active: [], wait: [], players: [] };
-
-function drawSparkline(id, data) {
-  const canvas = document.getElementById(id);
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (data.length < 2) return;
-
-  const max = Math.max(...data, 5);
-  const step = canvas.width / (data.length - 1);
-
-  ctx.beginPath();
-  ctx.strokeStyle = id.includes('active') ? '#00f5ff' : id.includes('wait') ? '#ffaa00' : '#aaff00';
-  ctx.lineWidth = 2;
-  data.forEach((val, i) => {
-    const x = i * step;
-    const y = canvas.height - (val / max) * canvas.height;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-}
-
-function countUp(id, target) {
-  const el = document.getElementById(id);
-  const start = parseInt(el.textContent) || 0;
-  const duration = 500;
-  const startTime = performance.now();
-
-  function update(currentTime) {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const current = Math.floor(start + (target - start) * progress);
-    el.textContent = current;
-    if (progress < 1) requestAnimationFrame(update);
-  }
-  requestAnimationFrame(update);
-}
 
 function initAdmin(){
   addLog('管理者セッション開始','info');
   startRoomsListener();
   startClock();
-  loadConfig();
 }
 
 function startClock(){
@@ -837,22 +702,11 @@ function updateStats(){
   const active=r.filter(x=>x.status==='ready').length;
   const waiting=r.filter(x=>x.status==='waiting').length;
   const players=r.reduce((n,x)=>n+(x.p1?1:0)+(x.p2?1:0),0);
-
-  countUp('st-active', active);
-  countUp('st-wait', waiting);
-  countUp('st-players', players);
-  countUp('st-total', r.length);
-
+  document.getElementById('st-active').textContent=active;
+  document.getElementById('st-wait').textContent=waiting;
+  document.getElementById('st-players').textContent=players;
+  document.getElementById('st-total').textContent=r.length;
   document.getElementById('navBadge').textContent=active+waiting;
-
-  // Update history for sparklines
-  history.active.push(active); if(history.active.length > 10) history.active.shift();
-  history.wait.push(waiting); if(history.wait.length > 10) history.wait.shift();
-  history.players.push(players); if(history.players.length > 10) history.players.shift();
-
-  drawSparkline('spark-active', history.active);
-  drawSparkline('spark-wait', history.wait);
-  drawSparkline('spark-players', history.players);
 }
 
 function fmtTime(ts){if(!ts)return'—';return new Date(ts).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
@@ -864,31 +718,7 @@ function statusBadge(s){
 }
 
 function renderTables(){
-  const search = document.getElementById('roomSearch')?.value.toLowerCase() || "";
-  const entries=Object.entries(roomsData).filter(([code, r]) => {
-    if(!search) return true;
-    return code.toLowerCase().includes(search) ||
-           (r.p1?.name || "").toLowerCase().includes(search) ||
-           (r.p2?.name || "").toLowerCase().includes(search);
-  });
-
-  const now = Date.now();
-
-  // Update spec selector
-  const specSelector = document.getElementById('specSelector');
-  if(specSelector) {
-    const currentVal = specSelector.value;
-    specSelector.innerHTML = '<option value="">Switch Room...</option>';
-    Object.entries(roomsData).forEach(([code, r]) => {
-        if(r.status === 'ready') {
-            const opt = document.createElement('option');
-            opt.value = code;
-            opt.textContent = `ROOM ${code} (${r.p1?.name} vs ${r.p2?.name})`;
-            if(code === currentVal) opt.selected = true;
-            specSelector.appendChild(opt);
-        }
-    });
-  }
+  const entries=Object.entries(roomsData);
 
   // Dashboard
   const db_tbody=document.getElementById('dashTbody');
@@ -909,13 +739,7 @@ function renderTables(){
   // Rooms detail
   const r_tbody=document.getElementById('roomsTbody');
   if(!entries.length){r_tbody.innerHTML='<tr><td class="empty-td" colspan="9">ルームなし</td></tr>';}
-  else{r_tbody.innerHTML=entries.map(([code,r])=> {
-    let dur = "—";
-    if(r.status === 'ready' && r.ts) {
-        const sec = Math.floor((now - r.ts) / 1000);
-        dur = Math.floor(sec/60) + ":" + (sec%60).toString().padStart(2, '0');
-    }
-    return `
+  else{r_tbody.innerHTML=entries.map(([code,r])=>`
     <tr>
       <td style="font-family:'Press Start 2P',monospace;color:var(--acc);letter-spacing:5px;font-size:11px">${code}</td>
       <td>${statusBadge(r.status)}</td>
@@ -923,13 +747,27 @@ function renderTables(){
       <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p1?.score??'—'}</td>
       <td>${r.p2?.name||'—'}</td>
       <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p2?.score??'—'}</td>
-      <td style="color:var(--dim); font-family:monospace;">${dur}</td>
+      <td style="color:var(--dim)">${r.game?.p1?.level??'—'}</td>
       <td style="color:var(--dim)">${fmtTime(r.ts)}</td>
       <td>${r.status==='ready'?`<button class="abtn abtn-watch" onclick="startSpec('${code}')">👁</button>`:''}
           <button class="abtn abtn-stop" onclick="openFsModal('${code}')">🛑</button>
           <button class="abtn abtn-msg" onclick="openMsgModal('${code}')">💬</button>
           <button class="abtn abtn-del" onclick="deleteRoom('${code}')">🗑</button></td>
-    </tr>`; }).join('');}
+    </tr>`).join('');}
+
+  // Spectate list
+  const active=entries.filter(([,r])=>r.status==='ready');
+  const sp_tbody=document.getElementById('specTbody');
+  if(!active.length){sp_tbody.innerHTML='<tr><td class="empty-td" colspan="6">対戦中のルームなし</td></tr>';}
+  else{sp_tbody.innerHTML=active.map(([code,r])=>`
+    <tr>
+      <td style="font-family:'Press Start 2P',monospace;color:var(--acc);letter-spacing:5px;font-size:11px">${code}</td>
+      <td>${r.p1?.name||'—'}</td>
+      <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p1?.score??0}</td>
+      <td>${r.p2?.name||'—'}</td>
+      <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p2?.score??0}</td>
+      <td><button class="abtn abtn-watch" onclick="startSpec('${code}')">👁 観戦開始</button></td>
+    </tr>`).join('');}
 }
 
 // ══ FORCE STOP MODAL ══
@@ -961,10 +799,15 @@ document.getElementById('fsModalMsg').addEventListener('keydown', e => {
 });
 
 // ══ FORCE STOP (core) ══
+// Steps:
+//   1. Write status:'force_ended' + forceMsg → players detect this and show their screen
+//   2. Wait 10s so players can read the message
+//   3. Delete the room (cleanup)
 window.forceStop = async (code, customMsg) => {
   const msg = (customMsg || defaultForceMsg).trim();
   if (!code) return;
 
+  // Prevent double-stop
   const current = roomsData[code];
   if (current?.status === 'force_ended') {
     showToast(`ROOM ${code} はすでに停止済みです`, 'warn');
@@ -972,6 +815,7 @@ window.forceStop = async (code, customMsg) => {
   }
 
   try {
+    // Step 1: atomically write force_ended so both players see it simultaneously
     await update(ref(db, `rooms/${code}`), {
       status:   'force_ended',
       forceMsg: msg,
@@ -980,6 +824,7 @@ window.forceStop = async (code, customMsg) => {
     addLog(`ROOM ${code} 強制停止: "${msg}"`, 'admin');
     showToast(`ROOM ${code} を強制停止しました`, 'warn');
 
+    // Step 2+3: after players have had time to read, delete the room
     setTimeout(async () => {
       try {
         await remove(ref(db, `rooms/${code}`));
@@ -998,6 +843,7 @@ window.currentSpecRoom = null;
 
 window.deleteRoom = async (code) => {
   if (!code) return;
+  // Show confirm for safety
   if (!confirm(`ROOM ${code} を削除しますか？\nこの操作は即座に実行され取り消せません。`)) return;
   try {
     await remove(ref(db, `rooms/${code}`));
@@ -1013,9 +859,7 @@ window.deleteRoom = async (code) => {
 window.startSpec=code=>{
   stopSpec();
   specRoom=code;window.currentSpecRoom=code;
-  const navItem = document.querySelectorAll('.nav-item')[2];
-  gotoPanel('spectate', navItem);
-  document.getElementById('spectateEmpty').style.display='none';
+  gotoPanel('spectate',document.querySelector('.nav-item:nth-child(3)'));
   document.getElementById('spectateList').style.display='none';
   document.getElementById('spectateView').style.display='block';
   document.getElementById('specCode').textContent=code;
@@ -1033,8 +877,10 @@ window.startSpec=code=>{
   onValue(rp2,s=>{const d=s.val();drawBoard(cv2,d);if(d){document.getElementById('ssP2Score').textContent=d.score||0;document.getElementById('ssP2Level').textContent=d.level||1;document.getElementById('ssP2Lines').textContent=d.lines||0;}});
   specUnsub.p1=rp1;specUnsub.p2=rp2;
 
-  const tmrIv=setInterval(()=>{
-    if(!specRoom){clearInterval(tmrIv);return;}
+  // Update timer (store reference so we can clear it in stopSpec)
+  if(specTimerIv)clearInterval(specTimerIv);
+  specTimerIv=setInterval(()=>{
+    if(!specRoom){clearInterval(specTimerIv);specTimerIv=null;return;}
     const el=Math.floor((Date.now()-specStartTs)/1000);
     const m=Math.floor(el/60),s=el%60;
     document.getElementById('specTimer').textContent=`経過時間: ${m}:${s.toString().padStart(2,'0')}`;
@@ -1044,10 +890,10 @@ window.stopSpec=()=>{
   if(specUnsub.p1)try{off(specUnsub.p1);}catch(e){}
   if(specUnsub.p2)try{off(specUnsub.p2);}catch(e){}
   specUnsub={p1:null,p2:null};
+  if(specTimerIv){clearInterval(specTimerIv);specTimerIv=null;}
   if(specRoom)addLog(`観戦終了: ROOM ${specRoom}`,'info');
   specRoom=null;window.currentSpecRoom=null;
-  document.getElementById('spectateEmpty').style.display='flex';
-  document.getElementById('spectateList').style.display='none';
+  document.getElementById('spectateList').style.display='';
   document.getElementById('spectateView').style.display='none';
 };
 
@@ -1055,21 +901,15 @@ window.stopSpec=()=>{
 window.sendBroadcast=async()=>{
   const msg=document.getElementById('bcMsg').value.trim();
   if(!msg){showToast('メッセージを入力してください','err');return;}
-  let n=0;
-  for(const code of Object.keys(roomsData)){
-    await update(ref(db,`rooms/${code}`),{sysMsg:msg,sysMsgTs:Date.now()}).catch(()=>{});n++;
-  }
-  await set(ref(db, 'config/announcement'), msg);
+  const codes=Object.keys(roomsData);
+  const ts=Date.now();
+  await Promise.all(codes.map(code=>update(ref(db,`rooms/${code}`),{sysMsg:msg,sysMsgTs:ts}).catch(()=>{})));
+  const n=codes.length;
   addLog(`ブロードキャスト (${n}ルーム): "${msg}"`,"warn");
   showToast(`${n}件のルームに送信`,'ok');
   document.getElementById('bcStatus').textContent=`✓ ${n}件に送信 — ${new Date().toLocaleTimeString('ja-JP')}`;
 };
-window.clearBcMsg=async()=>{
-  document.getElementById('bcMsg').value='';
-  document.getElementById('bcStatus').textContent='';
-  await set(ref(db, 'config/announcement'), "");
-  showToast('アナウンス削除', 'ok');
-};
+window.clearBcMsg=()=>{document.getElementById('bcMsg').value='';document.getElementById('bcStatus').textContent='';};
 window.saveDefMsg=()=>{defaultForceMsg=document.getElementById('defMsg').value||defaultForceMsg;showToast('デフォルトメッセージ保存','ok');};
 
 // ══ ROOM MESSAGE MODAL ══
@@ -1090,54 +930,12 @@ document.getElementById('msgModal').addEventListener('click',e=>{if(e.target===d
 // ══ SETTINGS ACTIONS ══
 window.toggleSiBody=id=>{const el=document.getElementById(id);el.classList.toggle('open');};
 
-let currentMaint = false;
-async function loadConfig() {
-  const snap = await get(ref(db, 'config'));
-  if (snap.exists()) {
-    const cfg = snap.val();
-    document.getElementById('maxRoomsIn').value = cfg.maxRooms || 50;
-    currentMaint = cfg.maintenance || false;
-    updateMaintUI();
-  }
-}
-function updateMaintUI() {
-  const btn = document.getElementById('maintToggle');
-  btn.textContent = currentMaint ? 'ON' : 'OFF';
-  btn.style.color = currentMaint ? 'var(--red)' : 'var(--green)';
-}
-window.toggleMaint = () => {
-  currentMaint = !currentMaint;
-  updateMaintUI();
-};
-window.saveConfig = async () => {
-  const max = parseInt(document.getElementById('maxRoomsIn').value);
-  await set(ref(db, 'config/maxRooms'), max);
-  await set(ref(db, 'config/maintenance'), currentMaint);
-  showToast('設定保存完了', 'ok');
-  addLog('ゲーム設定更新', 'admin');
-};
-window.changePassword = async () => {
-  const old = document.getElementById('oldPw').value;
-  const n1 = document.getElementById('newPw').value;
-  const n2 = document.getElementById('confirmPw').value;
-  if (!n1 || n1 !== n2) { showToast('パスワードが一致しません', 'err'); return; }
-  const snap = await get(ref(db, 'config/adminPassword'));
-  const current = snap.val() || 'Runa1124';
-  if (old !== current) { showToast('現在のパスワードが違います', 'err'); return; }
-  await set(ref(db, 'config/adminPassword'), n1);
-  cachedAdminPw = n1;
-  showToast('パスワード更新完了', 'ok');
-  addLog('管理者パスワード変更', 'admin');
-  document.getElementById('oldPw').value = "";
-  document.getElementById('newPw').value = "";
-  document.getElementById('confirmPw').value = "";
-};
-
 window.nukeAll = async () => {
   const inp = document.getElementById('nukeConfIn').value;
   if (inp !== 'NUKE') { showToast('「NUKE」と正確に入力してください', 'err'); return; }
   try {
     const codes = Object.keys(roomsData);
+    // Step 1: force_ended all active rooms so players see the screen
     const activeOps = codes
       .filter(c => roomsData[c]?.status !== 'force_ended')
       .map(c => update(ref(db, `rooms/${c}`), {
@@ -1147,7 +945,11 @@ window.nukeAll = async () => {
         }).catch(() => {}));
     await Promise.all(activeOps);
     addLog(`全${codes.length}ルームに force_ended 送信`, 'admin');
+
+    // Step 2: wait so players can read
     await new Promise(r => setTimeout(r, 2000));
+
+    // Step 3: delete everything
     await remove(ref(db, 'rooms'));
     addLog('⚠ 全ルームNUKE完了', 'error');
     showToast('全ルームを削除しました', 'warn');
@@ -1181,6 +983,7 @@ window.stopAllActive = async () => {
   if (!active.length) { showToast('アクティブなルームなし', 'warn'); return; }
 
   const BATCH_MSG = '管理者によって全ルームが強制終了されました';
+  // Batch write simultaneously for instant notification
   const ops = active.map(([code]) =>
     update(ref(db, `rooms/${code}`), {
       status:   'force_ended',
@@ -1190,22 +993,17 @@ window.stopAllActive = async () => {
   );
   await Promise.all(ops);
   addLog(`全${active.length}ルームを同時強制停止`, 'admin');
+  showToast(`${active.length}ルームを強制停止しました`, 'warn');
 
-  let cd = 15;
-  const timer = setInterval(() => {
-    showToast(`全停止中... あと${cd}秒で削除`, 'warn');
-    cd--;
-    if(cd < 0) {
-        clearInterval(timer);
-        const delOps = active.map(([code]) => remove(ref(db, `rooms/${code}`)).catch(() => {}));
-        Promise.all(delOps).then(() => {
-            addLog(`強制停止ルーム ${active.length}件 自動削除完了`, 'info');
-            showToast('削除完了', 'ok');
-        });
-    }
-  }, 1000);
+  // Auto-delete after players have read
+  setTimeout(async () => {
+    const delOps = active.map(([code]) => remove(ref(db, `rooms/${code}`)).catch(() => {}));
+    await Promise.all(delOps);
+    addLog(`強制停止ルーム ${active.length}件 自動削除`, 'info');
+  }, 10000);
 };
 
+// ══ LOG ══
 function addLog(msg,type='info'){
   const box=document.getElementById('logBox');
   const now=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -1216,6 +1014,7 @@ function addLog(msg,type='info'){
 }
 window.clearLog=()=>{document.getElementById('logBox').innerHTML='';};
 
+// ══ PANEL NAV ══
 window.gotoPanel=(name,el)=>{
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -1223,10 +1022,13 @@ window.gotoPanel=(name,el)=>{
   if(el)el.classList.add('active');
 };
 
+// ══ TOAST ══
 function showToast(msg,type=''){
   const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;
   setTimeout(()=>t.classList.remove('show'),3000);
 }
+
+// Expose for inline use
 
 // ═══ TETRIS FALLING BG ═══
 (function(){
