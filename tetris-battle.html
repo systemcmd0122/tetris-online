@@ -512,9 +512,8 @@
 <div class="overlay" id="resultOverlay">
   <div class="overlay-title" id="resultTitle">YOU WIN!</div>
   <div class="overlay-sub" id="resultSub"></div>
-  <div style="display:flex; gap:10px; margin-top:20px;">
-    <button class="btn btn-primary" style="width:160px;" onclick="rematch()">もう一度</button>
-    <button class="btn btn-secondary" style="width:160px;" onclick="leaveRoom()">ホームへ</button>
+  <div style="margin-top:20px;">
+    <button class="btn btn-secondary" style="width:200px;" onclick="leaveRoom()">ホームへ</button>
   </div>
 </div>
 
@@ -891,6 +890,7 @@ const genCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Firebase listener refs (stored so we can properly unsubscribe)
 const _listeners = { opp: null, room: null, garb: null, wait: null };
+let currentOnDisconnect = null;
 
 // ─────────────────────────────────────────────────────────────
 // offAll — detach ALL firebase listeners safely
@@ -909,6 +909,10 @@ function offAll() {
 // ─────────────────────────────────────────────────────────────
 function resetState() {
   offAll();
+  if (currentOnDisconnect) {
+    try { currentOnDisconnect.cancel(); } catch(e) {}
+    currentOnDisconnect = null;
+  }
   gameRunning = false;
   forceStopped = false;
   endedOnce = false;
@@ -974,13 +978,16 @@ window.returnToLobbyFromForceStop = () => {
 
 window.cancelWaiting = async () => {
   const code = roomCode;
+  window.closeRoomModal();
   // Clear waiting listener first
   if (_listeners.wait) { try { _listeners.wait(); } catch(e) {} _listeners.wait = null; }
-  resetState();
+
   // P1 owns the room — delete it so onDisconnect / p2 both get notified
   if (code && db) {
     try { await remove(ref(db, `rooms/${code}`)); } catch(e) {}
   }
+
+  resetState();
   document.getElementById('sysMsgBanner').classList.remove('show');
   showScreen('lobbyScreen');
 };
@@ -1010,29 +1017,6 @@ function copyToClipboard(text) {
     });
 }
 
-window.rematch = async () => {
-  document.getElementById('resultOverlay').classList.remove('show');
-  const oldCode = roomCode;
-  const oldRole = myRole;
-  const name = document.getElementById('myNameTag').textContent;
-
-  gameRunning = false;
-  endedOnce = false;
-  if (animId) { cancelAnimationFrame(animId); animId = null; }
-
-  try {
-    if (oldRole === 'p1') {
-      await set(ref(db, `rooms/${oldCode}`), { p1: { name }, status: 'waiting', ts: Date.now() });
-      showScreen('waitingScreen');
-      document.getElementById('displayRoomCode').textContent = oldCode;
-    } else {
-      await update(ref(db, `rooms/${oldCode}`), { p2: { name }, status: 'ready' });
-      startGame();
-    }
-  } catch(e) {
-    showToast('再戦エラー: ' + e.message, 'warn');
-  }
-};
 
 // ─────────────────────────────────────────────────────────────
 // MODAL HELPERS
@@ -1045,6 +1029,7 @@ window.closeRoomModal = () => {
 // CREATE ROOM (P1)
 // ─────────────────────────────────────────────────────────────
 window.createRoom = async () => {
+  resetState();
   const name = document.getElementById('playerName').value.trim() || 'PLAYER';
   const btn = document.getElementById('btnCreate');
   const spinner = document.getElementById('createSpinner');
@@ -1053,18 +1038,37 @@ window.createRoom = async () => {
   spinner.style.display = 'block';
 
   myRole = 'p1';
-  roomCode = genCode();
   endedOnce = false;
   forceStopped = false;
 
-  const rRef = ref(db, `rooms/${roomCode}`);
+  // Find a unique room code
+  let rRef = null;
+  let codeExists = true;
+  let attempts = 0;
+  while (codeExists && attempts < 10) {
+    roomCode = genCode();
+    rRef = ref(db, `rooms/${roomCode}`);
+    const snap = await get(rRef);
+    if (!snap.exists()) {
+      codeExists = false;
+    }
+    attempts++;
+  }
+
+  if (codeExists) {
+    showToast('ルーム作成に失敗しました。もう一度お試しください。', 'warn');
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    return;
+  }
 
   try {
     // Write room data
     await set(rRef, { p1: { name }, status: 'waiting', ts: Date.now() });
 
-    // onDisconnect for p1: mark as p1_left so p2 sees a graceful disconnect message
-    onDisconnect(ref(db, `rooms/${roomCode}/status`)).set('p1_left').catch(e => console.error(e));
+    // onDisconnect for p1: remove room if p1 disconnects before game starts or during game
+    currentOnDisconnect = onDisconnect(ref(db, `rooms/${roomCode}`));
+    currentOnDisconnect.remove().catch(e => console.error(e));
 
     showScreen('waitingScreen');
     document.getElementById('displayRoomCode').textContent = roomCode;
@@ -1072,7 +1076,8 @@ window.createRoom = async () => {
 
     // Show modal
     document.getElementById('modalRoomCode').textContent = roomCode;
-    document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${roomCode}`;
+    const shareUrl = window.location.origin + window.location.pathname + "?room=" + roomCode;
+    document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(shareUrl)}`;
     document.getElementById('roomModal').classList.add('show');
   } catch(e) {
     showToast('エラー: ' + e.message, 'warn');
@@ -1117,6 +1122,7 @@ window.createRoom = async () => {
 // JOIN ROOM (P2)
 // ─────────────────────────────────────────────────────────────
 window.joinRoom = async () => {
+  resetState();
   const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
   if (code.length !== 6 || !/^[0-9]{6}$/.test(code)) {
     showToast('6桁の数字コードを入力してください', 'warn'); return;
@@ -1140,7 +1146,8 @@ window.joinRoom = async () => {
     await update(rRef, { p2: { name }, status: 'ready' });
 
     // onDisconnect for p2: set status to 'p2_left' so p1 gets notified
-    onDisconnect(ref(db, `rooms/${roomCode}/status`)).set('p2_left').catch(e => console.error(e));
+    currentOnDisconnect = onDisconnect(ref(db, `rooms/${roomCode}/status`));
+    currentOnDisconnect.set('p2_left').catch(e => console.error(e));
 
     document.getElementById('statusRoom').textContent = `ROOM: ${roomCode}`;
     startGame();
@@ -1162,9 +1169,7 @@ window.leaveRoom = async () => {
   document.getElementById('sysMsgBanner').classList.remove('show');
   document.getElementById('countdownOverlay').classList.remove('show');
 
-  resetState();
-
-  // Notify Firebase AFTER state is cleared
+  // Notify Firebase BEFORE state is cleared
   if (code && db) {
     try {
       if (role === 'p1') {
@@ -1177,6 +1182,7 @@ window.leaveRoom = async () => {
     } catch(e) { /* best-effort */ }
   }
 
+  resetState();
   showScreen('lobbyScreen');
 };
 
@@ -1184,6 +1190,7 @@ window.leaveRoom = async () => {
 // START GAME — both players, after ready
 // ─────────────────────────────────────────────────────────────
 async function startGame() {
+  window.closeRoomModal();
   showScreen('gameScreen');
   const oppRole = myRole === 'p1' ? 'p2' : 'p1';
 
@@ -1531,7 +1538,17 @@ setupMobile('btnHold',()=>game?.hold(),false);
 // ═══════════════════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════════════════
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'lobbyScreen') {
+    document.querySelectorAll('.overlay').forEach(o => o.classList.remove('show'));
+    document.getElementById('forceStopOverlay').classList.remove('show');
+    document.getElementById('countdownOverlay').classList.remove('show');
+    document.getElementById('roomModal').classList.remove('show');
+    document.getElementById('sysMsgBanner').classList.remove('show');
+  }
+}
 function showToast(msg, type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.classList.remove('show');t.offsetHeight;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 function flashAttack(lines){
   const f = document.getElementById('attackFlash');
