@@ -80,16 +80,16 @@
   .room-code-display .code { font-family: 'Press Start 2P', monospace; font-size: 28px; color: var(--accent); text-shadow: 0 0 20px rgba(0,245,255,0.5); letter-spacing: 10px; display: block; margin-top: 8px; }
   .copy-hint { font-size: 11px; color: var(--dim); letter-spacing: 2px; margin-top: 8px; }
   .waiting-indicator { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--accent3); font-size: 11px; letter-spacing: 2px; margin-top: 14px; }
-  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); animation: blink 1s ease-in-out infinite; }
-  .dot:nth-child(2){animation-delay:.3s} .dot:nth-child(3){animation-delay:.6s}
-  @keyframes blink { 0%,100%{opacity:.2;transform:scale(.8)} 50%{opacity:1;transform:scale(1)} }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); animation: dotWave 1s ease-in-out infinite; }
+  .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+  @keyframes dotWave { 0%,100%{transform:translateY(0);opacity:.3} 50%{transform:translateY(-6px);opacity:1} }
 
   /* ══ GAME ══ */
   #gameScreen { padding: 8px; }
   .game-header { width: 100%; max-width: 720px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .game-title { font-family: 'Press Start 2P', monospace; font-size: 11px; color: var(--accent); text-shadow: 0 0 20px rgba(0,245,255,0.5); }
   .game-header-right { display: flex; gap: 8px; align-items: center; }
-  .game-layout { display: flex; gap: 10px; align-items: flex-start; }
+  .game-layout { display: flex; gap: 10px; align-items: flex-start; justify-content: center; }
   .player-section { display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .player-label { font-size: 11px; letter-spacing: 3px; padding: 3px 12px; border-radius: 2px; }
   .player-label.you { background: rgba(0,245,255,0.1); border: 1px solid var(--accent); color: var(--accent); }
@@ -98,22 +98,85 @@
 
   canvas { display: block; image-rendering: pixelated; }
   #myCanvas       { border: 1px solid var(--accent);  box-shadow: 0 0 20px rgba(0,245,255,0.4); }
-  #opponentCanvas { border: 1px solid var(--accent2); box-shadow: 0 0 20px rgba(255,0,128,0.4); opacity: .85; }
+  #opponentCanvas { border: 1px solid var(--accent2); box-shadow: 0 0 20px rgba(255,0,128,0.4); opacity: 1; transition: border-color 0.1s; }
+  #opponentCanvas.attack-hit { border-color: var(--red); box-shadow: 0 0 30px var(--red); }
 
   .center-col { display: flex; flex-direction: column; align-items: center; gap: 8px; align-self: center; }
   .vs-text { font-family: 'Press Start 2P', monospace; font-size: 16px; background: linear-gradient(180deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 10px rgba(0,245,255,0.5)); }
 
   .side-panel { display: flex; flex-direction: column; gap: 8px; min-width: 88px; }
-  .panel-box { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 9px; }
+  .panel-box {
+    background: var(--surface); border: 2px solid var(--border);
+    border-radius: 4px; padding: 9px; position: relative;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+  }
+  .panel-box::after {
+    content: ''; position: absolute; inset: -2px; border: 1px solid rgba(255,255,255,0.05);
+    pointer-events: none; border-radius: 4px;
+  }
   .panel-box-title { font-size: 10px; color: var(--dim); letter-spacing: 2px; margin-bottom: 6px; }
-  .score-value  { font-family: 'Press Start 2P', monospace; font-size: 11px; color: var(--accent3); text-shadow: 0 0 15px rgba(170,255,0,0.5); word-break: break-all; }
+  .score-value  {
+    font-family: 'Press Start 2P', monospace; font-size: 11px; color: var(--accent3);
+    text-shadow: 0 0 15px rgba(170,255,0,0.5); word-break: break-all;
+    transition: transform 0.1s ease; display: inline-block;
+  }
+  .score-value.flash { transform: scale(1.3); color: #fff; }
   .level-value  { font-family: 'Press Start 2P', monospace; font-size: 18px; color: var(--accent); text-shadow: 0 0 20px rgba(0,245,255,0.5); }
   .lines-value  { font-family: 'Press Start 2P', monospace; font-size: 13px; color: var(--text); }
-  #nextCanvas, #holdCanvas { border: none; background: rgba(0,0,0,0.4); }
+  #nextCanvas, #holdCanvas { border: 1px solid var(--border); background: rgba(0,0,0,0.4); border-radius: 4px; }
 
   .controls-hint { width: 100%; max-width: 720px; display: flex; justify-content: center; gap: 14px; margin-top: 8px; flex-wrap: wrap; }
   .key-hint { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--dim); letter-spacing: 1px; }
   .key { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 2px 6px; font-size: 11px; color: var(--text); font-family: monospace; }
+
+  .spinner {
+    display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite;
+    margin-left: 10px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 600;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-card {
+    background: var(--surface); border: 2px solid var(--accent); border-radius: 4px;
+    padding: 30px; width: 100%; max-width: 360px; position: relative; text-align: center;
+    box-shadow: 0 0 30px rgba(0,245,255,0.2);
+  }
+  .qr-code { width: 120px; height: 120px; margin: 20px auto; background: #fff; padding: 5px; border-radius: 4px; }
+  .modal-btn-copy {
+    background: var(--accent); color: #000; border: none; padding: 12px; width: 100%;
+    font-family: 'Orbitron'; font-weight: bold; cursor: pointer; margin-top: 15px;
+    letter-spacing: 2px; transition: all 0.2s;
+  }
+  .modal-btn-copy:hover { background: #fff; box-shadow: 0 0 15px var(--accent); }
+
+  /* Flash */
+  .flash-joined {
+    position: fixed; inset: 0; background: rgba(0,245,255,0.15); z-index: 1000;
+    display: none; align-items: center; justify-content: center;
+    pointer-events: none; animation: flashAnim 0.8s ease-out forwards;
+  }
+  @keyframes flashAnim { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+  .flash-text { font-family: 'Press Start 2P'; color: var(--accent); font-size: clamp(18px, 5vw, 32px); text-shadow: 0 0 20px var(--accent); }
+
+  /* Garbage popup */
+  .garbage-popup {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-family: 'Press Start 2P'; font-size: 20px; color: var(--red);
+    text-shadow: 0 0 10px var(--red); pointer-events: none; z-index: 100;
+    opacity: 0; animation: garbagePop 1s ease-out forwards;
+  }
+  @keyframes garbagePop {
+    0% { transform: translate(-50%, 0); opacity: 0; }
+    20% { transform: translate(-50%, -40px); opacity: 1; }
+    100% { transform: translate(-50%, -80px); opacity: 0; }
+  }
 
   /* Combo/action popup */
   .action-popup {
@@ -126,16 +189,40 @@
   @keyframes popUp { 0%{opacity:1;transform:translateX(-50%) translateY(0)} 100%{opacity:0;transform:translateX(-50%) translateY(-30px)} }
 
   /* Mobile controls */
-  .mobile-controls { display: none; flex-direction: column; align-items: center; gap: 6px; margin-top: 10px; }
-  .mobile-row { display: flex; gap: 6px; }
-  .mobile-btn { width: 54px; height: 54px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none; -webkit-user-select: none; touch-action: manipulation; transition: background .1s; }
-  .mobile-btn:active { background: rgba(0,245,255,0.15); border-color: var(--accent); }
-  @media (max-width: 640px) {
+  .mobile-controls { display: none; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; width: 100%; max-width: 400px; }
+  .mobile-row { display: flex; gap: 10px; width: 100%; justify-content: center; }
+  .mobile-btn {
+    width: 60px; height: 60px; background: rgba(10, 15, 26, 0.8);
+    border: 2px solid var(--border); border-radius: 8px; color: var(--text);
+    font-size: 24px; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; user-select: none; -webkit-user-select: none;
+    touch-action: manipulation; transition: all 0.1s;
+    backdrop-filter: blur(4px);
+  }
+  .mobile-btn:active { background: rgba(0,245,255,0.2); border-color: var(--accent); transform: scale(0.9); }
+
+  @media (max-width: 600px) {
+    .game-layout { flex-direction: column; align-items: center; gap: 20px; }
+    .player-section { width: 70%; }
+    .side-panel { display: none; }
+    .center-col { order: -1; }
+    .vs-text { font-size: 12px; }
+    .game-header { flex-direction: column; gap: 5px; }
+    #myCanvas, #opponentCanvas { width: 100% !important; height: auto !important; }
+    .player-label { font-size: 9px; padding: 2px 8px; }
+
+    .mobile-score-bar {
+      display: flex; width: 100%; justify-content: space-between;
+      font-family: 'Press Start 2P'; font-size: 8px; margin-bottom: 4px;
+      color: var(--accent3);
+    }
+  }
+  @media (min-width: 601px) {
+    .mobile-score-bar { display: none; }
+  }
+  @media (hover: none) and (pointer: coarse) {
     .mobile-controls { display: flex; }
     .controls-hint { display: none; }
-    .side-panel { min-width: 68px; }
-    .score-value { font-size: 9px; }
-    .panel-box { padding: 7px; }
   }
 
   /* Overlays */
@@ -195,14 +282,20 @@
 
   .countdown-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 40; pointer-events: none; }
   .countdown-overlay.show { display: flex; }
-  .countdown-num { font-family: 'Press Start 2P', monospace; font-size: 90px; color: var(--accent); text-shadow: 0 0 20px rgba(0,245,255,.5),0 0 100px rgba(0,245,255,.3); animation: countAnim .85s ease-out forwards; }
-  @keyframes countAnim { 0%{transform:scale(2);opacity:1} 100%{transform:scale(.4);opacity:0} }
+  .countdown-num { font-family: 'Press Start 2P', monospace; font-size: 90px; color: var(--accent); text-shadow: 0 0 20px rgba(0,245,255,.5),0 0 100px rgba(0,245,255,.3); animation: countAnim 0.85s ease-out forwards; }
+  @keyframes countAnim {
+    0% { transform: scale(3); opacity: 0; }
+    50% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.5); opacity: 0; }
+  }
 
   .attack-flash { position: fixed; inset: 0; background: rgba(255,0,128,.18); pointer-events: none; opacity: 0; z-index: 30; transition: opacity .08s; }
   .attack-flash.show { opacity: 1; }
 
   .status-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 5px 14px; font-size: 11px; color: var(--dim); letter-spacing: 2px; display: flex; justify-content: space-between; z-index: 10; }
   .status-online { color: var(--accent3); }
+  #connDot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); display: inline-block; margin-right: 5px; }
+  #connDot.online { background: var(--accent3); box-shadow: 0 0 8px var(--accent3); }
 
   .toast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--accent2); color: var(--accent2); font-size: 12px; letter-spacing: 2px; padding: 9px 18px; border-radius: 2px; z-index: 200; display: none; white-space: nowrap; }
   .toast.show { display: block; animation: toastIn .25s ease; }
@@ -265,16 +358,25 @@
     <div class="px-corner bl"></div><div class="px-corner br"></div>
     <div class="card-title">▶ PLAYER SETUP</div>
     <div class="input-group">
-      <label>PLAYER NAME</label>
+      <label style="display:flex; justify-content:space-between;">
+        <span>PLAYER NAME</span>
+        <span id="nameCounter" style="font-size:9px; color:var(--dim);">0/12</span>
+      </label>
       <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
     </div>
-    <button class="btn btn-primary" onclick="createRoom()">＋ ルームを作成</button>
+    <button id="btnCreate" class="btn btn-primary" onclick="createRoom()" style="display:flex; align-items:center; justify-content:center;">
+      <span>＋ ルームを作成</span>
+      <div class="spinner" id="createSpinner"></div>
+    </button>
     <div class="divider">OR</div>
     <div class="input-group">
-      <label>ROOM CODE</label>
-      <input type="text" id="roomCodeInput" placeholder="4桁コードを入力" maxlength="4" style="text-align:center;letter-spacing:10px;font-size:20px;">
+      <label style="display:flex; justify-content:space-between;">
+        <span>ROOM CODE</span>
+        <span id="codeCounter" style="font-size:9px; color:var(--dim);">0/6</span>
+      </label>
+      <input type="text" id="roomCodeInput" placeholder="6桁コードを入力" maxlength="6" style="text-align:center;letter-spacing:10px;font-size:20px;">
     </div>
-    <button class="btn btn-secondary" onclick="joinRoom()">→ ルームに参加</button>
+    <button id="btnJoinRoom" class="btn btn-secondary" onclick="joinRoom()">→ ルームに参加</button>
   </div>
 </div>
 
@@ -313,6 +415,10 @@
     <div class="player-section">
       <div class="player-label you">YOU</div>
       <div class="player-name-tag" id="myNameTag">PLAYER</div>
+      <div class="mobile-score-bar">
+        <span>SCORE: <span id="mScore1">0</span></span>
+        <span>LV: <span id="mLevel1">1</span></span>
+      </div>
       <div class="board-wrap">
         <canvas id="myCanvas" width="200" height="400"></canvas>
         <div class="lock-flash" id="lockFlash"></div>
@@ -351,6 +457,10 @@
     <div class="player-section">
       <div class="player-label opp">FOE</div>
       <div class="player-name-tag" id="oppNameTag">PLAYER 2</div>
+      <div class="mobile-score-bar">
+        <span>SCORE: <span id="mScore2">0</span></span>
+        <span>LV: <span id="mLevel2">1</span></span>
+      </div>
       <canvas id="opponentCanvas" width="200" height="400"></canvas>
     </div>
   </div>
@@ -365,27 +475,47 @@
   </div>
 
   <div class="mobile-controls">
-    <div class="mobile-row">
-      <div class="mobile-btn" id="btnHold" style="width:54px;font-size:11px;">HOLD</div>
-      <div class="mobile-btn" id="btnRotate">↻</div>
-      <div class="mobile-btn" id="btnRotateL">↺</div>
+    <div class="mobile-row" style="justify-content: space-between; padding: 0 20px;">
+      <div class="mobile-btn" id="btnHardDrop" style="color: var(--accent2);">▼</div>
+      <div class="mobile-btn" id="btnHold" style="font-size: 12px; color: var(--accent3);">HOLD</div>
     </div>
-    <div class="mobile-row">
-      <div class="mobile-btn" id="btnLeft">←</div>
-      <div class="mobile-btn" id="btnDown">↓</div>
-      <div class="mobile-btn" id="btnRight">→</div>
-    </div>
-    <div class="mobile-row">
-      <div class="mobile-btn" id="btnHardDrop" style="width:116px;font-size:11px;letter-spacing:1px;">▼ DROP</div>
+    <div class="mobile-row" style="gap: 20px; margin-top: 10px;">
+      <div class="mobile-row" style="gap: 5px; width: auto;">
+        <div class="mobile-btn" id="btnLeft">◀</div>
+        <div class="mobile-btn" id="btnDown">▼</div>
+        <div class="mobile-btn" id="btnRight">▶</div>
+      </div>
+      <div class="mobile-btn" id="btnRotate" style="border-radius: 50%; width: 70px; height: 70px; border-color: var(--accent);">↻</div>
     </div>
   </div>
+</div>
+
+<!-- ══ ROOM MODAL ══ -->
+<div class="modal-overlay" id="roomModal">
+  <div class="modal-card">
+    <div class="px-corner tl"></div><div class="px-corner tr"></div>
+    <div class="px-corner bl"></div><div class="px-corner br"></div>
+    <div class="card-title">ROOM CREATED</div>
+    <div style="font-size:20px; color:var(--accent); font-family:'Press Start 2P'; margin:15px 0; letter-spacing:5px;" id="modalRoomCode">000000</div>
+    <img id="qrImg" class="qr-code" src="" alt="QR Code">
+    <button class="modal-btn-copy" onclick="copyRoomCode()">COPY ROOM CODE</button>
+    <button class="btn btn-secondary" style="margin-top:10px;" onclick="closeRoomModal()">CLOSE</button>
+  </div>
+</div>
+
+<!-- ══ FLASH OVERLAY ══ -->
+<div class="flash-joined" id="flashJoined">
+  <div class="flash-text">PLAYER JOINED!</div>
 </div>
 
 <!-- ══ RESULT OVERLAY ══ -->
 <div class="overlay" id="resultOverlay">
   <div class="overlay-title" id="resultTitle">YOU WIN!</div>
   <div class="overlay-sub" id="resultSub"></div>
-  <button class="btn btn-primary" style="width:220px;margin-top:10px;" onclick="leaveRoom()">BACK TO LOBBY</button>
+  <div style="display:flex; gap:10px; margin-top:20px;">
+    <button class="btn btn-primary" style="width:160px;" onclick="rematch()">もう一度</button>
+    <button class="btn btn-secondary" style="width:160px;" onclick="leaveRoom()">ホームへ</button>
+  </div>
 </div>
 
 <!-- ══ FORCE STOP OVERLAY ══ -->
@@ -407,8 +537,15 @@
 </div>
 
 <div class="status-bar">
-  <span id="statusText">CONNECTING…</span>
+  <span><span id="connDot"></span><span id="statusText">CONNECTING…</span></span>
   <span id="statusRoom">—</span>
+</div>
+
+<!-- ══ DISCONNECT OVERLAY ══ -->
+<div class="overlay" id="disconnectOverlay" style="z-index: 2000;">
+  <div class="overlay-title lose">DISCONNECTED</div>
+  <div class="overlay-sub">接続が切れました</div>
+  <button class="btn btn-primary" style="width:200px; margin-top:20px;" onclick="location.reload()">再接続</button>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -427,8 +564,52 @@ const fbApp = initializeApp({
   appId:             "1:1045054992314:web:7fea20b9be543d7cab3783"
 });
 const db = getDatabase(fbApp);
-document.getElementById('statusText').textContent = 'ONLINE';
-document.getElementById('statusText').className   = 'status-online';
+
+// ── Maintenance & Announcement ──
+onValue(ref(db, 'config/maintenance'), (snapshot) => {
+  if (snapshot.val()) {
+    const ov = document.getElementById('disconnectOverlay');
+    ov.querySelector('.overlay-title').textContent = 'MAINTENANCE';
+    ov.querySelector('.overlay-sub').textContent = 'メンテナンス中です';
+    ov.classList.add('show');
+  }
+});
+
+onValue(ref(db, 'config/announcement'), (snapshot) => {
+  const msg = snapshot.val();
+  const banner = document.getElementById('sysMsgBanner');
+  const txt = document.getElementById('sysMsgText');
+  if (msg) {
+    txt.textContent = '📢 ' + msg;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+});
+
+// ── Connection Status ──
+let hasConnected = false;
+onValue(ref(db, '.info/connected'), (snap) => {
+  const connected = snap.val();
+  const dot = document.getElementById('connDot');
+  const txt = document.getElementById('statusText');
+  const ov = document.getElementById('disconnectOverlay');
+
+  if (connected) {
+    dot.className = 'online';
+    txt.textContent = 'ONLINE';
+    txt.className = 'status-online';
+    ov.classList.remove('show');
+    hasConnected = true;
+  } else {
+    dot.className = '';
+    txt.textContent = 'OFFLINE';
+    txt.className = '';
+    if (hasConnected) {
+      ov.classList.add('show');
+    }
+  }
+});
 
 // ═══════════════════════════════════════════════════════════════
 // SOUND ENGINE (Web Audio API)
@@ -521,7 +702,29 @@ window.toggleSound = () => {
 // ═══════════════════════════════════════════════════════════════
 // TETRIS ENGINE
 // ═══════════════════════════════════════════════════════════════
-const COLS = 10, ROWS = 20, CELL = 20;
+const COLS = 10, ROWS = 20;
+let CELL = 20;
+
+function resizeCanvas() {
+  CELL = Math.floor(Math.min(window.innerHeight * 0.7, window.innerWidth * 0.38) / 20);
+  if (CELL < 10) CELL = 10; // Minimum size
+
+  const myCanvas = document.getElementById('myCanvas');
+  const opponentCanvas = document.getElementById('opponentCanvas');
+
+  if (myCanvas) {
+    myCanvas.width = CELL * COLS;
+    myCanvas.height = CELL * ROWS;
+  }
+  if (opponentCanvas) {
+    opponentCanvas.width = CELL * COLS;
+    opponentCanvas.height = CELL * ROWS;
+  }
+
+  // Re-draw if game exists
+  if (game) game.draw();
+}
+window.addEventListener('resize', resizeCanvas);
 const COLORS = {
   I:'#00f5ff', O:'#ffff00', T:'#cc00ff',
   S:'#aaff00', Z:'#ff0040', J:'#0066ff', L:'#ff8800',
@@ -597,9 +800,29 @@ class TetrisGame {
     for(const[kdx,kdy]of kicks){if(this.valid(this.current,kdx,-kdy,to)){this.current.x+=kdx;this.current.y+=-kdy;this.current.rot=to;this.lastAction={type:'rotate',dir,kick:kdx!==0||kdy!==0};this._resetLock();playSound('rotate');return true;}}
     return false;
   }
-  move(dx){if(this.valid(this.current,dx)){this.current.x+=dx;this.lastAction={type:'move'};this._resetLock();playSound('move');return true;}return false;}
-  softDrop(){if(this.valid(this.current,0,1)){this.current.y++;this.score++;this.lastAction={type:'move'};this.isOnGround=false;this.lockTimer=null;return true;}return false;}
-  hardDrop(){let d=0;while(this.valid(this.current,0,1)){this.current.y++;d++;}this.score+=d*2;this.lastAction={type:'hard'};playSound('harddrop');return this._lock();}
+  move(dx){
+    if(this.valid(this.current,dx)){
+      this.current.x+=dx;this.lastAction={type:'move'};this._resetLock();playSound('move');
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+      return true;
+    }
+    return false;
+  }
+  softDrop(){
+    if(this.valid(this.current,0,1)){
+      this.current.y++;this.score++;this.lastAction={type:'move'};this.isOnGround=false;this.lockTimer=null;
+      return true;
+    }
+    return false;
+  }
+  hardDrop(){
+    let d=0;while(this.valid(this.current,0,1)){this.current.y++;d++;}
+    this.score+=d*2;this.lastAction={type:'hard'};
+    playSound('harddrop');
+    if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(30);
+    if(softDropInterval) { clearInterval(softDropInterval); softDropInterval = null; }
+    return this._lock();
+  }
   ghostY(){let g=this.current.y;while(this.valid(this.current,0,g-this.current.y+1))g++;return g;}
   _resetLock(){if(this.isOnGround&&this.lockResets<MAX_RESETS){this.lockTimer=null;this.lockResets++;}}
   _isTSpin(){if(this.current.name!=='T'||!this.lastAction||this.lastAction.type!=='rotate')return false;const{x,y}=this.current;const corners=[[x,y],[x+2,y],[x,y+2],[x+2,y+2]];const filled=corners.filter(([cx,cy])=>cy<0||cy>=ROWS||cx<0||cx>=COLS||!!this._get(cx,cy));return filled.length>=3;}
@@ -663,8 +886,8 @@ class TetrisGame {
 // MULTIPLAYER STATE
 // ═══════════════════════════════════════════════════════════════
 let roomCode = null, myRole = null, game = null, gameRunning = false, animId = null;
-let oppName = 'FOE', endedOnce = false, forceStopped = false;
-const genCode = () => Math.floor(1000 + Math.random() * 9000).toString();
+let oppName = 'FOE', endedOnce = false, forceStopped = false, oldLevel = 1;
+const genCode = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Firebase listener refs (stored so we can properly unsubscribe)
 const _listeners = { opp: null, room: null, garb: null, wait: null };
@@ -673,8 +896,11 @@ const _listeners = { opp: null, room: null, garb: null, wait: null };
 // offAll — detach ALL firebase listeners safely
 // ─────────────────────────────────────────────────────────────
 function offAll() {
-  for (const [key, r] of Object.entries(_listeners)) {
-    if (r) { try { off(r); } catch(e) {} _listeners[key] = null; }
+  for (const [key, unsub] of Object.entries(_listeners)) {
+    if (unsub && typeof unsub === 'function') {
+      try { unsub(); } catch(e) {}
+      _listeners[key] = null;
+    }
   }
 }
 
@@ -749,7 +975,7 @@ window.returnToLobbyFromForceStop = () => {
 window.cancelWaiting = async () => {
   const code = roomCode;
   // Clear waiting listener first
-  if (_listeners.wait) { try { off(_listeners.wait); } catch(e) {} _listeners.wait = null; }
+  if (_listeners.wait) { try { _listeners.wait(); } catch(e) {} _listeners.wait = null; }
   resetState();
   // P1 owns the room — delete it so onDisconnect / p2 both get notified
   if (code && db) {
@@ -760,10 +986,59 @@ window.cancelWaiting = async () => {
 };
 
 window.copyRoomCode = () => {
-  if (!roomCode) return;
-  navigator.clipboard?.writeText(roomCode)
+  if (!roomCode) {
+    const modalCode = document.getElementById('modalRoomCode').textContent;
+    if (modalCode && modalCode !== '000000') {
+        copyToClipboard(modalCode);
+    }
+    return;
+  }
+  copyToClipboard(roomCode);
+};
+
+function copyToClipboard(text) {
+  navigator.clipboard?.writeText(text)
     .then(() => showToast('コードをコピーしました！', 'ok'))
-    .catch(() => showToast('コード: ' + roomCode));
+    .catch(() => {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      showToast('コードをコピーしました！', 'ok');
+    });
+}
+
+window.rematch = async () => {
+  document.getElementById('resultOverlay').classList.remove('show');
+  const oldCode = roomCode;
+  const oldRole = myRole;
+  const name = document.getElementById('myNameTag').textContent;
+
+  gameRunning = false;
+  endedOnce = false;
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+
+  try {
+    if (oldRole === 'p1') {
+      await set(ref(db, `rooms/${oldCode}`), { p1: { name }, status: 'waiting', ts: Date.now() });
+      showScreen('waitingScreen');
+      document.getElementById('displayRoomCode').textContent = oldCode;
+    } else {
+      await update(ref(db, `rooms/${oldCode}`), { p2: { name }, status: 'ready' });
+      startGame();
+    }
+  } catch(e) {
+    showToast('再戦エラー: ' + e.message, 'warn');
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// MODAL HELPERS
+// ─────────────────────────────────────────────────────────────
+window.closeRoomModal = () => {
+  document.getElementById('roomModal').classList.remove('show');
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -771,6 +1046,12 @@ window.copyRoomCode = () => {
 // ─────────────────────────────────────────────────────────────
 window.createRoom = async () => {
   const name = document.getElementById('playerName').value.trim() || 'PLAYER';
+  const btn = document.getElementById('btnCreate');
+  const spinner = document.getElementById('createSpinner');
+
+  btn.disabled = true;
+  spinner.style.display = 'block';
+
   myRole = 'p1';
   roomCode = genCode();
   endedOnce = false;
@@ -778,27 +1059,37 @@ window.createRoom = async () => {
 
   const rRef = ref(db, `rooms/${roomCode}`);
 
-  // Write room data
-  await set(rRef, { p1: { name }, status: 'waiting', ts: Date.now() });
+  try {
+    // Write room data
+    await set(rRef, { p1: { name }, status: 'waiting', ts: Date.now() });
 
-  // onDisconnect for p1: mark as p1_left so p2 sees a graceful disconnect message
-  // (firebase will auto-remove after both sides disconnect anyway)
-  onDisconnect(ref(db, `rooms/${roomCode}/status`)).set('p1_left');
+    // onDisconnect for p1: mark as p1_left so p2 sees a graceful disconnect message
+    onDisconnect(ref(db, `rooms/${roomCode}/status`)).set('p1_left').catch(e => console.error(e));
 
-  showScreen('waitingScreen');
-  document.getElementById('displayRoomCode').textContent = roomCode;
-  document.getElementById('statusRoom').textContent = `ROOM: ${roomCode}`;
+    showScreen('waitingScreen');
+    document.getElementById('displayRoomCode').textContent = roomCode;
+    document.getElementById('statusRoom').textContent = `ROOM: ${roomCode}`;
+
+    // Show modal
+    document.getElementById('modalRoomCode').textContent = roomCode;
+    document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${roomCode}`;
+    document.getElementById('roomModal').classList.add('show');
+  } catch(e) {
+    showToast('エラー: ' + e.message, 'warn');
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
 
   // Watch the room for: p2 joining, force_ended, sysMsg
   const waitRef = ref(db, `rooms/${roomCode}`);
-  _listeners.wait = waitRef;
-  onValue(waitRef, snap => {
+  _listeners.wait = onValue(waitRef, snap => {
     const d = snap.val();
 
     // Room deleted (p2 joined and disconnected before ready, or admin deleted)
     if (!d) {
       if (!forceStopped && !endedOnce) {
-        off(waitRef); _listeners.wait = null;
+        if (_listeners.wait) { _listeners.wait(); _listeners.wait = null; }
         showScreen('lobbyScreen');
         showToast('ルームが削除されました', 'warn');
       }
@@ -808,15 +1099,16 @@ window.createRoom = async () => {
     handleSysMsg(d);
 
     if (d.status === 'force_ended' && !forceStopped) {
-      off(waitRef); _listeners.wait = null;
+      if (_listeners.wait) { _listeners.wait(); _listeners.wait = null; }
       showForceStop(d.forceMsg);
       return;
     }
 
     // p2 joined → start game
     if (d.status === 'ready' && !endedOnce && !forceStopped) {
-      off(waitRef); _listeners.wait = null;
-      startGame();
+      if (_listeners.wait) { _listeners.wait(); _listeners.wait = null; }
+      flashJoined();
+      setTimeout(startGame, 1200);
     }
   });
 };
@@ -826,8 +1118,8 @@ window.createRoom = async () => {
 // ─────────────────────────────────────────────────────────────
 window.joinRoom = async () => {
   const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-  if (code.length !== 4 || !/^[0-9]{4}$/.test(code)) {
-    showToast('4桁の数字コードを入力してください', 'warn'); return;
+  if (code.length !== 6 || !/^[0-9]{6}$/.test(code)) {
+    showToast('6桁の数字コードを入力してください', 'warn'); return;
   }
   const name = document.getElementById('playerName').value.trim() || 'PLAYER2';
   const rRef = ref(db, `rooms/${code}`);
@@ -843,14 +1135,18 @@ window.joinRoom = async () => {
 
   myRole = 'p2'; roomCode = code; endedOnce = false; forceStopped = false;
 
-  // Write p2 info and flip to ready
-  await update(rRef, { p2: { name }, status: 'ready' });
+  try {
+    // Write p2 info and flip to ready
+    await update(rRef, { p2: { name }, status: 'ready' });
 
-  // onDisconnect for p2: set status to 'p2_left' so p1 gets notified
-  onDisconnect(ref(db, `rooms/${roomCode}/status`)).set('p2_left');
+    // onDisconnect for p2: set status to 'p2_left' so p1 gets notified
+    onDisconnect(ref(db, `rooms/${roomCode}/status`)).set('p2_left').catch(e => console.error(e));
 
-  document.getElementById('statusRoom').textContent = `ROOM: ${roomCode}`;
-  startGame();
+    document.getElementById('statusRoom').textContent = `ROOM: ${roomCode}`;
+    startGame();
+  } catch(e) {
+    showToast('参加エラー: ' + e.message, 'warn');
+  }
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -912,8 +1208,7 @@ async function startGame() {
 
   // ── Watch room for force_ended / opponent leaving / sysMsg ──
   const roomRef = ref(db, `rooms/${roomCode}`);
-  _listeners.room = roomRef;
-  onValue(roomRef, snap => {
+  _listeners.room = onValue(roomRef, snap => {
     const d = snap.val();
 
     // Room deleted entirely (p1 disconnected / admin deleted)
@@ -926,7 +1221,7 @@ async function startGame() {
 
     // Admin force stop
     if (d.status === 'force_ended' && !forceStopped) {
-      off(roomRef); _listeners.room = null;
+      if (_listeners.room) { _listeners.room(); _listeners.room = null; }
       showForceStop(d.forceMsg);
       return;
     }
@@ -955,28 +1250,35 @@ async function startGame() {
   game = new TetrisGame('myCanvas', 'holdCanvas', 'nextCanvas');
   gameRunning = true;
   endedOnce   = false;
+  oldLevel = 1;
 
   // ── Watch opponent board ──
   const oppRef = ref(db, `rooms/${roomCode}/game/${oppRole}`);
-  _listeners.opp = oppRef;
-  onValue(oppRef, snap => {
+  _listeners.opp = onValue(oppRef, snap => {
     const d = snap.val();
     if (!d) return;
     TetrisGame.drawOpponent(document.getElementById('opponentCanvas'), d);
-    document.getElementById('oppNameTag').textContent = `${oppName} (${d.score || 0})`;
+    const score = d.score || 0;
+    document.getElementById('oppNameTag').textContent = `${oppName} (${score})`;
+
+    const mScore2 = document.getElementById('mScore2');
+    const mLevel2 = document.getElementById('mLevel2');
+    if(mScore2) mScore2.textContent = score;
+    if(mLevel2) mLevel2.textContent = d.level || 1;
+
     // Opponent topped out → we win
     if (d.gameOver && !game?.gameOver && gameRunning && !endedOnce) endGame('WIN');
   });
 
   // ── Watch incoming garbage ──
   const myGRef = ref(db, `rooms/${roomCode}/garb/${myRole}`);
-  _listeners.garb = myGRef;
-  onValue(myGRef, snap => {
+  _listeners.garb = onValue(myGRef, snap => {
     const v = snap.val();
     if (!v || !v.n || !game) return;
-    game.pendingGarbage += v.n;
+    const lines = v.n;
+    game.pendingGarbage += lines;
     set(myGRef, { n: 0 });
-    flashAttack();
+    flashAttack(lines);
     playSound('attack');
   });
 
@@ -988,11 +1290,29 @@ async function startGame() {
   const loop = ts => {
     if (!gameRunning) return;
     const result = game.update(ts);
+    if (result) {
+      if (result.cleared > 0) {
+        animateScore();
+        if (game.level > oldLevel) {
+          showLevelUp();
+          oldLevel = game.level;
+        }
+      }
+    }
     game.draw();
 
-    document.getElementById('scoreDisplay').textContent = game.score;
-    document.getElementById('levelDisplay').textContent = game.level;
-    document.getElementById('linesDisplay').textContent = game.lines;
+    const score = game.score;
+    const level = game.level;
+    const lines = game.lines;
+    document.getElementById('scoreDisplay').textContent = score;
+    document.getElementById('levelDisplay').textContent = level;
+    document.getElementById('linesDisplay').textContent = lines;
+
+    // Mobile score bar
+    const mScore1 = document.getElementById('mScore1');
+    const mLevel1 = document.getElementById('mLevel1');
+    if(mScore1) mScore1.textContent = score;
+    if(mLevel1) mLevel1.textContent = level;
 
     if (result?.actionLabel) showActionPopup(result.actionLabel);
 
@@ -1017,6 +1337,7 @@ async function startGame() {
 
     animId = requestAnimationFrame(loop);
   };
+  resizeCanvas();
   animId = requestAnimationFrame(loop);
 }
 
@@ -1085,18 +1406,20 @@ function countdown() {
       num.offsetHeight;   // reflow
       num.style.animation = 'countAnim .85s ease-out forwards';
       if (n > 0) {
-        num.textContent = n; n--;
-        setTimeout(tick, 850);
-      } else {
+        num.textContent = n;
+        n--;
+        setTimeout(tick, 1000);
+      } else if (n === 0) {
         num.textContent = 'GO!';
-        setTimeout(() => {
-          if (!resolved) {
-            resolved = true;
-            clearInterval(abortPoll);
-            ov.classList.remove('show');
-            resolve(false);   // false = normal finish
-          }
-        }, 850);
+        n--;
+        setTimeout(tick, 1000);
+      } else {
+        if (!resolved) {
+          resolved = true;
+          clearInterval(abortPoll);
+          ov.classList.remove('show');
+          resolve(false);
+        }
       }
     };
     tick();
@@ -1108,21 +1431,55 @@ function countdown() {
 // ═══════════════════════════════════════════════════════════════
 const DAS = 167, ARR = 33;
 const keys = new Set();
+const moveKeys = [];
 let dasTimer=null, dasDir=0, arrTimer=null;
 
 function dasStart(dir) {
-  if(dasDir===dir)return; dasStop(); dasDir=dir;
-  game?.move(dir);
-  dasTimer=setTimeout(()=>{arrTimer=setInterval(()=>{game?.move(dir);},ARR);},DAS);
+  if(dasDir===dir)return;
+  dasStop();
+  dasDir=dir;
+  if(game && gameRunning) game.move(dir);
+  dasTimer=setTimeout(()=>{
+    arrTimer=setInterval(()=>{
+      if(game && gameRunning) game.move(dir);
+    },ARR);
+  },DAS);
 }
-function dasStop(){clearTimeout(dasTimer);clearInterval(arrTimer);dasTimer=null;arrTimer=null;dasDir=0;}
+function dasStop(){
+  clearTimeout(dasTimer);
+  clearInterval(arrTimer);
+  dasTimer=null;
+  arrTimer=null;
+  dasDir=0;
+}
+
+function handleMoveKeys() {
+  const last = moveKeys[moveKeys.length - 1];
+  if (last === 'ArrowLeft') dasStart(-1);
+  else if (last === 'ArrowRight') dasStart(1);
+  else dasStop();
+}
 
 document.addEventListener('keydown',e=>{
-  if(keys.has(e.code))return; keys.add(e.code);
-  if(!game||!gameRunning)return;
+  if(keys.has(e.code))return;
+  keys.add(e.code);
+  if(!game||!gameRunning) {
+    if(e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+      if(!moveKeys.includes(e.code)) moveKeys.push(e.code);
+    }
+    return;
+  }
   switch(e.code){
-    case'ArrowLeft':  e.preventDefault();dasStart(-1);break;
-    case'ArrowRight': e.preventDefault();dasStart(1);break;
+    case'ArrowLeft':
+      e.preventDefault();
+      if(!moveKeys.includes(e.code)) moveKeys.push(e.code);
+      handleMoveKeys();
+      break;
+    case'ArrowRight':
+      e.preventDefault();
+      if(!moveKeys.includes(e.code)) moveKeys.push(e.code);
+      handleMoveKeys();
+      break;
     case'ArrowUp':    e.preventDefault();game.rotate(1);break;
     case'KeyX':       e.preventDefault();game.rotate(1);break;
     case'KeyZ':       e.preventDefault();game.rotate(-1);break;
@@ -1134,8 +1491,11 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('keyup',e=>{
   keys.delete(e.code);
-  if(e.code==='ArrowLeft'&&dasDir===-1)dasStop();
-  if(e.code==='ArrowRight'&&dasDir===1)dasStop();
+  if(e.code==='ArrowLeft' || e.code==='ArrowRight'){
+    const idx = moveKeys.indexOf(e.code);
+    if(idx !== -1) moveKeys.splice(idx, 1);
+    handleMoveKeys();
+  }
 });
 
 let softDropInterval=null;
@@ -1173,11 +1533,109 @@ setupMobile('btnHold',()=>game?.hold(),false);
 // ═══════════════════════════════════════════════════════════════
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function showToast(msg, type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.classList.remove('show');t.offsetHeight;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-function flashAttack(){const f=document.getElementById('attackFlash');f.classList.add('show');setTimeout(()=>f.classList.remove('show'),280);}
-function showActionPopup(label){const p=document.getElementById('actionPopup');p.textContent=label.replace('\n',' / ');p.classList.remove('show');p.offsetHeight;p.classList.add('show');}
+function flashAttack(lines){
+  const f = document.getElementById('attackFlash');
+  f.classList.add('show');
+  setTimeout(() => f.classList.remove('show'), 280);
+
+  // Flash opponent border
+  const oppCvs = document.getElementById('opponentCanvas');
+  if(oppCvs) {
+    oppCvs.classList.add('attack-hit');
+    setTimeout(() => oppCvs.classList.remove('attack-hit'), 300);
+  }
+
+  // Floating +N popup
+  const container = document.querySelector('.center-col');
+  const popup = document.createElement('div');
+  popup.className = 'garbage-popup';
+  popup.textContent = '+' + lines;
+  container.appendChild(popup);
+  setTimeout(() => popup.remove(), 1000);
+}
+function showActionPopup(label){
+  const p = document.getElementById('actionPopup');
+  p.textContent = label.replace('\n',' / ');
+  p.classList.remove('show');
+  void p.offsetWidth;
+  p.classList.add('show');
+}
+
+function animateScore() {
+  const s = document.getElementById('scoreDisplay');
+  s.classList.remove('flash');
+  void s.offsetWidth;
+  s.classList.add('flash');
+  setTimeout(() => s.classList.remove('flash'), 150);
+}
+
+function showLevelUp() {
+  const div = document.createElement('div');
+  div.style.position = 'fixed';
+  div.style.inset = '0';
+  div.style.zIndex = '2000';
+  div.style.background = 'rgba(0, 245, 255, 0.2)';
+  div.style.display = 'flex';
+  div.style.alignItems = 'center';
+  div.style.justifyContent = 'center';
+  div.style.pointerEvents = 'none';
+  div.innerHTML = `<div style="font-family:'Press Start 2P'; font-size:40px; color:#fff; text-shadow:0 0 20px var(--accent); animation:levelAnim 1s ease-out forwards;">LEVEL UP!</div>`;
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 1000);
+
+  // Particle burst placeholder
+  createBurst();
+}
+
+function createBurst() {
+  // Simple full screen flash for now
+  const flash = document.createElement('div');
+  flash.style.position = 'fixed';
+  flash.style.inset = '0';
+  flash.style.background = '#fff';
+  flash.style.zIndex = '2100';
+  flash.style.opacity = '0.5';
+  flash.style.pointerEvents = 'none';
+  document.body.appendChild(flash);
+  setTimeout(() => {
+    flash.style.transition = 'opacity 0.5s ease';
+    flash.style.opacity = '0';
+    setTimeout(() => flash.remove(), 500);
+  }, 50);
+}
+
+const levelAnimStyle = document.createElement('style');
+levelAnimStyle.textContent = `
+@keyframes levelAnim {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}`;
+document.head.appendChild(levelAnimStyle);
+
+function flashJoined() {
+  const f = document.getElementById('flashJoined');
+  f.style.display = 'flex';
+  setTimeout(() => f.style.display = 'none', 1000);
+}
+
+document.getElementById('playerName').oninput = e => {
+  document.getElementById('nameCounter').textContent = `${e.target.value.length}/12`;
+};
 
 document.getElementById('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')window.joinRoom();});
-document.getElementById('roomCodeInput').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^0-9]/g,'');});
+document.getElementById('roomCodeInput').addEventListener('input',e=>{
+  const val = e.target.value.toUpperCase().replace(/[^0-9]/g,'');
+  e.target.value = val;
+  document.getElementById('codeCounter').textContent = `${val.length}/6`;
+  if (val.length === 6) {
+    e.target.style.borderColor = 'var(--accent3)';
+    e.target.style.boxShadow = '0 0 10px var(--accent3)';
+  } else {
+    e.target.style.borderColor = '';
+    e.target.style.boxShadow = '';
+  }
+});
 
 // ═══ TETRIS FALLING BG ═══
 (function(){
@@ -1254,6 +1712,19 @@ document.getElementById('roomCodeInput').addEventListener('input',e=>{e.target.v
   };
   setTimeout(next,200);
 })();
+
+// ── Auto-join via URL ──
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const room = params.get('room');
+  if (room && room.length === 6) {
+    document.getElementById('roomCodeInput').value = room;
+    // Delay slightly to ensure Firebase is ready
+    setTimeout(() => {
+      window.joinRoom();
+    }, 1000);
+  }
+});
 
 </script>
 </body>
