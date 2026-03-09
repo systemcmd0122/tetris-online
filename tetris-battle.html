@@ -4,67 +4,120 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TETRIS BATTLE — リアルタイム対戦</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/common.css">
   <link rel="stylesheet" href="assets/css/game.css">
 </head>
 <body>
-<div class="scanline"></div>
+
+<!-- ══ BACKGROUND (lobby + waiting screens) ══ -->
+<canvas id="bgCanvas"></canvas>
+<div class="scanline-wrap"><div class="scanline"></div></div>
+<div class="vignette"></div>
+
+<!-- ══ ATTACK FLASH ══ -->
 <div class="attack-flash" id="attackFlash"></div>
 
 <!-- ══ SYSTEM MESSAGE BANNER ══ -->
-<div id="sysMsgBanner" id="sysMsgBanner">
+<div id="sysMsgBanner">
   <span id="sysMsgText"></span>
-  <button onclick="document.getElementById('sysMsgBanner').classList.remove('show')" style="margin-left:20px;background:transparent;border:1px solid var(--warn);color:var(--warn);font-family:'Orbitron',monospace;font-size:7px;padding:2px 8px;cursor:pointer;border-radius:2px;">✕</button>
+  <button class="sysMsg-close" onclick="document.getElementById('sysMsgBanner').classList.remove('show')">✕</button>
 </div>
 
-<!-- ══ LOBBY ══ -->
+<!-- ══════════════════════════════════════════
+     LOBBY SCREEN
+══════════════════════════════════════════ -->
 <div class="screen active" id="lobbyScreen">
-  <div class="logo">TETRIS</div>
-  <div class="subtitle">BATTLE — REAL-TIME PVP</div>
-  <div class="card">
-    <div class="card-title">▶ PLAYER SETUP</div>
-    <div class="input-group">
-      <label>PLAYER NAME</label>
-      <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
+
+  <!-- back to home -->
+  <a href="index.html" class="back-link">← HOME</a>
+
+  <div class="lobby-wrap">
+    <!-- Logo -->
+    <div class="lobby-logo">
+      <span class="ll-t">T</span><span class="ll-e">E</span><span class="ll-t2">T</span><span
+           class="ll-r">R</span><span class="ll-i">I</span><span class="ll-s">S</span>
     </div>
-    <button class="btn btn-primary" onclick="createRoom()">＋ ルームを作成</button>
-    <div class="divider">OR</div>
-    <div class="input-group">
-      <label>ROOM CODE</label>
-      <input type="text" id="roomCodeInput" placeholder="4桁コードを入力" maxlength="4" style="text-align:center;letter-spacing:10px;font-size:20px;">
+    <div class="lobby-sub">BATTLE — REAL-TIME PVP</div>
+
+    <!-- Setup card -->
+    <div class="card" id="setupCard">
+      <div class="card-bar"></div>
+      <div class="card-title">▶ PLAYER SETUP</div>
+
+      <div class="input-group">
+        <label>PLAYER NAME</label>
+        <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
+      </div>
+
+      <button class="btn btn-primary" onclick="createRoom()">
+        <span class="btn-icon-txt">＋</span> ルームを作成
+      </button>
+
+      <div class="divider"><span>OR</span></div>
+
+      <div class="input-group">
+        <label>ROOM CODE</label>
+        <input type="text" id="roomCodeInput" placeholder="- - - -" maxlength="4" class="code-input">
+      </div>
+
+      <button class="btn btn-secondary" onclick="joinRoom()">
+        <span class="btn-icon-txt">→</span> ルームに参加
+      </button>
     </div>
-    <button class="btn btn-secondary" onclick="joinRoom()">→ ルームに参加</button>
   </div>
 </div>
 
-<!-- ══ WAITING ══ -->
+<!-- ══════════════════════════════════════════
+     WAITING SCREEN
+══════════════════════════════════════════ -->
 <div class="screen" id="waitingScreen">
-  <div class="logo" style="font-size:22px;margin-bottom:4px;">WAITING</div>
-  <div class="subtitle">FOR OPPONENT</div>
-  <div class="card">
-    <div class="card-title">▶ ROOM CODE</div>
-    <div class="room-code-display" onclick="copyRoomCode()" title="クリックでコピー">
-      <span class="code-label">SHARE THIS CODE</span>
-      <span class="code" id="displayRoomCode">----</span>
-      <div class="copy-hint">📋 クリックしてコピー</div>
+
+  <a href="#" class="back-link" onclick="leaveRoom(); return false;">← BACK</a>
+
+  <div class="lobby-wrap">
+    <div class="lobby-logo" style="font-size:clamp(18px,3vw,28px); margin-bottom:4px;">WAITING</div>
+    <div class="lobby-sub">FOR OPPONENT…</div>
+
+    <div class="card">
+      <div class="card-bar"></div>
+      <div class="card-title">▶ ROOM CODE</div>
+
+      <div class="room-code-display" onclick="copyRoomCode()" title="クリックでコピー">
+        <div class="code-label">SHARE THIS CODE</div>
+        <div class="code" id="displayRoomCode">- - - -</div>
+        <div class="copy-hint">📋 クリックしてコピー</div>
+      </div>
+
+      <!-- animated tetromino waiting indicator -->
+      <div class="waiting-anim">
+        <canvas id="waitCanvas" width="240" height="60"></canvas>
+      </div>
+
+      <div class="waiting-indicator">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <span>WAITING FOR OPPONENT</span>
+      </div>
+
+      <button class="btn btn-danger" style="margin-top:18px;" onclick="leaveRoom()">✕ CANCEL</button>
     </div>
-    <div class="waiting-indicator">
-      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-      <span>WAITING FOR OPPONENT</span>
-    </div>
-    <button class="btn btn-danger" style="margin-top:18px;" onclick="leaveRoom()">← CANCEL</button>
   </div>
 </div>
 
-<!-- ══ GAME ══ -->
+<!-- ══════════════════════════════════════════
+     GAME SCREEN
+══════════════════════════════════════════ -->
 <div class="screen" id="gameScreen">
   <div class="game-header">
-    <span class="game-title">TETRIS BATTLE</span>
+    <span class="game-title">TETRIS <span class="game-title-battle">BATTLE</span></span>
     <div class="game-header-right">
-      <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊 ON</button>
-      <button class="btn btn-secondary" style="width:auto;padding:5px 12px;font-size:8px;" onclick="leaveRoom()">QUIT</button>
+      <button class="sound-btn on" id="soundBtn" onclick="toggleSound()">🔊 ON</button>
+      <button class="btn btn-danger-sm" onclick="leaveRoom()">QUIT</button>
     </div>
   </div>
+
   <div class="game-layout">
     <!-- My side -->
     <div class="player-section">
@@ -114,16 +167,16 @@
 
   <div class="controls-hint">
     <div class="key-hint"><span class="key">← →</span> 移動</div>
-    <div class="key-hint"><span class="key">↑ / X</span> 回転(右)</div>
-    <div class="key-hint"><span class="key">Z</span> 回転(左)</div>
-    <div class="key-hint"><span class="key">↓</span> ソフトドロップ</div>
-    <div class="key-hint"><span class="key">SPACE</span> ハードドロップ</div>
-    <div class="key-hint"><span class="key">C / Shift</span> ホールド</div>
+    <div class="key-hint"><span class="key">↑ / X</span> 回転</div>
+    <div class="key-hint"><span class="key">Z</span> 逆回転</div>
+    <div class="key-hint"><span class="key">↓</span> ソフト</div>
+    <div class="key-hint"><span class="key">SPACE</span> ハード</div>
+    <div class="key-hint"><span class="key">C / ⇧</span> ホールド</div>
   </div>
 
   <div class="mobile-controls">
     <div class="mobile-row">
-      <div class="mobile-btn" id="btnHold" style="width:54px;font-size:11px;">HOLD</div>
+      <div class="mobile-btn" id="btnHold">HOLD</div>
       <div class="mobile-btn" id="btnRotate">↻</div>
       <div class="mobile-btn" id="btnRotateL">↺</div>
     </div>
@@ -133,16 +186,17 @@
       <div class="mobile-btn" id="btnRight">→</div>
     </div>
     <div class="mobile-row">
-      <div class="mobile-btn" id="btnHardDrop" style="width:116px;font-size:11px;letter-spacing:1px;">▼ DROP</div>
+      <div class="mobile-btn wide" id="btnHardDrop">▼ DROP</div>
     </div>
   </div>
 </div>
 
 <!-- ══ RESULT OVERLAY ══ -->
 <div class="overlay" id="resultOverlay">
+  <div class="overlay-result-icon" id="resultIcon">🏆</div>
   <div class="overlay-title" id="resultTitle">YOU WIN!</div>
   <div class="overlay-sub" id="resultSub"></div>
-  <button class="btn btn-primary" style="width:220px;margin-top:10px;" onclick="leaveRoom()">BACK TO LOBBY</button>
+  <button class="btn btn-primary" style="width:240px;margin-top:16px;" onclick="leaveRoom()">← BACK TO LOBBY</button>
 </div>
 
 <!-- ══ FORCE STOP OVERLAY ══ -->
@@ -158,17 +212,25 @@
   <button class="fs-back-btn" onclick="leaveRoom()">← BACK TO LOBBY</button>
 </div>
 
-<!-- ══ COUNTDOWN ══ -->
+<!-- ══ COUNTDOWN OVERLAY ══ -->
 <div class="countdown-overlay" id="countdownOverlay">
-  <div class="countdown-num" id="countdownNum">3</div>
+  <div class="countdown-inner">
+    <canvas id="countCanvas" width="320" height="320"></canvas>
+    <div class="countdown-num" id="countdownNum">3</div>
+  </div>
 </div>
 
+<!-- ══ STATUS BAR ══ -->
 <div class="status-bar">
   <span id="statusText">CONNECTING…</span>
   <span id="statusRoom">—</span>
 </div>
+
+<!-- ══ TOAST ══ -->
 <div class="toast" id="toast"></div>
 
+<!-- ══ JS ══ -->
+<script src="assets/js/lobby-bg.js"></script>
 <script type="module" src="assets/js/game.js"></script>
 </body>
 </html>
