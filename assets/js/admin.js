@@ -85,8 +85,8 @@ function startClock(){
 }
 
 function startRoomsListener(){
-  if(roomsListener)try{off(ref(db,'rooms'));}catch(e){}
-  onValue(ref(db,'rooms'),snap=>{
+  if(roomsListener && typeof roomsListener === 'function') try{ roomsListener(); }catch(e){}
+  roomsListener = onValue(ref(db,'rooms'),snap=>{
     const prev=Object.keys(roomsData).length;
     roomsData=snap.val()||{};
     const curr=Object.keys(roomsData).length;
@@ -94,7 +94,6 @@ function startRoomsListener(){
     totalRooms=Math.max(totalRooms,curr);
     updateStats();renderTables();
   });
-  roomsListener=true;
   addLog('Firebaseリスナー開始','info');
 }
 
@@ -233,9 +232,8 @@ window.startSpec=code=>{
   const cv1=document.getElementById('specCv1'),cv2=document.getElementById('specCv2');
   const rp1=ref(db,`rooms/${code}/game/p1`);
   const rp2=ref(db,`rooms/${code}/game/p2`);
-  onValue(rp1,s=>{const d=s.val();drawBoard(cv1,d);if(d){document.getElementById('ssP1Score').textContent=d.score||0;document.getElementById('ssP1Level').textContent=d.level||1;document.getElementById('ssP1Lines').textContent=d.lines||0;}});
-  onValue(rp2,s=>{const d=s.val();drawBoard(cv2,d);if(d){document.getElementById('ssP2Score').textContent=d.score||0;document.getElementById('ssP2Level').textContent=d.level||1;document.getElementById('ssP2Lines').textContent=d.lines||0;}});
-  specUnsub.p1=rp1;specUnsub.p2=rp2;
+  specUnsub.p1=onValue(rp1,s=>{const d=s.val();drawBoard(cv1,d);if(d){document.getElementById('ssP1Score').textContent=d.score||0;document.getElementById('ssP1Level').textContent=d.level||1;document.getElementById('ssP1Lines').textContent=d.lines||0;}});
+  specUnsub.p2=onValue(rp2,s=>{const d=s.val();drawBoard(cv2,d);if(d){document.getElementById('ssP2Score').textContent=d.score||0;document.getElementById('ssP2Level').textContent=d.level||1;document.getElementById('ssP2Lines').textContent=d.lines||0;}});
 
   // Update timer
   const tmrIv=setInterval(()=>{
@@ -246,8 +244,8 @@ window.startSpec=code=>{
   },1000);
 };
 window.stopSpec=()=>{
-  if(specUnsub.p1)try{off(specUnsub.p1);}catch(e){}
-  if(specUnsub.p2)try{off(specUnsub.p2);}catch(e){}
+  if(specUnsub.p1)try{ typeof specUnsub.p1 === 'function' ? specUnsub.p1() : off(specUnsub.p1); }catch(e){}
+  if(specUnsub.p2)try{ typeof specUnsub.p2 === 'function' ? specUnsub.p2() : off(specUnsub.p2); }catch(e){}
   specUnsub={p1:null,p2:null};
   if(specRoom)addLog(`観戦終了: ROOM ${specRoom}`,'info');
   specRoom=null;window.currentSpecRoom=null;

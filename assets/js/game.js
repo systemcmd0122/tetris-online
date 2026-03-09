@@ -250,20 +250,21 @@ class TetrisGame {
 let roomCode=null, myRole=null, game=null, gameRunning=false, animId=null;
 let oppName='FOE', endedOnce=false;
 let forceStopped = false;
+let gameStarting = false;
 
 // Generate 4-digit numeric room code
 const genCode = () => Math.floor(1000+Math.random()*9000).toString();
 
-// Active Firebase listeners (stored as refs for cleanup)
-let _oppRef=null, _roomRef=null, _garbRef=null, _waitRef=null;
+// Active Firebase listeners (stored as unsubscribe functions for cleanup)
+let _oppUnsub=null, _roomUnsub=null, _garbUnsub=null, _waitUnsub=null;
 // onDisconnect handles
 let _dcHandle=null;
 
 function offAll() {
-  if(_oppRef)  { try{off(_oppRef);}catch(e){}  _oppRef=null; }
-  if(_roomRef) { try{off(_roomRef);}catch(e){} _roomRef=null; }
-  if(_garbRef) { try{off(_garbRef);}catch(e){} _garbRef=null; }
-  if(_waitRef) { try{off(_waitRef);}catch(e){} _waitRef=null; }
+  if(_oppUnsub)  { try{ _oppUnsub(); }catch(e){}  _oppUnsub=null; }
+  if(_roomUnsub) { try{ _roomUnsub(); }catch(e){} _roomUnsub=null; }
+  if(_garbUnsub) { try{ _garbUnsub(); }catch(e){} _garbUnsub=null; }
+  if(_waitUnsub) { try{ _waitUnsub(); }catch(e){} _waitUnsub=null; }
 }
 
 // ── FORCE STOP ────────────────────────────────────────────────
@@ -319,22 +320,24 @@ window.createRoom = async () => {
   document.getElementById('statusRoom').textContent = `ROOM: ${roomCode}`;
 
   // Listen to full room node: catches force_ended AND ready
-  _waitRef = ref(db, `rooms/${roomCode}`);
-  onValue(_waitRef, snap => {
+  _waitUnsub = onValue(ref(db, `rooms/${roomCode}`), snap => {
     const d = snap.val();
     if (!d) {
       // Room was deleted externally
-      off(_waitRef); _waitRef=null;
+      if (_waitUnsub) _waitUnsub();
+      _waitUnsub=null;
       return;
     }
     handleSysMsg(d);
     if (d.status === 'force_ended') {
-      off(_waitRef); _waitRef=null;
+      if (_waitUnsub) _waitUnsub();
+      _waitUnsub=null;
       showForceStop(d.forceMsg);
       return;
     }
     if (d.status === 'ready') {
-      off(_waitRef); _waitRef=null;
+      if (_waitUnsub) _waitUnsub();
+      _waitUnsub=null;
       startGame();
     }
   });
@@ -397,6 +400,9 @@ window.leaveRoom = () => {
 
 // ── START GAME ────────────────────────────────────────────────
 async function startGame() {
+  if (gameStarting) return;
+  gameStarting = true;
+
   showScreen('gameScreen');
   const oppRole = myRole==='p1'?'p2':'p1';
 
@@ -406,6 +412,7 @@ async function startGame() {
   } catch(e) {
     showToast('接続エラー');
     showScreen('lobbyScreen');
+    gameStarting = false;
     return;
   }
   const data = snap.val();
@@ -413,12 +420,14 @@ async function startGame() {
   if (!data) {
     showToast('ルームが存在しません');
     showScreen('lobbyScreen');
+    gameStarting = false;
     return;
   }
 
   // Check if force stopped before game even loads
   if (data.status === 'force_ended') {
     showForceStop(data.forceMsg);
+    gameStarting = false;
     return;
   }
 
@@ -431,10 +440,10 @@ async function startGame() {
 
   game = new TetrisGame('myCanvas','holdCanvas','nextCanvas');
   gameRunning = true; endedOnce = false;
+  gameStarting = false;
 
   // ── Listen: opponent board ──
-  _oppRef = ref(db, `rooms/${roomCode}/game/${oppRole}`);
-  onValue(_oppRef, snap => {
+  _oppUnsub = onValue(ref(db, `rooms/${roomCode}/game/${oppRole}`), snap => {
     const d = snap.val(); if (!d) return;
     TetrisGame.drawOpponent(document.getElementById('opponentCanvas'), d);
     document.getElementById('oppNameTag').textContent = `${oppName} (${d.score||0})`;
@@ -442,8 +451,7 @@ async function startGame() {
   });
 
   // ── Listen: full room node (force_ended + sysMsg + disconnection) ──
-  _roomRef = ref(db, `rooms/${roomCode}`);
-  onValue(_roomRef, snap => {
+  _roomUnsub = onValue(ref(db, `rooms/${roomCode}`), snap => {
     const d = snap.val();
     if (!d) {
       if (gameRunning) endGame('DISCONNECT');
@@ -451,7 +459,8 @@ async function startGame() {
     }
     handleSysMsg(d);
     if (d.status === 'force_ended' && !forceStopped) {
-      off(_roomRef); _roomRef=null;
+      if (_roomUnsub) _roomUnsub();
+      _roomUnsub=null;
       showForceStop(d.forceMsg);
       return;
     }
@@ -465,12 +474,12 @@ async function startGame() {
   });
 
   // ── Listen: incoming garbage ──
-  _garbRef = ref(db, `rooms/${roomCode}/garb/${myRole}`);
+  const myGRef = ref(db, `rooms/${roomCode}/garb/${myRole}`);
   const oppGRef = ref(db, `rooms/${roomCode}/garb/${oppRole}`);
-  onValue(_garbRef, snap => {
+  _garbUnsub = onValue(myGRef, snap => {
     const v = snap.val(); if (!v || !v.n || v.n <= 0) return;
     game.pendingGarbage += v.n;
-    set(_garbRef, {n:0});
+    set(myGRef, {n:0});
     flashAttack();
     playSound('attack');
   });
@@ -515,7 +524,7 @@ async function startGame() {
 // ── END GAME ──────────────────────────────────────────────────
 function endGame(result) {
   if (endedOnce) return;
-  endedOnce = true; gameRunning = false;
+  endedOnce = true; gameRunning = false; gameStarting = false;
   if (animId) { cancelAnimationFrame(animId); animId=null; }
   const title = document.getElementById('resultTitle');
   const sub   = document.getElementById('resultSub');
