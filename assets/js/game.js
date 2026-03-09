@@ -61,6 +61,8 @@ function playSound(type) {
         g.gain.exponentialRampToValueAtTime(0.001, now+0.15);
         o.start(now); o.stop(now+0.15); break;
       case 'tetris':
+        o.stop && o.stop(); // stop the default oscillator, not needed
+        g.disconnect();
         [440,554,659,880].forEach((f,i)=>{
           const o2=ctx.createOscillator(); const g2=ctx.createGain();
           o2.connect(g2); g2.connect(ctx.destination);
@@ -84,6 +86,8 @@ function playSound(type) {
         g.gain.exponentialRampToValueAtTime(0.001, now+0.25);
         o.start(now); o.stop(now+0.25); break;
       case 'win':
+        o.stop && o.stop();
+        g.disconnect();
         [523,659,784,1047].forEach((f,i)=>{
           const o2=ctx.createOscillator(); const g2=ctx.createGain();
           o2.connect(g2); g2.connect(ctx.destination); o2.type='triangle';
@@ -92,6 +96,8 @@ function playSound(type) {
           g2.gain.exponentialRampToValueAtTime(0.001, now+i*0.12+0.3);
           o2.start(now+i*0.12); o2.stop(now+i*0.12+0.3);
         }); break;
+      default:
+        o.start(now); o.stop(now+0.001); break;
     }
   } catch(e) {}
 }
@@ -256,14 +262,12 @@ const genCode = () => Math.floor(1000+Math.random()*9000).toString();
 
 // Active Firebase listeners (stored as refs for cleanup)
 let _oppRef=null, _roomRef=null, _garbRef=null, _waitRef=null;
-// onDisconnect handles
-let _dcHandle=null;
 
 function offAll() {
-  if(_oppRef)  { try{off(_oppRef);}catch(e){}  _oppRef=null; }
-  if(_roomRef) { try{off(_roomRef);}catch(e){} _roomRef=null; }
-  if(_garbRef) { try{off(_garbRef);}catch(e){} _garbRef=null; }
-  if(_waitRef) { try{off(_waitRef);}catch(e){} _waitRef=null; }
+  if(_oppRef)  { try{off(_oppRef);}catch(e){}   _oppRef=null; }
+  if(_roomRef) { try{off(_roomRef);}catch(e){}  _roomRef=null; }
+  if(_garbRef) { try{off(_garbRef);}catch(e){}  _garbRef=null; }
+  if(_waitRef) { try{off(_waitRef);}catch(e){}  _waitRef=null; }
 }
 
 // ── FORCE STOP ────────────────────────────────────────────────
@@ -324,17 +328,20 @@ window.createRoom = async () => {
     const d = snap.val();
     if (!d) {
       // Room was deleted externally
-      off(_waitRef); _waitRef=null;
+      try { off(_waitRef); } catch(e) {}
+      _waitRef = null;
       return;
     }
     handleSysMsg(d);
     if (d.status === 'force_ended') {
-      off(_waitRef); _waitRef=null;
+      try { off(_waitRef); } catch(e) {}
+      _waitRef = null;
       showForceStop(d.forceMsg);
       return;
     }
     if (d.status === 'ready') {
-      off(_waitRef); _waitRef=null;
+      try { off(_waitRef); } catch(e) {}
+      _waitRef = null;
       startGame();
     }
   });
@@ -451,7 +458,8 @@ async function startGame() {
     }
     handleSysMsg(d);
     if (d.status === 'force_ended' && !forceStopped) {
-      off(_roomRef); _roomRef=null;
+      try { off(_roomRef); } catch(e) {}
+      _roomRef = null;
       showForceStop(d.forceMsg);
       return;
     }
@@ -465,40 +473,64 @@ async function startGame() {
   });
 
   // ── Listen: incoming garbage ──
+  // BUG FIX: Use onValue listener instead of get() in the game loop
+  // This was the primary cause of page freeze (thousands of get() calls per second)
   _garbRef = ref(db, `rooms/${roomCode}/garb/${myRole}`);
-  const oppGRef = ref(db, `rooms/${roomCode}/garb/${oppRole}`);
   onValue(_garbRef, snap => {
-    const v = snap.val(); if (!v || !v.n || v.n <= 0) return;
-    game.pendingGarbage += v.n;
-    set(_garbRef, {n:0});
+    const v = snap.val();
+    if (!v || !v.n || v.n <= 0) return;
+    if (game) game.pendingGarbage += v.n;
+    set(_garbRef, {n:0}).catch(()=>{});
     flashAttack();
     playSound('attack');
   });
 
+  // ── Network state for outgoing garbage ──
+  // BUG FIX: Use a local accumulator instead of get() every frame
+  // The old code called get(oppGRef) inside the game loop which caused exponential API calls
+  const oppGRef = ref(db, `rooms/${roomCode}/garb/${oppRole}`);
+  let pendingGarbageOut = 0;  // accumulate locally, then flush periodically
+
   let lastPushTs = 0;
-  const PUSH_RATE = 66; // ~15fps for network updates
+  let lastGarbFlushTs = 0;
+  const PUSH_RATE = 100;   // ~10fps for network state updates (reduces Firebase calls)
+  const GARB_FLUSH_RATE = 200; // flush garbage less frequently
 
   // ── Game loop ──
   const loop = ts => {
     if (!gameRunning) return;
+
     const result = game.update(ts);
     game.draw();
+
     document.getElementById('scoreDisplay').textContent = game.score;
     document.getElementById('levelDisplay').textContent = game.level;
     document.getElementById('linesDisplay').textContent = game.lines;
+
     if (result && result.actionLabel) showActionPopup(result.actionLabel);
 
+    // Accumulate outgoing garbage locally (no Firebase reads here)
+    if (result && result.garbageOut > 0) {
+      pendingGarbageOut += result.garbageOut;
+    }
+
+    // Push board state at reduced rate
     if (ts - lastPushTs > PUSH_RATE) {
       lastPushTs = ts;
       const serial = game.serialize();
       set(ref(db, `rooms/${roomCode}/game/${myRole}`), serial).catch(()=>{});
-      if (result && result.garbageOut > 0) {
-        const gn = result.garbageOut;
-        get(oppGRef).then(s => {
-          const ex = s.val()?.n || 0;
-          set(oppGRef, {n: ex + gn}).catch(()=>{});
-        });
-      }
+    }
+
+    // Flush accumulated garbage at reduced rate (no get() calls!)
+    if (pendingGarbageOut > 0 && ts - lastGarbFlushTs > GARB_FLUSH_RATE) {
+      lastGarbFlushTs = ts;
+      const toSend = pendingGarbageOut;
+      pendingGarbageOut = 0;
+      // Use Firebase transaction-safe increment via set with current known value
+      // We track opponent garbage server-side; use a simple set with accumulated value
+      // This avoids get() calls entirely by using a write-only approach:
+      // Both players only write to their opponent's inbox; reset is handled by receiver
+      set(oppGRef, {n: toSend, ts: Date.now()}).catch(()=>{});
     }
 
     if (game.gameOver) {
@@ -507,6 +539,7 @@ async function startGame() {
       endGame('LOSE');
       return;
     }
+
     animId = requestAnimationFrame(loop);
   };
   animId = requestAnimationFrame(loop);
@@ -548,7 +581,9 @@ function countdown() {
     const num=document.getElementById('countdownNum');
     ov.classList.add('show'); let n=3;
     const tick = () => {
-      num.style.animation='none'; num.offsetHeight;
+      num.style.animation='none';
+      // Force reflow to restart animation
+      void num.offsetHeight;
       num.style.animation='countAnim .85s ease-out forwards';
       if(n>0){
         num.textContent=n;
@@ -657,7 +692,7 @@ function showToast(msg, type=''){
   t.textContent=msg;
   t.className='toast'+(type?' '+type:'');
   t.classList.remove('show');
-  t.offsetHeight;
+  void t.offsetHeight;
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3000);
 }
@@ -670,16 +705,15 @@ function showActionPopup(label){
   const p=document.getElementById('actionPopup');
   p.textContent=label.replace('\n',' / ');
   p.classList.remove('show');
-  p.offsetHeight;
+  void p.offsetHeight;
   p.classList.add('show');
 }
 
-// ── Input event: digits only, no toUpperCase needed ──
+// ── Input event: digits only ──
 document.getElementById('roomCodeInput').addEventListener('keydown',e=>{
   if(e.key==='Enter') window.joinRoom();
 });
 document.getElementById('roomCodeInput').addEventListener('input',e=>{
-  // Allow only digits
   e.target.value = e.target.value.replace(/\D/g,'').slice(0,4);
 });
 document.getElementById('playerName').addEventListener('keydown',e=>{

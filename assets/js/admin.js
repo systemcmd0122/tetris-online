@@ -70,6 +70,7 @@ function drawBoard(cv,d){
 
 // ══ ADMIN STATE ══
 let roomsData={};let specRoom=null,specUnsub={p1:null,p2:null},specStartTs=null;
+let specTimerInterval=null; // BUG FIX: track timer interval for proper cleanup
 let roomsListener=null;let defaultForceMsg='管理者によってこのルームは強制終了されました';
 let totalRooms=0;
 
@@ -85,7 +86,7 @@ function startClock(){
 }
 
 function startRoomsListener(){
-  if(roomsListener)try{off(ref(db,'rooms'));}catch(e){}
+  if(roomsListener){try{off(ref(db,'rooms'));}catch(e){}}
   onValue(ref(db,'rooms'),snap=>{
     const prev=Object.keys(roomsData).length;
     roomsData=snap.val()||{};
@@ -198,7 +199,6 @@ document.getElementById('fsModalMsg').addEventListener('keydown', e => { if (e.k
 window.forceStop=async(code,customMsg)=>{
   const msg=customMsg||defaultForceMsg;
   try{
-    // ★ Works for ALL statuses: waiting, ready, etc.
     await update(ref(db,`rooms/${code}`),{status:'force_ended',forceMsg:msg,forceTs:Date.now()});
     addLog(`ROOM ${code} を強制停止: "${msg}"`,"admin");
     showToast(`ROOM ${code} を強制停止しました`,'warn');
@@ -237,9 +237,9 @@ window.startSpec=code=>{
   onValue(rp2,s=>{const d=s.val();drawBoard(cv2,d);if(d){document.getElementById('ssP2Score').textContent=d.score||0;document.getElementById('ssP2Level').textContent=d.level||1;document.getElementById('ssP2Lines').textContent=d.lines||0;}});
   specUnsub.p1=rp1;specUnsub.p2=rp2;
 
-  // Update timer
-  const tmrIv=setInterval(()=>{
-    if(!specRoom){clearInterval(tmrIv);return;}
+  // BUG FIX: Store timer interval reference for cleanup
+  specTimerInterval=setInterval(()=>{
+    if(!specRoom){clearInterval(specTimerInterval);specTimerInterval=null;return;}
     const el=Math.floor((Date.now()-specStartTs)/1000);
     const m=Math.floor(el/60),s=el%60;
     document.getElementById('specTimer').textContent=`経過時間: ${m}:${s.toString().padStart(2,'0')}`;
@@ -249,6 +249,8 @@ window.stopSpec=()=>{
   if(specUnsub.p1)try{off(specUnsub.p1);}catch(e){}
   if(specUnsub.p2)try{off(specUnsub.p2);}catch(e){}
   specUnsub={p1:null,p2:null};
+  // BUG FIX: Clear the timer interval
+  if(specTimerInterval){clearInterval(specTimerInterval);specTimerInterval=null;}
   if(specRoom)addLog(`観戦終了: ROOM ${specRoom}`,'info');
   specRoom=null;window.currentSpecRoom=null;
   document.getElementById('spectateList').style.display='';
@@ -292,7 +294,6 @@ window.nukeAll=async()=>{
   const inp=document.getElementById('nukeConfIn').value;
   if(inp!=='NUKE'){showToast('「NUKE」と正確に入力してください','err');return;}
   try{
-    // Force stop all first so players see the screen
     for(const code of Object.keys(roomsData)){
       await update(ref(db,`rooms/${code}`),{status:'force_ended',forceMsg:'システムメンテナンスのため強制終了しました'}).catch(()=>{});
     }
@@ -348,6 +349,3 @@ function showToast(msg,type=''){
   const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;
   setTimeout(()=>t.classList.remove('show'),3000);
 }
-
-// Expose for inline use
-window.forceStop=window.forceStop;
