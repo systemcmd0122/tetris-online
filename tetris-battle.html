@@ -588,11 +588,12 @@ class TetrisGame{
   reset(){
     this.board=Array.from({length:ROWS+2},()=>Array(COLS).fill(null));
     this.bag=new Bag();this.current=makePiece(this.bag.next());
-    this.hold=null;this.canHold=true;
+    this.heldPiece=null;this.canHold=true;
     this.score=0;this.lines=0;this.level=1;this.combo=0;this.b2b=false;
     this.gameOver=false;this.dropSpeed=800;this.lastDropTs=0;
     this.lockTimer=null;this.lockResets=0;this.isOnGround=false;
     this.lastAction=null;this.pendingGarbage=0;
+    this.results=[];
   }
   _get(x,y){if(x<0||x>=COLS||y<-2||y>=ROWS)return y>=ROWS?'WALL':null;return this.board[y+2][x];}
   _set(x,y,v){if(y<-2||y>=ROWS||x<0||x>=COLS)return;this.board[y+2][x]=v;}
@@ -604,7 +605,7 @@ class TetrisGame{
       if(!m[r][c])continue;
       const nx=p.x+c+dx,ny=p.y+r+dy;
       if(nx<0||nx>=COLS||ny>=ROWS)return false;
-      if(ny>=0&&this._get(nx,ny))return false;
+      if(ny>=-2&&this._get(nx,ny))return false;
     }
     return true;
   }
@@ -628,7 +629,7 @@ class TetrisGame{
     const isSpecial=tspin||cleared===4;
     if(tspin){pts=TSPIN_SCORES[cleared]*this.level;const labels=['T-SPIN!','T-SPIN SINGLE!','T-SPIN DOUBLE!','T-SPIN TRIPLE!'];actionLabel=labels[cleared]||'T-SPIN!';garbageOut=[0,2,4,6][cleared]||0;}
     else if(cleared>0){pts=LINE_SCORES[cleared]*this.level;const labels=['','SINGLE','DOUBLE','TRIPLE','TETRIS!!'];actionLabel=labels[cleared];garbageOut=[0,0,1,2,4][cleared]||0;}
-    if(isSpecial&&cleared>0){if(this.b2b){pts=Math.floor(pts*B2B_MULT);actionLabel+='\nBACK-TO-BACK!';}this.b2b=true;}
+    if(isSpecial&&cleared>0){if(this.b2b){pts=Math.floor(pts*B2B_MULT);garbageOut+=1;actionLabel+='\nBACK-TO-BACK!';}this.b2b=true;}
     else if(cleared>0&&!tspin){this.b2b=false;}
     if(cleared>0){this.combo++;if(this.combo>1){pts+=50*(this.combo-1)*this.level;garbageOut+=Math.floor(this.combo/2);if(!actionLabel)actionLabel=`COMBO x${this.combo}!`;else actionLabel+=`\nCOMBO x${this.combo}!`;}}else{this.combo=0;}
     this.score+=pts;
@@ -636,11 +637,22 @@ class TetrisGame{
     if(this.pendingGarbage>0){const cancel=Math.min(garbageOut,this.pendingGarbage);garbageOut-=cancel;this.pendingGarbage-=cancel;if(this.pendingGarbage>0){this._addGarbage(this.pendingGarbage);this.pendingGarbage=0;}}
     this.current=makePiece(this.bag.next());this.canHold=true;this.lockTimer=null;this.lockResets=0;this.isOnGround=false;this.lastAction=null;
     if(!this.valid(this.current)){this.current.y--;if(!this.valid(this.current))this.gameOver=true;}
-    return{cleared,garbageOut,actionLabel};
+    const res={cleared,garbageOut,actionLabel};
+    this.results.push(res);
+    return res;
   }
   _clearLines(){let n=0;for(let r=ROWS-1;r>=0;r--){if(this.board[r+2].every(c=>c!==null)){this.board.splice(r+2,1);this.board.unshift(Array(COLS).fill(null));n++;r++;}}return n;}
   _addGarbage(lines){const hole=Math.floor(Math.random()*COLS);for(let i=0;i<lines;i++){this.board.shift();const row=Array(COLS).fill('G');row[hole]=null;this.board.push(row);}while(!this.valid(this.current)&&this.current.y>-4)this.current.y--;}
-  hold(){if(!this.canHold)return false;const name=this.current.name;if(this.hold){this.current=makePiece(this.hold);}else{this.current=makePiece(this.bag.next());}this.hold=name;this.canHold=false;this.lockTimer=null;this.lockResets=0;this.isOnGround=false;return true;}
+  hold(){
+    if(!this.canHold)return false;
+    const name=this.current.name;
+    if(this.heldPiece){this.current=makePiece(this.heldPiece);}
+    else{this.current=makePiece(this.bag.next());}
+    this.heldPiece=name;this.canHold=false;this.lockTimer=null;this.lockResets=0;this.isOnGround=false;
+    this.lastDropTs=performance.now();
+    playSound('move');
+    return true;
+  }
   update(ts){
     if(this.gameOver)return null;
     const onGround=!this.valid(this.current,0,1);
@@ -660,7 +672,7 @@ class TetrisGame{
     this.matrix().forEach((row,r)=>row.forEach((cell,c)=>{if(cell){const py=this.current.y+r;if(py>=0)this._drawCell(ctx,this.current.x+c,py,COLORS[this.current.name]);}}));
     if(this.gameOver){ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(0,0,this.cvs.width,this.cvs.height);ctx.fillStyle='#ff0080';ctx.font='bold 13px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('GAME',this.cvs.width/2,this.cvs.height/2-14);ctx.fillText('OVER',this.cvs.width/2,this.cvs.height/2+10);}
     if(this.nCtx)this._drawMini(this.nCtx,makePiece(this.bag.peek(1)[0]));
-    if(this.hCtx){this.hCtx.clearRect(0,0,80,80);if(this.hold)this._drawMini(this.hCtx,makePiece(this.hold),this.canHold?1.0:0.4);}
+    if(this.hCtx){this.hCtx.clearRect(0,0,80,80);if(this.heldPiece)this._drawMini(this.hCtx,makePiece(this.heldPiece),this.canHold?1.0:0.4);}
   }
   _drawCell(ctx,x,y,color){ctx.fillStyle=color+'dd';ctx.fillRect(x*CELL+1,y*CELL+1,CELL-2,CELL-2);ctx.fillStyle='rgba(255,255,255,0.22)';ctx.fillRect(x*CELL+1,y*CELL+1,CELL-2,3);ctx.fillRect(x*CELL+1,y*CELL+1,3,CELL-2);ctx.fillStyle='rgba(0,0,0,0.25)';ctx.fillRect(x*CELL+3,y*CELL+CELL-3,CELL-3,2);ctx.fillRect(x*CELL+CELL-3,y*CELL+3,2,CELL-3);}
   _drawMini(ctx,piece,alpha=1){const s=80,cs=16;ctx.clearRect(0,0,s,s);ctx.globalAlpha=alpha;const m=PIECES[piece.name][0];const ox=Math.floor((4-m[0].length)/2),oy=Math.floor((4-m.length)/2);m.forEach((row,r)=>row.forEach((cell,c)=>{if(cell){ctx.fillStyle=COLORS[piece.name]+'dd';ctx.fillRect((ox+c)*cs+1,(oy+r)*cs+1,cs-2,cs-2);ctx.fillStyle='rgba(255,255,255,.2)';ctx.fillRect((ox+c)*cs+1,(oy+r)*cs+1,cs-2,3);}}));ctx.globalAlpha=1;}
@@ -917,33 +929,39 @@ window.startBotGame=async(difficulty)=>{
   // Game loop
   const loop=ts=>{
     if(!gameRunning)return;
-    const result=game.update(ts);
+    game.update(ts);
     game.draw();
     botCtrl.tick(ts);
-    const botResult=botGame.update(ts);
+    botGame.update(ts);
     botGame.draw();
 
-    // Track stats
-    if(result?.garbageOut>0){statAtkSent+=result.garbageOut;}
-    if(result?.cleared===4)statTetris++;
+    // Process my results
+    while(game.results.length>0){
+      const res=game.results.shift();
+      if(res.garbageOut>0){
+        statAtkSent+=res.garbageOut;
+        botGame.pendingGarbage+=res.garbageOut;
+      }
+      if(res.cleared===4)statTetris++;
+      if(res.actionLabel)showActionPopup(res.actionLabel);
+    }
+
+    // Process bot results
+    while(botGame.results.length>0){
+      const res=botGame.results.shift();
+      if(res.garbageOut>0){
+        game.pendingGarbage+=res.garbageOut;
+        statAtkRecv+=res.garbageOut;
+        const badge=document.getElementById('attackBadge');
+        badge.textContent=`+${res.garbageOut} ⚠`;
+        badge.classList.remove('show');void badge.offsetWidth;badge.classList.add('show');
+        setTimeout(()=>badge.classList.remove('show'),1200);
+        flashAttack();playSound('attack');
+      }
+    }
 
     updateGameUI();
     document.getElementById('oppNameTag').textContent=`${oppName} (${botGame.score})`;
-
-    if(result?.actionLabel)showActionPopup(result.actionLabel);
-
-    // Garbage exchange
-    if(result?.garbageOut>0){botGame.pendingGarbage+=result.garbageOut;}
-    if(botResult?.garbageOut>0){
-      game.pendingGarbage+=botResult.garbageOut;
-      statAtkRecv+=botResult.garbageOut;
-      // Show attack badge
-      const badge=document.getElementById('attackBadge');
-      badge.textContent=`+${botResult.garbageOut} ⚠`;
-      badge.classList.remove('show');void badge.offsetWidth;badge.classList.add('show');
-      setTimeout(()=>badge.classList.remove('show'),1200);
-      flashAttack();playSound('attack');
-    }
 
     if(game.gameOver&&!endedOnce){endGame('LOSE');return;}
     if(botGame.gameOver&&!game.gameOver&&!endedOnce){endGame('WIN');return;}
@@ -1128,18 +1146,21 @@ async function startGame(preloadedData){
   // Game loop
   const loop=ts=>{
     if(!gameRunning)return;
-    const result=game.update(ts);
+    game.update(ts);
     game.draw();
 
-    // Track stats
-    if(result?.garbageOut>0){statAtkSent+=result.garbageOut;}
-    if(result?.cleared===4)statTetris++;
+    // Process my results
+    while(game.results.length>0){
+      const res=game.results.shift();
+      if(res.garbageOut>0){
+        statAtkSent+=res.garbageOut;
+        pendingGarbageOut+=res.garbageOut;
+      }
+      if(res.cleared===4)statTetris++;
+      if(res.actionLabel)showActionPopup(res.actionLabel);
+    }
 
     updateGameUI();
-
-    if(result?.actionLabel)showActionPopup(result.actionLabel);
-    // Accumulate garbage to send (fix: always capture even if push rate not met)
-    if(result?.garbageOut>0)pendingGarbageOut+=result.garbageOut;
 
     if(ts-lastPushTs>PUSH_RATE){
       lastPushTs=ts;
