@@ -636,13 +636,14 @@ class TetrisGame{
     if(cleared>0){this.lines+=cleared;this.level=Math.floor(this.lines/10)+1;this.dropSpeed=Math.max(50,800-(this.level-1)*70);if(cleared===4)playSound('tetris');else playSound('clear1');}else{playSound('lock');}
     if(this.pendingGarbage>0){const cancel=Math.min(garbageOut,this.pendingGarbage);garbageOut-=cancel;this.pendingGarbage-=cancel;if(this.pendingGarbage>0){this._addGarbage(this.pendingGarbage);this.pendingGarbage=0;}}
     this.current=makePiece(this.bag.next());this.canHold=true;this.lockTimer=null;this.lockResets=0;this.isOnGround=false;this.lastAction=null;
-    if(!this.valid(this.current)){this.current.y--;if(!this.valid(this.current))this.gameOver=true;}
+    while(!this.valid(this.current)&&this.current.y>-4)this.current.y--;
+    if(!this.valid(this.current))this.gameOver=true;
     const res={cleared,garbageOut,actionLabel};
     this.results.push(res);
     return res;
   }
   _clearLines(){let n=0;for(let r=ROWS-1;r>=0;r--){if(this.board[r+2].every(c=>c!==null)){this.board.splice(r+2,1);this.board.unshift(Array(COLS).fill(null));n++;r++;}}return n;}
-  _addGarbage(lines){const hole=Math.floor(Math.random()*COLS);for(let i=0;i<lines;i++){this.board.shift();const row=Array(COLS).fill('G');row[hole]=null;this.board.push(row);}while(!this.valid(this.current)&&this.current.y>-4)this.current.y--;}
+  _addGarbage(lines){const hole=Math.floor(Math.random()*COLS);for(let i=0;i<lines;i++){this.board.shift();const row=Array(COLS).fill('G');row[hole]=null;this.board.push(row);}}
   hold(){
     if(!this.canHold)return false;
     const name=this.current.name;
@@ -665,7 +666,7 @@ class TetrisGame{
     const ctx=this.ctx;ctx.clearRect(0,0,this.cvs.width,this.cvs.height);
     ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;
     for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)ctx.strokeRect(c*CELL,r*CELL,CELL,CELL);
-    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const cell=this.board[r+2][c];if(cell)this._drawCell(ctx,c,r,cell==='G'?'#3a4060':COLORS[cell]);}
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const cell=this.board[r+2][c];if(cell)this._drawCell(ctx,c,r,cell==='G'?'#888888':COLORS[cell]);}
     const gy=this.ghostY();
     this.matrix().forEach((row,r)=>row.forEach((cell,c)=>{if(cell){const py=gy+r;if(py>=0){ctx.fillStyle=COLORS.GHOST;ctx.fillRect(c*CELL+this.current.x*CELL+1,py*CELL+1,CELL-2,CELL-2);}}}));
     if(this.isOnGround&&this.lockTimer!==null){const pct=1-Math.min(1,(performance.now()-this.lockTimer)/LOCK_DELAY);const cells=this.cells();const maxY=Math.max(...cells.map(c=>c[1]));cells.filter(([,cy])=>cy===maxY&&cy>=0).forEach(([cx,cy])=>{ctx.fillStyle=`rgba(255,255,255,${0.4*pct})`;ctx.fillRect(cx*CELL+1,cy*CELL+CELL-3,Math.floor((CELL-2)*pct),2);});}
@@ -682,7 +683,7 @@ class TetrisGame{
     const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;
     for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)ctx.strokeRect(c*CELL,r*CELL,CELL,CELL);
-    data.board.forEach((row,r)=>row.forEach((cell,c)=>{if(!cell)return;const color=cell==='G'?'#3a4060':(COLORS[cell]||'#888');ctx.fillStyle=color+'cc';ctx.fillRect(c*CELL+1,r*CELL+1,CELL-2,CELL-2);ctx.fillStyle='rgba(255,255,255,.15)';ctx.fillRect(c*CELL+1,r*CELL+1,CELL-2,3);}));
+    data.board.forEach((row,r)=>row.forEach((cell,c)=>{if(!cell)return;const color=cell==='G'?'#888888':(COLORS[cell]||'#888');ctx.fillStyle=color+'cc';ctx.fillRect(c*CELL+1,r*CELL+1,CELL-2,CELL-2);ctx.fillStyle='rgba(255,255,255,.15)';ctx.fillRect(c*CELL+1,r*CELL+1,CELL-2,3);}));
     if(data.cur&&PIECES[data.cur.name]){const m=PIECES[data.cur.name][data.cur.rot||0];const color=COLORS[data.cur.name]||'#888';m.forEach((row,r)=>row.forEach((cell,c)=>{if(cell){const py=data.cur.y+r;if(py>=0){ctx.fillStyle=color+'99';ctx.fillRect((data.cur.x+c)*CELL+1,py*CELL+1,CELL-2,CELL-2);}}}));}
     if(data.gameOver){ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#ff0080';ctx.font='bold 11px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('GAME OVER',canvas.width/2,canvas.height/2);}
   }
