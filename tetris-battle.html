@@ -287,6 +287,7 @@
     </div>
     <button class="btn btn-primary" onclick="createRoom()">＋ オンライン対戦（ルーム作成）</button>
     <button class="btn btn-bot" onclick="toggleBotDifficulty()">🤖 VS BOT（ボット対戦）</button>
+    <a href="how-to.html" class="btn btn-secondary" style="text-decoration:none;text-align:center;display:block;">📖 あそびかた解説</a>
     <div class="bot-difficulty" id="botDifficulty">
       <div class="bot-difficulty-label">DIFFICULTY</div>
       <div class="diff-btns">
@@ -302,6 +303,11 @@
     </div>
     <button class="btn btn-secondary" onclick="joinRoom()">→ ルームに参加</button>
   </div>
+</div>
+
+<!-- Match Found Flash -->
+<div class="match-flash" id="matchFlash">
+  <div class="match-text">MATCH FOUND!</div>
 </div>
 
 <!-- ══ WAITING ══ -->
@@ -470,7 +476,7 @@
 
 <!-- ══ COUNTDOWN ══ -->
 <div class="countdown-overlay" id="countdownOverlay">
-  <div class="countdown-num" id="countdownNum">3</div>
+  <div class="countdown-num" id="countdownNum"></div>
 </div>
 
 <div class="status-bar">
@@ -726,7 +732,9 @@ class BotController{
     for(let col=0;col<COLS;col++){let found=false;for(let row=0;row<ROWS;row++){if(filt[row][col])found=true;else if(found)holes++;}}
     let bump=0;
     for(let col=0;col<COLS-1;col++)bump+=Math.abs(heights[col]-heights[col+1]);
-    const score=-0.510066*aH+0.760666*cleared-0.356630*holes-0.184483*bump;
+    // Enhanced weight for cleared lines to encourage bot to send garbage (especially Tetris)
+    const clearedWeight = cleared === 4 ? 8.0 : (cleared * 1.5);
+    const score=-0.51*aH + clearedWeight - 0.36*holes - 0.18*bump;
     return{score};
   }
 
@@ -879,6 +887,7 @@ window.toggleBotDifficulty=()=>{
 // START BOT GAME
 // ─────────────────────────────────────────────────────────────
 window.startBotGame=async(difficulty)=>{
+  document.activeElement?.blur();
   const name=(document.getElementById('playerName').value.trim()||'PLAYER').toUpperCase();
   botMode=true;
   endedOnce=false;forceStopped=false;
@@ -953,7 +962,7 @@ window.createRoom=async()=>{
   myRole='p1';roomCode=genCode();endedOnce=false;forceStopped=false;
   const rRef=ref(db,`rooms/${roomCode}`);
   await set(rRef,{p1:{name},status:'waiting',ts:Date.now()});
-  onDisconnect(ref(db,`rooms/${roomCode}/status`)).set('p1_left');
+  onDisconnect(rRef).remove();
   showScreen('waitingScreen');
   document.getElementById('displayRoomCode').textContent=roomCode;
   document.getElementById('statusRoom').textContent=`ROOM: ${roomCode}`;
@@ -989,7 +998,7 @@ window.joinRoom=async()=>{
   // P2 writes gameStartAt so both players can synchronize countdown
   const gameStartAt=Date.now()+4800;
   await update(rRef,{p2:{name},status:'ready',gameStartAt});
-  onDisconnect(ref(db,`rooms/${roomCode}/status`)).set('p2_left');
+  onDisconnect(rRef).remove();
   document.getElementById('statusRoom').textContent=`ROOM: ${roomCode}`;
   startGame({...d,p2:{name},gameStartAt});
 };
@@ -1010,8 +1019,11 @@ window.leaveRoom=async()=>{
   resetState();
   if(!wasBot&&code&&db){
     try{
-      if(role==='p1'){await remove(ref(db,`rooms/${code}`));}
-      else{await update(ref(db,`rooms/${code}`),{status:'p2_left'});}
+      // If P1 leaves or it's a bot game cleanup, delete room.
+      // If P2 leaves, they can also trigger deletion if they want a clean exit,
+      // but usually P1 is the room owner. Let's make it so anyone leaving deletes it for simplicity
+      // and to avoid ghost rooms.
+      await remove(ref(db,`rooms/${code}`));
     }catch(e){}
   }
   showScreen('lobbyScreen');
@@ -1021,6 +1033,7 @@ window.leaveRoom=async()=>{
 // START GAME (Online) — receives pre-fetched room data
 // ─────────────────────────────────────────────────────────────
 async function startGame(preloadedData){
+  document.activeElement?.blur();
   showScreen('gameScreen');
   clearBoards(); // ← clear old board immediately
   _prevScore=0;_prevCombo=-1;
@@ -1187,6 +1200,18 @@ function countdown(startAt){
   return new Promise(resolve=>{
     const ov=document.getElementById('countdownOverlay');
     const num=document.getElementById('countdownNum');
+    const mf=document.getElementById('matchFlash');
+
+    // Reset countdown num
+    num.textContent = '';
+    num.style.animation = 'none';
+
+    // Show match flash if it's not a bot game
+    if(!botMode && mf) {
+      mf.classList.add('show');
+      setTimeout(()=>mf.classList.remove('show'), 2000);
+    }
+
     ov.classList.add('show');
     let resolved=false;
 
@@ -1248,6 +1273,7 @@ document.addEventListener('keydown',e=>{
     case'KeyC':       e.preventDefault();game.hold();break;
     case'ShiftLeft':  e.preventDefault();game.hold();break;
     case'ShiftRight': e.preventDefault();game.hold();break;
+    case'Shift':      e.preventDefault();game.hold();break;
   }
 });
 document.addEventListener('keyup',e=>{
