@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HOW TO PLAY — TETRIS BATTLE</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+    :root {
+      --bg: #04060f; --s0: #080d18;
+      --acc: #00f5ff; --acc2: #ff0080; --acc3: #aaff00;
+      --tx: #e0f0ff; --dim: #4a6080;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--tx);
+      font-family: 'Orbitron', monospace;
+      padding: 40px 20px; line-height: 1.6;
+      max-width: 800px; margin: 0 auto;
+    }
+    .logo {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(18px, 4vw, 32px);
+      color: var(--acc);
+      text-shadow: 0 0 10px rgba(0,245,255,.5);
+      text-align: center; margin-bottom: 40px;
+    }
+    h2 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 14px; color: var(--acc2);
+      margin: 30px 0 15px; border-bottom: 2px solid var(--acc2);
+      padding-bottom: 5px;
+    }
+    p { margin-bottom: 15px; font-size: 14px; }
+    .controls {
+      background: var(--s0); border: 1px solid var(--dim);
+      padding: 20px; border-radius: 4px; display: grid;
+      grid-template-columns: auto 1fr; gap: 10px 20px;
+      align-items: center; margin-bottom: 30px;
+    }
+    .key {
+      background: #1a2540; border: 1px solid var(--acc);
+      color: var(--acc); padding: 4px 10px; border-radius: 3px;
+      font-family: monospace; font-weight: bold; min-width: 60px;
+      text-align: center;
+    }
+    .back-btn {
+      display: inline-block; padding: 12px 24px;
+      background: var(--acc); color: #000;
+      text-decoration: none; font-family: 'Press Start 2P', monospace;
+      font-size: 10px; margin-top: 40px; border-radius: 2px;
+      transition: transform 0.2s;
+    }
+    .back-btn:hover { transform: translateY(-2px); }
+    li { margin-left: 20px; margin-bottom: 10px; font-size: 14px; }
+    .highlight { color: var(--acc3); font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="logo">HOW TO PLAY</div>
+
+  <h2>基本的な操作方法</h2>
+  <div class="controls">
+    <div class="key">← →</div> <div>左右に移動</div>
+    <div class="key">↑ / X</div> <div>右回転</div>
+    <div class="key">Z</div> <div>左回転</div>
+    <div class="key">↓</div> <div>ソフトドロップ（少し速く落とす）</div>
+    <div class="key">SPACE</div> <div>ハードドロップ（一瞬で落として固定）</div>
+    <div class="key">Shift / C</div> <div>ホールド（ミノを1つ保存しておく）</div>
+  </div>
+
+  <h2>対戦の仕組み（お邪魔ブロック）</h2>
+  <p>ラインを一度に多く消すと、相手に<span class="highlight">「お邪魔ブロック」</span>を送り込むことができます。</p>
+  <ul>
+    <li><span class="highlight">2ライン消し (Double)</span>: 相手に 1ライン 送る</li>
+    <li><span class="highlight">3ライン消し (Triple)</span>: 相手に 2ライン 送る</li>
+    <li><span class="highlight">4ライン消し (Tetris)</span>: 相手に 4ライン 送る</li>
+  </ul>
+
+  <h2>テクニカルボーナス</h2>
+  <p>さらに高度な消し方をすると、ボーナスとして送るライン数が増えます。</p>
+  <ul>
+    <li><span class="highlight">Combo</span>: 連続でラインを消すと、回数に応じて追加のラインを送ります。</li>
+    <li><span class="highlight">T-Spin</span>: Tミノを隙間にねじ込んで消すと、通常よりも多くのラインを送ります。</li>
+    <li><span class="highlight">Back-to-Back (B2B)</span>: Tetris または T-Spin を連続で行うと、攻撃力が 1.5倍 になります。</li>
+  </ul>
+
+  <h2>勝利条件</h2>
+  <p>ミノが画面の一番上まで積み上がってしまった方が負けとなります。相手にプレッシャーを与えてミスを誘いましょう！</p>
+
+  <a href="index.html" class="back-btn">◀ メニューに戻る</a>
+
+</body>
+</html>
