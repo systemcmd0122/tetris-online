@@ -504,6 +504,12 @@ const fbApp=initializeApp({
 const db=getDatabase(fbApp);
 const fs=getFirestore(fbApp);
 
+let serverTimeOffset = 0;
+onValue(ref(db, ".info/serverTimeOffset"), (snap) => {
+  serverTimeOffset = snap.val() || 0;
+});
+const getServerTime = () => Date.now() + serverTimeOffset;
+
 async function persistLog(msg, type='info', details={}){
   try {
     await addDoc(collection(fs, 'site_logs'), {
@@ -608,6 +614,7 @@ class TetrisGame{
     this.cvs=document.getElementById(cvsId);this.ctx=this.cvs.getContext('2d');
     this.hCvs=holdId?document.getElementById(holdId):null;this.hCtx=this.hCvs?this.hCvs.getContext('2d'):null;
     this.nCvs=nextId?document.getElementById(nextId):null;this.nCtx=this.nCvs?this.nCvs.getContext('2d'):null;
+    this.isWaitingNext=false;this.nextSpawnTs=0;
     this.reset();
   }
   reset(){
@@ -617,11 +624,13 @@ class TetrisGame{
     this.score=0;this.lines=0;this.level=1;this.combo=0;this.b2b=false;
     this.gameOver=false;this.dropSpeed=800;this.lastDropTs=0;
     this.lockTimer=null;this.lockResets=0;this.isOnGround=false;
+    this.isWaitingNext=false;this.nextSpawnTs=0;
+    this.boardDirty=true;
     this.lastAction=null;this.pendingGarbage=0;
     this.results=[];
   }
   _get(x,y){if(x<0||x>=COLS||y<-2||y>=ROWS)return y>=ROWS?'WALL':null;return this.board[y+2][x];}
-  _set(x,y,v){if(y<-2||y>=ROWS||x<0||x>=COLS)return;this.board[y+2][x]=v;}
+  _set(x,y,v){if(y<-2||y>=ROWS||x<0||x>=COLS)return;this.board[y+2][x]=v;this.boardDirty=true;}
   matrix(p=this.current){return PIECES[p.name][p.rot];}
   cells(p=this.current){const m=this.matrix(p),out=[];for(let r=0;r<m.length;r++)for(let c=0;c<m[r].length;c++)if(m[r][c])out.push([p.x+c,p.y+r]);return out;}
   valid(p,dx=0,dy=0,rot=null){
@@ -660,15 +669,14 @@ class TetrisGame{
     this.score+=pts;
     if(cleared>0){this.lines+=cleared;this.level=Math.floor(this.lines/10)+1;this.dropSpeed=Math.max(50,800-(this.level-1)*70);if(cleared===4)playSound('tetris');else playSound('clear1');}else{playSound('lock');}
     if(this.pendingGarbage>0){const cancel=Math.min(garbageOut,this.pendingGarbage);garbageOut-=cancel;this.pendingGarbage-=cancel;if(this.pendingGarbage>0){this._addGarbage(this.pendingGarbage);this.pendingGarbage=0;}}
-    this.current=makePiece(this.bag.next());this.canHold=true;this.lockTimer=null;this.lockResets=0;this.isOnGround=false;this.lastAction=null;
-    while(!this.valid(this.current)&&this.current.y>-4)this.current.y--;
-    if(!this.valid(this.current))this.gameOver=true;
+    this.isWaitingNext=true;this.nextSpawnTs=performance.now()+200;
+    this.canHold=true;this.lockTimer=null;this.lockResets=0;this.isOnGround=false;this.lastAction=null;
     const res={cleared,garbageOut,actionLabel};
     this.results.push(res);
     return res;
   }
-  _clearLines(){let n=0;for(let r=ROWS-1;r>=0;r--){if(this.board[r+2].every(c=>c!==null)){this.board.splice(r+2,1);this.board.unshift(Array(COLS).fill(null));n++;r++;}}return n;}
-  _addGarbage(lines){const hole=Math.floor(Math.random()*COLS);for(let i=0;i<lines;i++){this.board.shift();const row=Array(COLS).fill('G');row[hole]=null;this.board.push(row);}}
+  _clearLines(){let n=0;for(let r=ROWS-1;r>=0;r--){if(this.board[r+2].every(c=>c!==null)){this.board.splice(r+2,1);this.board.unshift(Array(COLS).fill(null));n++;r++;this.boardDirty=true;}}return n;}
+  _addGarbage(lines){if(lines<=0)return;const hole=Math.floor(Math.random()*COLS);for(let i=0;i<lines;i++){this.board.shift();const row=Array(COLS).fill('G');row[hole]=null;this.board.push(row);}this.boardDirty=true;}
   hold(){
     if(!this.canHold)return false;
     const name=this.current.name;
@@ -681,21 +689,35 @@ class TetrisGame{
   }
   update(ts){
     if(this.gameOver)return null;
+    if(this.isWaitingNext){
+      if(ts>=this.nextSpawnTs){
+        this.isWaitingNext=false;
+        this.current=makePiece(this.bag.next());
+        while(!this.valid(this.current)&&this.current.y>-4)this.current.y--;
+        if(!this.valid(this.current))this.gameOver=true;
+      }
+      return null;
+    }
     const onGround=!this.valid(this.current,0,1);
     if(onGround){if(!this.isOnGround){this.isOnGround=true;this.lockTimer=ts;}if(ts-this.lockTimer>=LOCK_DELAY){this.isOnGround=false;return this._lock();}}
     else{this.isOnGround=false;this.lockTimer=null;if(ts-this.lastDropTs>=this.dropSpeed){this.lastDropTs=ts;this.current.y++;}}
     return null;
   }
-  serialize(){const vis=this.board.slice(2).map(row=>row.map(c=>c||''));return{board:vis,score:this.score,lines:this.lines,level:this.level,gameOver:this.gameOver,cur:{name:this.current.name,rot:this.current.rot,x:this.current.x,y:this.current.y}};}
+  serialize(){
+    if(this.boardDirty || !this._cachedBoard){this._cachedBoard=this.board.slice(2).map(row=>row.map(c=>c||''));this.boardDirty=false;}
+    return{board:this._cachedBoard,score:this.score,lines:this.lines,level:this.level,gameOver:this.gameOver,cur:{name:this.current.name,rot:this.current.rot,x:this.current.x,y:this.current.y}};
+  }
   draw(){
     const ctx=this.ctx;ctx.clearRect(0,0,this.cvs.width,this.cvs.height);
     ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;
     for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)ctx.strokeRect(c*CELL,r*CELL,CELL,CELL);
     for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const cell=this.board[r+2][c];if(cell)this._drawCell(ctx,c,r,cell==='G'?'#888888':COLORS[cell]);}
-    const gy=this.ghostY();
-    this.matrix().forEach((row,r)=>row.forEach((cell,c)=>{if(cell){const py=gy+r;if(py>=0){ctx.fillStyle=COLORS.GHOST;ctx.fillRect(c*CELL+this.current.x*CELL+1,py*CELL+1,CELL-2,CELL-2);}}}));
-    if(this.isOnGround&&this.lockTimer!==null){const pct=1-Math.min(1,(performance.now()-this.lockTimer)/LOCK_DELAY);const cells=this.cells();const maxY=Math.max(...cells.map(c=>c[1]));cells.filter(([,cy])=>cy===maxY&&cy>=0).forEach(([cx,cy])=>{ctx.fillStyle=`rgba(255,255,255,${0.4*pct})`;ctx.fillRect(cx*CELL+1,cy*CELL+CELL-3,Math.floor((CELL-2)*pct),2);});}
-    this.matrix().forEach((row,r)=>row.forEach((cell,c)=>{if(cell){const py=this.current.y+r;if(py>=0)this._drawCell(ctx,this.current.x+c,py,COLORS[this.current.name]);}}));
+    if(!this.isWaitingNext){
+      const gy=this.ghostY();
+      this.matrix().forEach((row,r)=>row.forEach((cell,c)=>{if(cell){const py=gy+r;if(py>=0){ctx.fillStyle=COLORS.GHOST;ctx.fillRect(c*CELL+this.current.x*CELL+1,py*CELL+1,CELL-2,CELL-2);}}}));
+      if(this.isOnGround&&this.lockTimer!==null){const pct=1-Math.min(1,(performance.now()-this.lockTimer)/LOCK_DELAY);const cells=this.cells();const maxY=Math.max(...cells.map(c=>c[1]));cells.filter(([,cy])=>cy===maxY&&cy>=0).forEach(([cx,cy])=>{ctx.fillStyle=`rgba(255,255,255,${0.4*pct})`;ctx.fillRect(cx*CELL+1,cy*CELL+CELL-3,Math.floor((CELL-2)*pct),2);});}
+      this.matrix().forEach((row,r)=>row.forEach((cell,c)=>{if(cell){const py=this.current.y+r;if(py>=0)this._drawCell(ctx,this.current.x+c,py,COLORS[this.current.name]);}}));
+    }
     if(this.gameOver){ctx.fillStyle='rgba(0,0,0,.75)';ctx.fillRect(0,0,this.cvs.width,this.cvs.height);ctx.fillStyle='#ff0080';ctx.font='bold 13px "Press Start 2P"';ctx.textAlign='center';ctx.fillText('GAME',this.cvs.width/2,this.cvs.height/2-14);ctx.fillText('OVER',this.cvs.width/2,this.cvs.height/2+10);}
     if(this.nCtx)this._drawMini(this.nCtx,makePiece(this.bag.peek(1)[0]));
     if(this.hCtx){this.hCtx.clearRect(0,0,80,80);if(this.heldPiece)this._drawMini(this.hCtx,makePiece(this.heldPiece),this.canHold?1.0:0.4);}
@@ -984,7 +1006,7 @@ window.startBotGame=async(difficulty)=>{
   persistLog(`Bot game started: ${name} vs ${oppName}`, 'info', {player:name, bot:oppName});
 
   // Run countdown (local, ~4 seconds)
-  const aborted=await countdown(Date.now()+4000);
+  const aborted=await countdown(getServerTime()+4000);
   if(aborted)return;
 
   game=new TetrisGame('myCanvas','holdCanvas','nextCanvas');
@@ -1046,7 +1068,7 @@ window.createRoom=async()=>{
   const name=(document.getElementById('playerName').value.trim()||'PLAYER').toUpperCase();
   myRole='p1';roomCode=genCode();endedOnce=false;forceStopped=false;
   const rRef=ref(db,`rooms/${roomCode}`);
-  await set(rRef,{p1:{name},status:'waiting',ts:Date.now()});
+  await set(rRef,{p1:{name},status:'waiting',ts:getServerTime()});
   persistLog(`Room ${roomCode} created by ${name}`, 'success', {code:roomCode, player:name});
   onDisconnect(rRef).remove();
   showScreen('waitingScreen');
@@ -1083,7 +1105,7 @@ window.joinRoom=async()=>{
   if(d.status!=='waiting'){showToast('このルームは満員か既に開始しています','warn');return;}
   myRole='p2';roomCode=code;endedOnce=false;forceStopped=false;
   // P2 writes gameStartAt so both players can synchronize countdown
-  const gameStartAt=Date.now()+4800;
+  const gameStartAt=getServerTime()+4800;
   await update(rRef,{p2:{name},status:'ready',gameStartAt});
   onDisconnect(rRef).remove();
   document.getElementById('statusRoom').textContent=`ROOM: ${roomCode}`;
@@ -1210,7 +1232,7 @@ async function startGame(preloadedData){
 
   const oppGRef=ref(db,`rooms/${roomCode}/garb/${oppRole}`);
   let lastPushTs=0,pendingGarbageOut=0;
-  const PUSH_RATE=66;
+  const PUSH_RATE=50;
 
   // Game loop
   const loop=ts=>{
@@ -1319,7 +1341,7 @@ function countdown(startAt){
     // 3 shows at (startAt - 3000), 2 at (startAt - 2000), 1 at (startAt - 1000), GO! at startAt
     [3,2,1,0].forEach((n,i)=>{
       const showAt=startAt-(3-i)*1000;
-      const delay=Math.max(0,showAt-Date.now());
+      const delay=Math.max(0,showAt-getServerTime());
       setTimeout(()=>{
         if(resolved)return;
         num.style.animation='none';
@@ -1331,7 +1353,7 @@ function countdown(startAt){
     });
 
     // Resolve after GO! animation completes
-    const endDelay=Math.max(200,startAt-Date.now()+750);
+    const endDelay=Math.max(200,startAt-getServerTime()+750);
     setTimeout(()=>{clearInterval(abortIv);done(false);},endDelay);
   });
 }
@@ -1427,40 +1449,46 @@ function flashAttack(){const f=document.getElementById('attackFlash');f.classLis
 function showActionPopup(label){const p=document.getElementById('actionPopup');p.textContent=label.replace('\n',' / ');p.classList.remove('show');p.offsetHeight;p.classList.add('show');}
 
 let _prevScore=0,_prevCombo=-1;
+const uiCache={score:-1,level:-1,lines:-1,combo:-1,b2b:null,sent:-1,recv:-1,pg:-1};
 function updateGameUI(){
   if(!game)return;
   // Score
-  const sd=document.getElementById('scoreDisplay');
-  if(game.score!==_prevScore){sd.classList.remove('score-pop');void sd.offsetWidth;sd.classList.add('score-pop');_prevScore=game.score;}
-  sd.textContent=game.score;
-  document.getElementById('levelDisplay').textContent=game.level;
-  document.getElementById('linesDisplay').textContent=game.lines;
-  // Combo
-  const cd=document.getElementById('comboDisplay');
-  if(game.combo!==_prevCombo){
-    if(game.combo>1){cd.classList.remove('pop');void cd.offsetWidth;cd.classList.add('pop');}
-    _prevCombo=game.combo;
+  if(game.score!==uiCache.score){
+    const sd=document.getElementById('scoreDisplay');
+    sd.classList.remove('score-pop');void sd.offsetWidth;sd.classList.add('score-pop');
+    sd.textContent=game.score;uiCache.score=game.score;
   }
-  cd.textContent=game.combo>1?game.combo:0;
-  if(game.combo>statMaxCombo)statMaxCombo=game.combo;
+  if(game.level!==uiCache.level){document.getElementById('levelDisplay').textContent=game.level;uiCache.level=game.level;}
+  if(game.lines!==uiCache.lines){document.getElementById('linesDisplay').textContent=game.lines;uiCache.lines=game.lines;}
+  // Combo
+  if(game.combo!==uiCache.combo){
+    const cd=document.getElementById('comboDisplay');
+    if(game.combo>1){cd.classList.remove('pop');void cd.offsetWidth;cd.classList.add('pop');}
+    cd.textContent=game.combo>1?game.combo:0;
+    uiCache.combo=game.combo;
+    if(game.combo>statMaxCombo)statMaxCombo=game.combo;
+  }
   // B2B
-  document.getElementById('b2bBadge').className='b2b-badge '+(game.b2b?'on':'off');
+  if(game.b2b!==uiCache.b2b){document.getElementById('b2bBadge').className='b2b-badge '+(game.b2b?'on':'off');uiCache.b2b=game.b2b;}
   // Attack stats
-  document.getElementById('atkSentDisplay').textContent=statAtkSent;
-  document.getElementById('atkRecvDisplay').textContent=statAtkRecv;
+  if(statAtkSent!==uiCache.sent){document.getElementById('atkSentDisplay').textContent=statAtkSent;uiCache.sent=statAtkSent;}
+  if(statAtkRecv!==uiCache.recv){document.getElementById('atkRecvDisplay').textContent=statAtkRecv;uiCache.recv=statAtkRecv;}
   // Pending garbage display
   const pg=game.pendingGarbage||0;
-  document.getElementById('pendGarbDisplay').textContent=pg;
-  // Mini cells
-  const pgc=document.getElementById('pendGarbCells');
-  pgc.innerHTML='';
-  const showN=Math.min(pg,10);
-  for(let i=0;i<showN;i++){const d=document.createElement('div');d.className='pg-cell'+(pg>=8?' warn':'');pgc.appendChild(d);}
-  // Garbage bar on side
-  const gb=document.getElementById('garbBar');
-  gb.innerHTML='';
-  const barN=Math.min(pg,20);
-  for(let i=0;i<barN;i++){const d=document.createElement('div');d.className='garb-cell'+(pg>=10?' warn':'');gb.appendChild(d);}
+  if(pg!==uiCache.pg){
+    document.getElementById('pendGarbDisplay').textContent=pg;
+    // Mini cells
+    const pgc=document.getElementById('pendGarbCells');
+    pgc.innerHTML='';
+    const showN=Math.min(pg,10);
+    for(let i=0;i<showN;i++){const d=document.createElement('div');d.className='pg-cell'+(pg>=8?' warn':'');pgc.appendChild(d);}
+    // Garbage bar on side
+    const gb=document.getElementById('garbBar');
+    gb.innerHTML='';
+    const barN=Math.min(pg,20);
+    for(let i=0;i<barN;i++){const d=document.createElement('div');d.className='garb-cell'+(pg>=10?' warn':'');gb.appendChild(d);}
+    uiCache.pg=pg;
+  }
 }
 
 document.getElementById('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')window.joinRoom();});
