@@ -740,8 +740,8 @@ class TetrisGame{
 // BOT AI CONTROLLER
 // ═══════════════════════════════════════════════════════════════
 const BOT_NAMES=['BOT-EASY','BOT-NORMAL','BOT-HARD'];
-let BOT_DELAYS=[380,160,75];    // ms between actions
-let BOT_NOISE=[0.22,0.07,0.01]; // evaluation noise (mistake rate)
+let BOT_DELAYS=[250,120,40];    // ms between actions
+let BOT_NOISE=[0.12,0.04,0.0];  // evaluation noise (mistake rate)
 
 class BotController{
   constructor(game,difficulty=2){
@@ -778,7 +778,7 @@ class BotController{
     // Place
     const nb=boardRows.map(r=>[...r]);
     for(let r=0;r<m.length;r++)for(let c=0;c<m[r].length;c++){
-      if(m[r][c]){const ny=py+r;const nx=startX+c;if(ny>=0&&ny<ROWS)nb[ny][nx]=pieceName;else if(ny>=ROWS)return null;}
+      if(m[r][c]){const ny=py+r;const nx=startX+c;if(ny<0||ny>=ROWS)return null;nb[ny][nx]=pieceName;}
     }
     // Clear lines
     let cleared=0;
@@ -794,26 +794,52 @@ class BotController{
     let bump=0;
     for(let col=0;col<COLS-1;col++)bump+=Math.abs(heights[col]-heights[col+1]);
     // Enhanced weight for cleared lines to encourage bot to send garbage (especially Tetris)
-    const clearedWeight = cleared === 4 ? 8.0 : (cleared * 1.5);
-    const score=-0.51*aH + clearedWeight - 0.36*holes - 0.18*bump;
-    return{score, aH, cleared, holes, bump, clearedWeight};
+    const clearedWeight = cleared === 4 ? 12.0 : (cleared * 1.5);
+    const score=-0.51*aH + clearedWeight - 0.40*holes - 0.20*bump;
+    return{score, aH, cleared, holes, bump, clearedWeight, nb:filt};
   }
 
   findBestMove(){
-    // Current board (20 rows)
     const board=this.game.board.slice(2).map(r=>r.map(c=>c||null));
-    const pName=this.game.current.name;
-    let best=-Infinity,bestRot=0,bestX=3,bestRes=null;
-    for(let rot=0;rot<4;rot++){
-      for(let x=-2;x<COLS+2;x++){
-        const res=this._simulate(board,pName,rot,x);
-        if(!res)continue;
-        const s=res.score+(Math.random()*2-1)*this.noise*4;
-        if(s>best){best=s;bestRot=rot;bestX=x;bestRes=res;}
+    const bag=this.game.bag;
+    const canHold=this.game.canHold;
+
+    const evaluate=(pName, nName, isHold)=>{
+      let bestS=-Infinity, bestR=0, bestX=3, bestRes=null;
+      for(let r=0;r<4;r++){
+        for(let x=-2;x<COLS+2;x++){
+          const res=this._simulate(board,pName,r,x);
+          if(!res)continue;
+          let totalS=res.score;
+          // Look-ahead
+          let bestNext=-Infinity;
+          for(let nr=0;nr<4;nr++){
+            for(let nx=-2;nx<COLS+2;nx++){
+              const nres=this._simulate(res.nb,nName,nr,nx);
+              if(nres && nres.score>bestNext)bestNext=nres.score;
+            }
+          }
+          if(bestNext!==-Infinity)totalS+=bestNext;
+          totalS+=(Math.random()*2-1)*this.noise*4;
+          if(totalS>bestS){bestS=totalS;bestR=r;bestX=x;bestRes=res;}
+        }
       }
+      return {score:bestS, rot:bestR, x:bestX, res:bestRes, isHold};
+    };
+
+    const curEval=evaluate(this.game.current.name, bag.peek(1)[0], false);
+    let bestEval=curEval;
+
+    if(canHold){
+      let hName, nName;
+      if(this.game.heldPiece){ hName=this.game.heldPiece; nName=bag.peek(1)[0]; }
+      else{ hName=bag.peek(1)[0]; nName=bag.peek(2)[1]; }
+      const holdEval=evaluate(hName, nName, true);
+      if(holdEval.score > curEval.score) bestEval=holdEval;
     }
-    this.lastEval = { x: bestX, rot: bestRot, score: best, details: bestRes };
-    return{rot:bestRot,x:bestX};
+
+    this.lastEval={x:bestEval.x, rot:bestEval.rot, score:bestEval.score, details:bestEval.res, hold:bestEval.isHold};
+    return this.lastEval;
   }
 
   planMoves(targetRot,targetX){
@@ -831,11 +857,13 @@ class BotController{
 
   tick(ts){
     if(!this.game||this.game.gameOver)return;
+    if(this.game.isWaitingNext){this.moveQueue=[];return;}
     if(ts-this.lastActionTs<this.actionDelay)return;
     this.lastActionTs=ts;
     if(this.moveQueue.length===0){
       const b=this.findBestMove();
-      this.moveQueue=this.planMoves(b.rot,b.x);
+      if(b.hold){this.moveQueue=['hold'];}
+      else{this.moveQueue=this.planMoves(b.rot,b.x);}
     }
     const action=this.moveQueue.shift();
     if(!action)return;
@@ -845,6 +873,7 @@ class BotController{
       case'mr':this.game.move(1);break;
       case'ml':this.game.move(-1);break;
       case'hd':this.game.hardDrop();this.moveQueue=[];break;
+      case'hold':this.game.hold();this.moveQueue=[];break;
     }
   }
 
