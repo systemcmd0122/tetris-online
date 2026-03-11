@@ -180,6 +180,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
 .log-entry{display:flex;gap:12px;padding:3px 0;border-bottom:1px solid var(--dim2)}
 .log-entry:last-child{border-bottom:none}
 .log-ts{color:var(--dim);white-space:nowrap;flex-shrink:0;font-family:monospace}
+.log-src{font-size:8px;padding:2px 4px;border-radius:2px;background:var(--b2);color:var(--dim);text-transform:uppercase}
 .log-msg{flex:1}
 .log-msg.info{color:var(--acc)}.log-msg.success{color:var(--green)}
 .log-msg.warn{color:var(--warn)}.log-msg.error{color:var(--red)}
@@ -505,8 +506,8 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
       <!-- ── LOG ── -->
       <div class="panel" id="panel-log">
         <div class="ph">
-          <div class="ph-left"><div class="ph-title">EVENT LOG</div><div class="ph-sub">管理操作・システムイベント履歴</div></div>
-          <button class="sbtn sbtn-red" onclick="clearLog()">🗑 クリア</button>
+          <div class="ph-left"><div class="ph-title">EVENT LOG</div><div class="ph-sub">管理操作・システムイベント履歴 (Firestore)</div></div>
+          <button class="sbtn sbtn-red" onclick="clearAllLogs()">🗑 全削除</button>
         </div>
         <div class="log-box" id="logBox"></div>
       </div>
@@ -555,6 +556,37 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
               <button class="sbtn sbtn-red" onclick="stopAllActive()">STOP ALL</button>
             </div>
           </div>
+          <!-- Bot Settings -->
+          <div class="setting-item">
+            <div class="si-header">
+              <div class="si-info">
+                <div class="si-name">BOT CONFIGURATION</div>
+                <div class="si-desc">ボットの反応速度とミス率を調整します。</div>
+              </div>
+              <button class="sbtn" onclick="toggleSiBody('botConfigBody')">EDIT ▼</button>
+            </div>
+            <div class="si-body" id="botConfigBody">
+              <div style="margin-top:16px; display:grid; gap:12px;">
+                <div>
+                  <div style="font-size:10px; color:var(--dim); margin-bottom:5px;">DELAYS (Easy, Normal, Hard) - ms</div>
+                  <div style="display:flex; gap:5px;">
+                    <input type="number" id="botDelay0" class="cf-input" style="margin-bottom:0">
+                    <input type="number" id="botDelay1" class="cf-input" style="margin-bottom:0">
+                    <input type="number" id="botDelay2" class="cf-input" style="margin-bottom:0">
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:10px; color:var(--dim); margin-bottom:5px;">NOISE (Easy, Normal, Hard) - 0.0 to 1.0</div>
+                  <div style="display:flex; gap:5px;">
+                    <input type="number" step="0.01" id="botNoise0" class="cf-input" style="margin-bottom:0">
+                    <input type="number" step="0.01" id="botNoise1" class="cf-input" style="margin-bottom:0">
+                    <input type="number" step="0.01" id="botNoise2" class="cf-input" style="margin-bottom:0">
+                  </div>
+                </div>
+                <button class="pw-btn" style="width:auto; align-self:start; padding:10px 20px;" onclick="saveBotConfig()">SAVE CONFIG</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -596,6 +628,8 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getDatabase,ref,set,get,onValue,off,update,remove}
   from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import{getFirestore,collection,addDoc,query,orderBy,limit,onSnapshot,deleteDoc,doc,getDocs,serverTimestamp,writeBatch}
+  from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const fbApp=initializeApp({
   apiKey:"AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
@@ -607,6 +641,19 @@ const fbApp=initializeApp({
   appId:"1:1045054992314:web:7fea20b9be543d7cab3783"
 });
 const db=getDatabase(fbApp);
+const fs=getFirestore(fbApp);
+
+async function persistLog(msg, type='info', details={}){
+  try {
+    await addDoc(collection(fs, 'site_logs'), {
+      message: msg,
+      type: type,
+      details: details,
+      timestamp: serverTimestamp(),
+      source: 'admin'
+    });
+  } catch(e) { console.error('Log failed:', e); }
+}
 
 // ══ AUTH ══
 const ADMIN_PW='Runa1124';
@@ -665,12 +712,14 @@ function drawBoard(cv,d){
 
 // ══ ADMIN STATE ══
 let roomsData={};let specRoom=null,specUnsub={p1:null,p2:null},specStartTs=null,specTimerIv=null;
-let roomsListener=null;let defaultForceMsg='管理者によってこのルームは強制終了されました';
+let roomsListener=null;let logsUnsub=null;let defaultForceMsg='管理者によってこのルームは強制終了されました';
 let totalRooms=0;
 
 function initAdmin(){
   addLog('管理者セッション開始','info');
   startRoomsListener();
+  startLogsListener();
+  startBotConfigListener();
   startClock();
 }
 
@@ -822,6 +871,7 @@ window.forceStop = async (code, customMsg) => {
       forceTs:  Date.now()
     });
     addLog(`ROOM ${code} 強制停止: "${msg}"`, 'admin');
+    persistLog(`Forced stop room ${code}`, 'admin', {code, msg});
     showToast(`ROOM ${code} を強制停止しました`, 'warn');
 
     // Step 2+3: after players have had time to read, delete the room
@@ -848,6 +898,7 @@ window.deleteRoom = async (code) => {
   try {
     await remove(ref(db, `rooms/${code}`));
     addLog(`ROOM ${code} 削除`, 'warn');
+    persistLog(`Deleted room ${code}`, 'warn', {code});
     showToast(`ROOM ${code} を削除しました`, 'ok');
   } catch(e) {
     addLog(`削除失敗: ${e.message}`, 'error');
@@ -906,6 +957,7 @@ window.sendBroadcast=async()=>{
   await Promise.all(codes.map(code=>update(ref(db,`rooms/${code}`),{sysMsg:msg,sysMsgTs:ts}).catch(()=>{})));
   const n=codes.length;
   addLog(`ブロードキャスト (${n}ルーム): "${msg}"`,"warn");
+  persistLog(`Broadcast to ${n} rooms: "${msg}"`, 'admin', {n, msg});
   showToast(`${n}件のルームに送信`,'ok');
   document.getElementById('bcStatus').textContent=`✓ ${n}件に送信 — ${new Date().toLocaleTimeString('ja-JP')}`;
 };
@@ -952,6 +1004,7 @@ window.nukeAll = async () => {
     // Step 3: delete everything
     await remove(ref(db, 'rooms'));
     addLog('⚠ 全ルームNUKE完了', 'error');
+    persistLog('Nuke all rooms executed', 'error');
     showToast('全ルームを削除しました', 'warn');
     document.getElementById('nukeConfIn').value = '';
     toggleSiBody('nukeBody');
@@ -974,7 +1027,44 @@ window.cleanupRooms = async () => {
   }
   await Promise.all(ops);
   addLog(`クリーンアップ: ${n}件削除`, 'success');
+  persistLog(`Cleanup ended rooms: ${n} removed`, 'success', {count: n});
   showToast(`${n}件のルームを削除`, n > 0 ? 'ok' : 'warn');
+};
+
+function startBotConfigListener(){
+  onValue(ref(db, 'config/bot'), snap => {
+    const d = snap.val();
+    if(d){
+      if(d.delays){
+        document.getElementById('botDelay0').value = d.delays[0];
+        document.getElementById('botDelay1').value = d.delays[1];
+        document.getElementById('botDelay2').value = d.delays[2];
+      }
+      if(d.noise){
+        document.getElementById('botNoise0').value = d.noise[0];
+        document.getElementById('botNoise1').value = d.noise[1];
+        document.getElementById('botNoise2').value = d.noise[2];
+      }
+    }
+  });
+}
+
+window.saveBotConfig = async () => {
+  const delays = [
+    parseInt(document.getElementById('botDelay0').value),
+    parseInt(document.getElementById('botDelay1').value),
+    parseInt(document.getElementById('botDelay2').value)
+  ];
+  const noise = [
+    parseFloat(document.getElementById('botNoise0').value),
+    parseFloat(document.getElementById('botNoise1').value),
+    parseFloat(document.getElementById('botNoise2').value)
+  ];
+  try {
+    await set(ref(db, 'config/bot'), { delays, noise });
+    showToast('ボット設定を保存しました', 'ok');
+    persistLog('Bot configuration updated', 'admin', { delays, noise });
+  } catch(e) { showToast('保存失敗', 'err'); }
 };
 
 window.stopAllActive = async () => {
@@ -993,6 +1083,7 @@ window.stopAllActive = async () => {
   );
   await Promise.all(ops);
   addLog(`全${active.length}ルームを同時強制停止`, 'admin');
+  persistLog(`Force stop all ${active.length} active rooms`, 'admin', {count: active.length});
   showToast(`${active.length}ルームを強制停止しました`, 'warn');
 
   // Auto-delete after players have read
@@ -1004,15 +1095,51 @@ window.stopAllActive = async () => {
 };
 
 // ══ LOG ══
-function addLog(msg,type='info'){
-  const box=document.getElementById('logBox');
-  const now=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  const el=document.createElement('div');el.className='log-entry';
-  el.innerHTML=`<span class="log-ts">${now}</span><span class="log-msg ${type}">${msg}</span>`;
-  box.prepend(el);
-  while(box.children.length>300)box.lastChild.remove();
+function startLogsListener(){
+  if(logsUnsub) logsUnsub();
+  const q = query(collection(fs, 'site_logs'), orderBy('timestamp', 'desc'), limit(100));
+  logsUnsub = onSnapshot(q, snap => {
+    const box = document.getElementById('logBox');
+    box.innerHTML = '';
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+      const id = docSnap.id;
+      const ts = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString('ja-JP') : '...';
+      const el = document.createElement('div');
+      el.className = 'log-entry';
+      el.innerHTML = `
+        <span class="log-ts">${ts}</span>
+        <span class="log-src">${data.source || '???'}</span>
+        <span class="log-msg ${data.type || 'info'}">${data.message}</span>
+        <button class="abtn abtn-log-del" onclick="deleteLog('${id}')">DEL</button>
+      `;
+      box.appendChild(el);
+    });
+  });
 }
-window.clearLog=()=>{document.getElementById('logBox').innerHTML='';};
+
+function addLog(msg,type='info'){
+  // Local only preview for instant feedback if needed, but Firestore listener handles it
+  console.log(`[${type}] ${msg}`);
+}
+
+window.deleteLog = async (id) => {
+  try {
+    await deleteDoc(doc(fs, 'site_logs', id));
+  } catch(e) { showToast('削除失敗', 'err'); }
+};
+
+window.clearAllLogs = async () => {
+  if(!confirm('全てのログを削除しますか？')) return;
+  try {
+    const q = query(collection(fs, 'site_logs'), limit(500));
+    const snap = await getDocs(q);
+    const batch = writeBatch(fs);
+    snap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    showToast('ログをクリアしました', 'ok');
+  } catch(e) { showToast('クリア失敗', 'err'); }
+};
 
 // ══ PANEL NAV ══
 window.gotoPanel=(name,el)=>{

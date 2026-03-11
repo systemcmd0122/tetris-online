@@ -489,6 +489,8 @@
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getDatabase,ref,set,get,onValue,off,update,remove,onDisconnect}
   from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import{getFirestore,collection,addDoc,serverTimestamp}
+  from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const fbApp=initializeApp({
   apiKey:"AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
@@ -500,8 +502,31 @@ const fbApp=initializeApp({
   appId:"1:1045054992314:web:7fea20b9be543d7cab3783"
 });
 const db=getDatabase(fbApp);
+const fs=getFirestore(fbApp);
+
+async function persistLog(msg, type='info', details={}){
+  try {
+    await addDoc(collection(fs, 'site_logs'), {
+      message: msg,
+      type: type,
+      details: details,
+      timestamp: serverTimestamp(),
+      source: 'client'
+    });
+  } catch(e) { console.error('Log failed:', e); }
+}
+
 document.getElementById('statusText').textContent='ONLINE';
 document.getElementById('statusText').className='status-online';
+
+// Listen for bot config
+onValue(ref(db, 'config/bot'), snap => {
+  const d = snap.val();
+  if (d) {
+    if (d.delays) BOT_DELAYS = d.delays;
+    if (d.noise) BOT_NOISE = d.noise;
+  }
+});
 
 // ═══════════════════════════════════════════════════════════════
 // SOUND ENGINE
@@ -693,8 +718,8 @@ class TetrisGame{
 // BOT AI CONTROLLER
 // ═══════════════════════════════════════════════════════════════
 const BOT_NAMES=['BOT-EASY','BOT-NORMAL','BOT-HARD'];
-const BOT_DELAYS=[380,160,75];    // ms between actions
-const BOT_NOISE=[0.22,0.07,0.01]; // evaluation noise (mistake rate)
+let BOT_DELAYS=[380,160,75];    // ms between actions
+let BOT_NOISE=[0.22,0.07,0.01]; // evaluation noise (mistake rate)
 
 class BotController{
   constructor(game,difficulty=2){
@@ -704,6 +729,7 @@ class BotController{
     this.noise=BOT_NOISE[difficulty-1];
     this.lastActionTs=0;
     this.moveQueue=[];
+    this.lastEval=null;
   }
 
   // Simulate piece placement and score the resulting board
@@ -748,22 +774,23 @@ class BotController{
     // Enhanced weight for cleared lines to encourage bot to send garbage (especially Tetris)
     const clearedWeight = cleared === 4 ? 8.0 : (cleared * 1.5);
     const score=-0.51*aH + clearedWeight - 0.36*holes - 0.18*bump;
-    return{score};
+    return{score, aH, cleared, holes, bump, clearedWeight};
   }
 
   findBestMove(){
     // Current board (20 rows)
     const board=this.game.board.slice(2).map(r=>r.map(c=>c||null));
     const pName=this.game.current.name;
-    let best=-Infinity,bestRot=0,bestX=3;
+    let best=-Infinity,bestRot=0,bestX=3,bestRes=null;
     for(let rot=0;rot<4;rot++){
       for(let x=-2;x<COLS+2;x++){
         const res=this._simulate(board,pName,rot,x);
         if(!res)continue;
         const s=res.score+(Math.random()*2-1)*this.noise*4;
-        if(s>best){best=s;bestRot=rot;bestX=x;}
+        if(s>best){best=s;bestRot=rot;bestX=x;bestRes=res;}
       }
     }
+    this.lastEval = { x: bestX, rot: bestRot, score: best, details: bestRes };
     return{rot:bestRot,x:bestX};
   }
 
@@ -797,6 +824,43 @@ class BotController{
       case'ml':this.game.move(-1);break;
       case'hd':this.game.hardDrop();this.moveQueue=[];break;
     }
+  }
+
+  drawVisualization(){
+    if(!this.lastEval||!this.lastEval.details)return;
+    const ctx=this.game.ctx;
+    const ev=this.lastEval;
+    // Draw target ghost
+    const m=PIECES[this.game.current.name][ev.rot];
+    ctx.globalAlpha=0.25;
+    ctx.fillStyle='#ffffff';
+    // Find landing Y for target
+    let ty=-2;
+    while(this.game.valid({name:this.game.current.name,rot:ev.rot,x:ev.x,y:ty+1}))ty++;
+    m.forEach((row,r)=>row.forEach((cell,c)=>{
+      if(cell){
+        const py=ty+r;
+        if(py>=0)ctx.fillRect((ev.x+c)*CELL+2,py*CELL+2,CELL-4,CELL-4);
+      }
+    }));
+    ctx.globalAlpha=1;
+
+    // Draw heuristics
+    ctx.fillStyle='rgba(0,0,0,0.6)';
+    ctx.fillRect(5,5,110,75);
+    ctx.strokeStyle=this.difficulty===3?'#ff3355':(this.difficulty===2?'#ffaa00':'#aaff00');
+    ctx.lineWidth=1;
+    ctx.strokeRect(5,5,110,75);
+    ctx.fillStyle='#fff';
+    ctx.font='7px monospace';
+    const d=ev.details;
+    ctx.fillText(`SCORE: ${ev.score.toFixed(1)}`,10,15);
+    ctx.fillText(`HEIGHT: ${d.aH}`,10,25);
+    ctx.fillText(`HOLES: ${d.holes}`,10,35);
+    ctx.fillText(`BUMP: ${d.bump}`,10,45);
+    ctx.fillText(`CLEAR: ${d.cleared}`,10,55);
+    ctx.fillText(`C_WGT: ${d.clearedWeight.toFixed(1)}`,10,65);
+    ctx.fillText(`QUEUE: ${this.moveQueue.length}`,10,75);
   }
 }
 
@@ -917,6 +981,7 @@ window.startBotGame=async(difficulty)=>{
   document.getElementById('opponentCanvas').className='bot-canvas';
   document.getElementById('statusRoom').textContent='BOT MODE';
   _prevScore=0;_prevCombo=-1;
+  persistLog(`Bot game started: ${name} vs ${oppName}`, 'info', {player:name, bot:oppName});
 
   // Run countdown (local, ~4 seconds)
   const aborted=await countdown(Date.now()+4000);
@@ -935,6 +1000,7 @@ window.startBotGame=async(difficulty)=>{
     botCtrl.tick(ts);
     botGame.update(ts);
     botGame.draw();
+    botCtrl.drawVisualization();
 
     // Process my results
     while(game.results.length>0){
@@ -981,6 +1047,7 @@ window.createRoom=async()=>{
   myRole='p1';roomCode=genCode();endedOnce=false;forceStopped=false;
   const rRef=ref(db,`rooms/${roomCode}`);
   await set(rRef,{p1:{name},status:'waiting',ts:Date.now()});
+  persistLog(`Room ${roomCode} created by ${name}`, 'success', {code:roomCode, player:name});
   onDisconnect(rRef).remove();
   showScreen('waitingScreen');
   document.getElementById('displayRoomCode').textContent=roomCode;
@@ -1009,6 +1076,7 @@ window.joinRoom=async()=>{
   const rRef=ref(db,`rooms/${code}`);
   let snap;
   try{snap=await get(rRef);}catch(e){showToast('接続エラー: '+e.message,'warn');return;}
+  persistLog(`Player ${name} joined room ${code}`, 'info', {code:code, player:name});
   if(!snap.exists()){showToast('ルームが見つかりません','warn');return;}
   const d=snap.val();
   if(d.status==='force_ended'){showToast('このルームは強制終了されています','warn');return;}
@@ -1188,6 +1256,7 @@ async function startGame(preloadedData){
 function endGame(result){
   if(endedOnce)return;
   endedOnce=true;gameRunning=false;
+  persistLog(`Game ended in room ${roomCode}: ${result}`, result==='WIN'?'success':'info', {code:roomCode, result, score:game?.score});
   if(animId){cancelAnimationFrame(animId);animId=null;}
   if(!botMode)offAll();
   const title=document.getElementById('resultTitle');
