@@ -152,7 +152,58 @@
     .footer {
       margin-top: 22px; font-size: 9px; color: var(--dim);
       letter-spacing: 2px; position: relative; z-index: 10;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
     }
+
+    /* UPDATE MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      z-index: 300; display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(6px); opacity: 0; pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: auto; }
+    .update-modal {
+      background: var(--s0); border: 2px solid var(--acc);
+      border-radius: 4px; padding: 32px; width: min(450px, 90vw);
+      position: relative; box-shadow: 0 0 40px rgba(0,245,255,0.25);
+    }
+    .modal-close {
+      position: absolute; top: 10px; right: 14px; cursor: pointer;
+      color: var(--dim); font-size: 20px; transition: color 0.2s;
+    }
+    .modal-close:hover { color: var(--acc2); }
+    .um-version {
+      font-family: 'Press Start 2P', monospace; font-size: 10px;
+      color: var(--acc2); margin-bottom: 12px;
+    }
+    .um-title {
+      font-size: 18px; color: var(--acc); margin-bottom: 18px;
+      letter-spacing: 1px; font-weight: bold;
+    }
+    .um-list { list-style: none; margin-bottom: 24px; }
+    .um-list li {
+      font-size: 13px; margin-bottom: 10px; position: relative;
+      padding-left: 18px; line-height: 1.5;
+    }
+    .um-list li::before {
+      content: '▶'; position: absolute; left: 0; color: var(--acc3);
+      font-size: 9px; top: 4px;
+    }
+    .modal-btns { display: flex; gap: 12px; }
+    .modal-btn {
+      flex: 1; padding: 12px; border-radius: 2px; cursor: pointer;
+      font-family: 'Orbitron', monospace; font-size: 11px;
+      font-weight: 700; text-align: center; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .modal-btn.primary {
+      background: var(--acc); color: #000; border: none;
+    }
+    .modal-btn.secondary {
+      background: transparent; border: 1px solid var(--dim); color: var(--tx);
+    }
+    .modal-btn:hover { transform: translateY(-2px); opacity: 0.9; }
 
     /* LOADING SCREEN */
     #loadingScreen {
@@ -249,13 +300,35 @@
     <div class="menu">
       <a href="tetris-battle.html" class="menu-btn primary">▶ 対戦開始</a>
       <a href="how-to.html" class="menu-btn secondary">📖 あそびかた</a>
+      <a href="updates.html" class="menu-btn secondary">📋 更新履歴</a>
       <a href="admin.html" class="menu-btn secondary">⚙ 管理画面</a>
     </div>
   </div>
 </div>
-<div class="footer">© 2025 TETRIS BATTLE ONLINE</div>
+<div class="footer">
+  <span id="versionDisp" style="color:var(--acc2); font-weight:bold;">VER 1.2.0</span>
+  <span>© 2025 TETRIS BATTLE ONLINE</span>
+</div>
 
-<script>
+<!-- UPDATE MODAL -->
+<div class="modal-overlay" id="updateModalOverlay">
+  <div class="update-modal">
+    <div class="modal-close" onclick="closeUpdateModal()">×</div>
+    <div class="um-version" id="umVersion">Ver. 1.2.0</div>
+    <div class="um-title" id="umTitle">アップデートのお知らせ</div>
+    <ul class="um-list" id="umList">
+      <!-- Dynamic list -->
+    </ul>
+    <div class="modal-btns">
+      <a href="updates.html" class="modal-btn secondary">詳細ログを見る</a>
+      <div class="modal-btn primary" onclick="closeUpdateModal()">閉じる</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { APP_VERSION, UPDATE_LOG } from './config.js';
+
 const COLORS = {I:'#00f5ff',O:'#ffff00',T:'#cc00ff',S:'#aaff00',Z:'#ff0040',J:'#0066ff',L:'#ff8800'};
 const CNAMES = Object.keys(COLORS);
 
@@ -419,6 +492,35 @@ const CNAMES = Object.keys(COLORS);
     requestAnimationFrame(frame);
   }
   frame();
+})();
+
+// ═══ VERSION & UPDATE NOTIFICATION ═══
+(function(){
+  document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
+
+  const lastSeen = localStorage.getItem('lastSeenVersion');
+  if (lastSeen !== APP_VERSION) {
+    const latest = UPDATE_LOG[0];
+    document.getElementById('umVersion').textContent = `Ver. ${latest.version}`;
+    document.getElementById('umTitle').textContent = latest.title;
+    const list = document.getElementById('umList');
+    list.innerHTML = '';
+    latest.changes.forEach(change => {
+      const li = document.createElement('li');
+      li.textContent = change;
+      list.appendChild(li);
+    });
+
+    // Delay showing to wait for loading screen fade
+    setTimeout(() => {
+      document.getElementById('updateModalOverlay').classList.add('show');
+    }, 2000);
+  }
+
+  window.closeUpdateModal = () => {
+    localStorage.setItem('lastSeenVersion', APP_VERSION);
+    document.getElementById('updateModalOverlay').classList.remove('show');
+  };
 })();
 </script>
 </body>
