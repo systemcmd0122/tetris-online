@@ -54,6 +54,11 @@
     .back-btn:hover { transform: translateY(-2px); }
     li { margin-left: 20px; margin-bottom: 10px; font-size: 14px; }
     .highlight { color: var(--acc3); font-weight: bold; }
+    .footer {
+      margin-top: 60px; padding-bottom: 20px;
+      text-align: center; font-size: 9px; color: var(--dim);
+      letter-spacing: 2px;
+    }
   </style>
 </head>
 <body>
@@ -90,5 +95,11 @@
 
   <a href="index.html" class="back-btn">◀ メニューに戻る</a>
 
+  <div class="footer">© 2025 TETRIS BATTLE ONLINE <span id="versionDisp"></span></div>
+
+  <script>
+    const APP_VERSION = '1.1.0';
+    document.getElementById('versionDisp').textContent = 'v' + APP_VERSION;
+  </script>
 </body>
 </html>
