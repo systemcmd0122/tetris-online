@@ -487,7 +487,7 @@
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getDatabase,ref,set,get,onValue,off,update,remove,onDisconnect}
+import{getDatabase,ref,set,get,onValue,off,update,remove,onDisconnect,runTransaction,increment}
   from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import{getFirestore,collection,addDoc,serverTimestamp}
   from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -644,15 +644,25 @@ class TetrisGame{
     return true;
   }
   rotate(dir=1){
+    if(this.gameOver||this.isWaitingNext)return false;
     const from=this.current.rot,to=(from+(dir>0?1:3))%4,key=`${ROT_NAMES[from]}->${ROT_NAMES[to]}`;
     const kicks=this.current.name==='I'?KICKS_I[key]:KICKS_JLSTZ[key];
     if(!kicks)return false;
     for(const[kdx,kdy]of kicks){if(this.valid(this.current,kdx,-kdy,to)){this.current.x+=kdx;this.current.y+=-kdy;this.current.rot=to;this.lastAction={type:'rotate',dir,kick:kdx!==0||kdy!==0};this._resetLock();playSound('rotate');return true;}}
     return false;
   }
-  move(dx){if(this.valid(this.current,dx)){this.current.x+=dx;this.lastAction={type:'move'};this._resetLock();playSound('move');return true;}return false;}
-  softDrop(){if(this.valid(this.current,0,1)){this.current.y++;this.score++;this.lastAction={type:'move'};this.isOnGround=false;this.lockTimer=null;return true;}return false;}
-  hardDrop(){let d=0;while(this.valid(this.current,0,1)){this.current.y++;d++;}this.score+=d*2;this.lastAction={type:'hard'};playSound('harddrop');return this._lock();}
+  move(dx){
+    if(this.gameOver||this.isWaitingNext)return false;
+    if(this.valid(this.current,dx)){this.current.x+=dx;this.lastAction={type:'move'};this._resetLock();playSound('move');return true;}return false;
+  }
+  softDrop(){
+    if(this.gameOver||this.isWaitingNext)return false;
+    if(this.valid(this.current,0,1)){this.current.y++;this.score++;this.lastAction={type:'move'};this.isOnGround=false;this.lockTimer=null;return true;}return false;
+  }
+  hardDrop(){
+    if(this.gameOver||this.isWaitingNext)return null;
+    let d=0;while(this.valid(this.current,0,1)){this.current.y++;d++;}this.score+=d*2;this.lastAction={type:'hard'};playSound('harddrop');return this._lock();
+  }
   ghostY(){let g=this.current.y;while(this.valid(this.current,0,g-this.current.y+1))g++;return g;}
   _resetLock(){if(this.isOnGround&&this.lockResets<MAX_RESETS){this.lockTimer=null;this.lockResets++;}}
   _isTSpin(){if(this.current.name!=='T'||!this.lastAction||this.lastAction.type!=='rotate')return false;const{x,y}=this.current;const corners=[[x,y],[x+2,y],[x,y+2],[x+2,y+2]];const filled=corners.filter(([cx,cy])=>cy<0||cy>=ROWS||cx<0||cx>=COLS||!!this._get(cx,cy));return filled.length>=3;}
@@ -675,10 +685,21 @@ class TetrisGame{
     this.results.push(res);
     return res;
   }
-  _clearLines(){let n=0;for(let r=ROWS-1;r>=0;r--){if(this.board[r+2].every(c=>c!==null)){this.board.splice(r+2,1);this.board.unshift(Array(COLS).fill(null));n++;r++;this.boardDirty=true;}}return n;}
+  _clearLines(){
+    let n=0;this.lastClearedRows=[];
+    for(let r=ROWS-1;r>=0;r--){
+      if(this.board[r+2].every(c=>c!==null)){
+        this.board.splice(r+2,1);
+        this.board.unshift(Array(COLS).fill(null));
+        this.lastClearedRows.push(r);
+        n++;r++;this.boardDirty=true;
+      }
+    }
+    return n;
+  }
   _addGarbage(lines){if(lines<=0)return;const hole=Math.floor(Math.random()*COLS);for(let i=0;i<lines;i++){this.board.shift();const row=Array(COLS).fill('G');row[hole]=null;this.board.push(row);}this.boardDirty=true;}
   hold(){
-    if(!this.canHold)return false;
+    if(this.gameOver||this.isWaitingNext||!this.canHold)return false;
     const name=this.current.name;
     if(this.heldPiece){this.current=makePiece(this.heldPiece);}
     else{this.current=makePiece(this.bag.next());}
@@ -705,7 +726,7 @@ class TetrisGame{
   }
   serialize(){
     if(this.boardDirty || !this._cachedBoard){this._cachedBoard=this.board.slice(2).map(row=>row.map(c=>c||''));this.boardDirty=false;}
-    return{board:this._cachedBoard,score:this.score,lines:this.lines,level:this.level,gameOver:this.gameOver,cur:{name:this.current.name,rot:this.current.rot,x:this.current.x,y:this.current.y}};
+    return{board:this._cachedBoard,score:this.score,lines:this.lines,level:this.level,gameOver:this.gameOver,clRows:this.lastClearedRows||[],cur:{name:this.current.name,rot:this.current.rot,x:this.current.x,y:this.current.y}};
   }
   draw(){
     const ctx=this.ctx;ctx.clearRect(0,0,this.cvs.width,this.cvs.height);
@@ -1125,20 +1146,31 @@ window.joinRoom=async()=>{
   if(code.length!==4||!/^[0-9]{4}$/.test(code)){showToast('4桁の数字コードを入力してください','warn');return;}
   const name=(document.getElementById('playerName').value.trim()||'PLAYER2').toUpperCase();
   const rRef=ref(db,`rooms/${code}`);
-  let snap;
-  try{snap=await get(rRef);}catch(e){showToast('接続エラー: '+e.message,'warn');return;}
-  persistLog(`Player ${name} joined room ${code}`, 'info', {code:code, player:name});
-  if(!snap.exists()){showToast('ルームが見つかりません','warn');return;}
-  const d=snap.val();
-  if(d.status==='force_ended'){showToast('このルームは強制終了されています','warn');return;}
-  if(d.status!=='waiting'){showToast('このルームは満員か既に開始しています','warn');return;}
-  myRole='p2';roomCode=code;endedOnce=false;forceStopped=false;
-  // P2 writes gameStartAt so both players can synchronize countdown
-  const gameStartAt=getServerTime()+4800;
-  await update(rRef,{p2:{name},status:'ready',gameStartAt});
-  onDisconnect(rRef).remove();
-  document.getElementById('statusRoom').textContent=`ROOM: ${roomCode}`;
-  startGame({...d,p2:{name},gameStartAt});
+
+  try {
+    const result = await runTransaction(rRef, (currentData) => {
+      if (!currentData) return; // Room doesn't exist
+      if (currentData.status !== 'waiting') return; // Not waiting
+      currentData.p2 = { name };
+      currentData.status = 'ready';
+      currentData.gameStartAt = getServerTime() + 4800;
+      return currentData;
+    });
+
+    if (!result.committed) {
+      showToast('ルームに参加できません（満員か削除済み）', 'warn');
+      return;
+    }
+
+    const d = result.snapshot.val();
+    persistLog(`Player ${name} joined room ${code}`, 'info', {code, player:name});
+    myRole='p2';roomCode=code;endedOnce=false;forceStopped=false;
+    onDisconnect(rRef).remove();
+    document.getElementById('statusRoom').textContent=`ROOM: ${roomCode}`;
+    startGame(d);
+  } catch(e) {
+    showToast('接続エラー: '+e.message, 'warn');
+  }
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1248,11 +1280,12 @@ async function startGame(preloadedData){
   onValue(myGRef,snap=>{
     const v=snap.val();if(!v||!v.n||!game)return;
     if(v.n>0){
-      statAtkRecv+=v.n;
-      game.pendingGarbage+=v.n;
-      set(myGRef,{n:0});
+      const added = v.n;
+      statAtkRecv+=added;
+      game.pendingGarbage+=added;
+      update(myGRef,{n:increment(-added)}); // Atomic decrement
       const badge=document.getElementById('attackBadge');
-      badge.textContent=`+${v.n} ⚠`;
+      badge.textContent=`+${added} ⚠`;
       badge.classList.remove('show');void badge.offsetWidth;badge.classList.add('show');
       setTimeout(()=>badge.classList.remove('show'),1200);
       flashAttack();playSound('attack');
@@ -1287,7 +1320,7 @@ async function startGame(preloadedData){
       set(ref(db,`rooms/${roomCode}/game/${myRole}`),game.serialize()).catch(()=>{});
       if(pendingGarbageOut>0){
         const gn=pendingGarbageOut;pendingGarbageOut=0;
-        get(oppGRef).then(s=>{const ex=s.val()?.n||0;set(oppGRef,{n:ex+gn}).catch(()=>{});});
+        update(oppGRef, { n: increment(gn) }).catch(()=>{}); // Atomic increment
       }
     }
 
@@ -1436,6 +1469,11 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('keyup',e=>{
   if(e.code==='ArrowDown'){clearInterval(softDropInterval);softDropInterval=null;}
 });
+window.addEventListener('blur',()=>{
+  keys.clear();
+  dasStop();
+  if(softDropInterval){clearInterval(softDropInterval);softDropInterval=null;}
+});
 
 // Mobile controls
 function setupMobile(id,fn,repeat=false){
@@ -1475,7 +1513,7 @@ setupMobile('btnHold',()=>game?.hold(),false);
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.classList.remove('show');t.offsetHeight;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 function flashAttack(){const f=document.getElementById('attackFlash');f.classList.add('show');setTimeout(()=>f.classList.remove('show'),280);const bw=document.querySelector('.board-wrap');if(bw){bw.classList.remove('shake');void bw.offsetWidth;bw.classList.add('shake');setTimeout(()=>bw.classList.remove('shake'),260);}}
-function showActionPopup(label){const p=document.getElementById('actionPopup');p.textContent=label.replace('\n',' / ');p.classList.remove('show');p.offsetHeight;p.classList.add('show');}
+function showActionPopup(label){const p=document.getElementById('actionPopup');p.textContent=label.replace(/\n/g,' / ');p.classList.remove('show');p.offsetHeight;p.classList.add('show');}
 
 let _prevScore=0,_prevCombo=-1;
 const uiCache={score:-1,level:-1,lines:-1,combo:-1,b2b:null,sent:-1,recv:-1,pg:-1};
