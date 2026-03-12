@@ -480,7 +480,10 @@
 </div>
 
 <div class="status-bar">
-  <span id="statusText">CONNECTING…</span>
+  <div style="display:flex;gap:12px">
+    <span id="statusText">CONNECTING…</span>
+    <span id="versionDisp" style="color:var(--accent2);font-weight:bold">VER ---</span>
+  </div>
   <span id="statusRoom">—</span>
 </div>
 <div class="toast" id="toast"></div>
@@ -492,6 +495,7 @@ import{getDatabase,ref,set,get,onValue,off,update,remove,onDisconnect}
 import{getFirestore,collection,addDoc,serverTimestamp}
   from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+import { APP_VERSION } from './config.js';
 const fbApp=initializeApp({
   apiKey:"AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
   authDomain:"tetris-online-9c827.firebaseapp.com",
@@ -524,6 +528,7 @@ async function persistLog(msg, type='info', details={}){
 
 document.getElementById('statusText').textContent='ONLINE';
 document.getElementById('statusText').className='status-online';
+document.getElementById('versionDisp').textContent=`VER ${APP_VERSION}`;
 
 // Listen for bot config
 onValue(ref(db, 'config/bot'), snap => {

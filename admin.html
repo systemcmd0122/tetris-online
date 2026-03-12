@@ -337,7 +337,10 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
 <!-- ══ ADMIN SHELL ══ -->
 <div id="shell">
   <div class="topbar">
-    <div class="topbar-logo">⬡ ADMIN CONSOLE</div>
+    <div style="display:flex;align-items:center;gap:15px">
+      <div class="topbar-logo">⬡ ADMIN CONSOLE</div>
+      <div id="versionDisp" style="font-size:9px;color:var(--acc2);font-weight:bold;letter-spacing:1px">VER ---</div>
+    </div>
     <div class="topbar-right">
       <span class="badge-online" id="connBadge">● CONNECTED</span>
       <div style="font-size:7px;color:var(--dim);letter-spacing:1px" id="clockDisp"></div>
@@ -631,6 +634,7 @@ import{getDatabase,ref,set,get,onValue,off,update,remove}
 import{getFirestore,collection,addDoc,query,orderBy,limit,onSnapshot,deleteDoc,doc,getDocs,serverTimestamp,writeBatch}
   from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+import { APP_VERSION } from './config.js';
 const fbApp=initializeApp({
   apiKey:"AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
   authDomain:"tetris-online-9c827.firebaseapp.com",
@@ -716,6 +720,7 @@ let roomsListener=null;let logsUnsub=null;let defaultForceMsg='管理者によ�
 let totalRooms=0;
 
 function initAdmin(){
+  document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
   addLog('管理者セッション開始','info');
   startRoomsListener();
   startLogsListener();
