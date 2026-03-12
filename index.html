@@ -314,24 +314,73 @@ const APP_VERSION = '1.1.0';
 const UPDATE_LOG = [
   {
     version: '1.1.0',
-    date: '2025-02-12',
+    date: '2026-03-12',
     title: 'Update Management System',
     changes: [
       'Added Update Log page to track game history.',
       'Added Update Notification dialog for new releases.',
-      'Displaying version number across the site.',
-      'Minor UI improvements and stability fixes.'
+      'Integrated version display across index, battle, and admin pages.',
+      'Added "VIEW FULL LOG" link with automatic version dismissal.'
+    ]
+  },
+  {
+    version: '1.0.6',
+    date: '2026-03-12',
+    title: 'Stabilization & Refactoring',
+    changes: [
+      'Refactored codebase into a modular structure.',
+      'Stabilized game logic and Firebase synchronization.',
+      'Optimized multiplayer state sync rate to 50ms (20fps).'
+    ]
+  },
+  {
+    version: '1.0.5',
+    date: '2026-03-11',
+    title: 'Bot AI & Entry Delay',
+    changes: [
+      'Improved Bot AI for perfect play and strategic survival.',
+      'Added 200ms Entry Delay (ARE) for smoother gameplay feel.',
+      'Implemented 1-piece look-ahead for Bot move evaluation.'
+    ]
+  },
+  {
+    version: '1.0.4',
+    date: '2026-03-11',
+    title: 'Admin Console & Logs',
+    changes: [
+      'Added Firestore-based persistent site logging system.',
+      'Implemented Bot visualization and decision display in Admin Console.',
+      'Enhanced room management and broadcast tools.'
+    ]
+  },
+  {
+    version: '1.0.3',
+    date: '2026-03-10',
+    title: 'Core System Fixes',
+    changes: [
+      'Fixed garbage block visibility and spawn positioning logic.',
+      'Resolved Hold function and Garbage system sync issues.',
+      'Fixed countdown bugs and room cleanup logic.'
+    ]
+  },
+  {
+    version: '1.0.2',
+    date: '2026-03-09',
+    title: 'Performance & Animations',
+    changes: [
+      'Improved performance and added line-clear animations.',
+      'Optimized garbage addition visuals and timing.',
+      'Fixed room management and exit signaling robustness.'
     ]
   },
   {
     version: '1.0.0',
-    date: '2025-01-20',
-    title: 'Official Release',
+    date: '2026-03-09',
+    title: 'Production Release',
     changes: [
-      'Initial release of Tetris Battle Online.',
-      'Real-time PvP multiplayer mode.',
-      'VS Bot mode with multiple difficulties.',
-      'Admin console for room management.'
+      'Initial release of Tetris Battle Online with real-time PvP.',
+      'Implemented VS Bot mode with multiple difficulty levels.',
+      'Full Admin Console for real-time monitoring and control.'
     ]
   }
 ];
