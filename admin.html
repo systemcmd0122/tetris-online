@@ -337,7 +337,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
 <!-- ══ ADMIN SHELL ══ -->
 <div id="shell">
   <div class="topbar">
-    <div class="topbar-logo">⬡ ADMIN CONSOLE <span id="versionDisp" style="font-family:'Orbitron',monospace; font-size:9px; color:var(--dim); margin-left:10px; text-shadow:none;"></span></div>
+    <div class="topbar-logo">⬡ ADMIN CONSOLE</div>
     <div class="topbar-right">
       <span class="badge-online" id="connBadge">● CONNECTED</span>
       <div style="font-size:7px;color:var(--dim);letter-spacing:1px" id="clockDisp"></div>
@@ -642,9 +642,6 @@ const fbApp=initializeApp({
 });
 const db=getDatabase(fbApp);
 const fs=getFirestore(fbApp);
-
-const APP_VERSION = '1.1.0';
-document.getElementById('versionDisp').textContent = 'v' + APP_VERSION;
 
 async function persistLog(msg, type='info', details={}){
   try {

@@ -154,44 +154,6 @@
       letter-spacing: 2px; position: relative; z-index: 10;
     }
 
-    /* MODAL */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-      display: none; align-items: center; justify-content: center;
-      z-index: 300; backdrop-filter: blur(4px);
-    }
-    .modal-overlay.show { display: flex; }
-    .modal-content {
-      background: var(--s0); border: 2px solid var(--acc);
-      padding: 30px; border-radius: 4px; width: min(500px, 90vw);
-      position: relative; box-shadow: 0 0 30px rgba(0,245,255,0.2);
-      text-align: left;
-    }
-    .modal-content::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, var(--acc), var(--acc2));
-    }
-    .modal-title {
-      font-family: 'Press Start 2P', monospace; font-size: 14px;
-      color: var(--acc); margin-bottom: 20px; letter-spacing: 2px;
-    }
-    .update-version { color: var(--acc2); font-size: 11px; margin-bottom: 15px; font-family: 'Press Start 2P', monospace; }
-    .update-list { list-style: none; margin-bottom: 25px; }
-    .update-list li { font-size: 12px; margin-bottom: 10px; color: var(--tx); display: flex; gap: 10px; line-height: 1.4; }
-    .update-list li::before { content: '▶'; color: var(--acc); font-size: 10px; flex-shrink: 0; margin-top: 2px; }
-    .modal-btns { display: flex; gap: 10px; }
-    .modal-close {
-      flex: 1; padding: 12px; background: var(--acc); color: #000;
-      border: none; font-family: 'Orbitron', monospace; font-weight: 700;
-      cursor: pointer; border-radius: 2px; letter-spacing: 1px;
-    }
-    .modal-link {
-      flex: 1; padding: 12px; border: 1px solid var(--acc2); color: var(--acc2);
-      text-decoration: none; text-align: center; font-size: 12px;
-      font-weight: 700; border-radius: 2px; display: flex; align-items: center; justify-content: center;
-      letter-spacing: 1px;
-    }
-
     /* LOADING SCREEN */
     #loadingScreen {
       position: fixed; inset: 0; background: #04060f;
@@ -287,55 +249,13 @@
     <div class="menu">
       <a href="tetris-battle.html" class="menu-btn primary">▶ 対戦開始</a>
       <a href="how-to.html" class="menu-btn secondary">📖 あそびかた</a>
-      <a href="updates.html" class="menu-btn secondary">🆕 更新履歴</a>
       <a href="admin.html" class="menu-btn secondary">⚙ 管理画面</a>
     </div>
   </div>
 </div>
-<div class="footer">© 2025 TETRIS BATTLE ONLINE <span id="versionDisp"></span></div>
-
-<!-- UPDATE MODAL -->
-<div id="updateModal" class="modal-overlay">
-  <div class="modal-content">
-    <div class="modal-title">NEW UPDATE!</div>
-    <div id="updateInfo">
-      <div class="update-version" id="updateVerTitle">VERSION 1.1.0</div>
-      <ul class="update-list" id="updateChanges"></ul>
-    </div>
-    <div class="modal-btns">
-      <button class="modal-close" onclick="closeUpdateModal()">CLOSE</button>
-      <a href="updates.html" class="modal-link" onclick="localStorage.setItem('lastSeenVersion', APP_VERSION)">VIEW FULL LOG</a>
-    </div>
-  </div>
-</div>
+<div class="footer">© 2025 TETRIS BATTLE ONLINE</div>
 
 <script>
-const APP_VERSION = '1.1.0';
-const UPDATE_LOG = [
-  {
-    version: '1.1.0',
-    date: '2025-02-12',
-    title: 'Update Management System',
-    changes: [
-      'Added Update Log page to track game history.',
-      'Added Update Notification dialog for new releases.',
-      'Displaying version number across the site.',
-      'Minor UI improvements and stability fixes.'
-    ]
-  },
-  {
-    version: '1.0.0',
-    date: '2025-01-20',
-    title: 'Official Release',
-    changes: [
-      'Initial release of Tetris Battle Online.',
-      'Real-time PvP multiplayer mode.',
-      'VS Bot mode with multiple difficulties.',
-      'Admin console for room management.'
-    ]
-  }
-];
-
 const COLORS = {I:'#00f5ff',O:'#ffff00',T:'#cc00ff',S:'#aaff00',Z:'#ff0040',J:'#0066ff',L:'#ff8800'};
 const CNAMES = Object.keys(COLORS);
 
@@ -387,10 +307,7 @@ const CNAMES = Object.keys(COLORS);
       setTimeout(()=>{
         const ls = document.getElementById('loadingScreen');
         ls.classList.add('fade-out');
-        setTimeout(()=>{
-          ls.remove();
-          checkUpdate();
-        },700);
+        setTimeout(()=>ls.remove(),700);
       },350);
       return;
     }
@@ -503,24 +420,6 @@ const CNAMES = Object.keys(COLORS);
   }
   frame();
 })();
-
-// ═══ VERSION & UPDATE ═══
-document.getElementById('versionDisp').textContent = 'v' + APP_VERSION;
-
-function checkUpdate() {
-  const lastSeen = localStorage.getItem('lastSeenVersion');
-  if (lastSeen !== APP_VERSION) {
-    const latest = UPDATE_LOG[0];
-    document.getElementById('updateVerTitle').textContent = `VERSION ${latest.version} (${latest.date})`;
-    const list = document.getElementById('updateChanges');
-    list.innerHTML = latest.changes.map(c => `<li>${c}</li>`).join('');
-    document.getElementById('updateModal').classList.add('show');
-  }
-}
-window.closeUpdateModal = () => {
-  localStorage.setItem('lastSeenVersion', APP_VERSION);
-  document.getElementById('updateModal').classList.remove('show');
-};
 </script>
 </body>
 </html>
