@@ -480,7 +480,10 @@
 </div>
 
 <div class="status-bar">
-  <span id="statusText">CONNECTING…</span>
+  <div>
+    <span id="statusText">CONNECTING…</span>
+    <span style="margin-left: 10px; opacity: 0.6;" id="versionDisp"></span>
+  </div>
   <span id="statusRoom">—</span>
 </div>
 <div class="toast" id="toast"></div>
@@ -522,6 +525,8 @@ async function persistLog(msg, type='info', details={}){
   } catch(e) { console.error('Log failed:', e); }
 }
 
+const APP_VERSION = '1.1.0';
+document.getElementById('versionDisp').textContent = 'v' + APP_VERSION;
 document.getElementById('statusText').textContent='ONLINE';
 document.getElementById('statusText').className='status-online';
 
