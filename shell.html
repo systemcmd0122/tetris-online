@@ -307,13 +307,13 @@
 <!-- ═══ SEARCH / QUEUE / PLAYLIST DRAWER ═══ -->
 <div id="drawer">
   <div class="dh">
-    <span class="dh-title">🎵 MUSIC PLAYER</span>
-    <button class="dh-btn" onclick="closeDrawer()">✕ 閉じる</button>
+    <span class="dh-title">MUSIC PLAYER</span>
+    <button class="dh-btn" onclick="closeDrawer()">X CLOSE</button>
   </div>
   <div class="tabs">
-    <div class="tab on"  id="tab-search"    onclick="swTab('search')">🔍 SEARCH</div>
-    <div class="tab"     id="tab-queue"     onclick="swTab('queue')">▶ QUEUE <span id="qBadge"></span></div>
-    <div class="tab"     id="tab-playlists" onclick="swTab('playlists')">📋 PLAYLIST <span id="plBadge"></span></div>
+    <div class="tab on"  id="tab-search"    onclick="swTab('search')">SEARCH</div>
+    <div class="tab"     id="tab-queue"     onclick="swTab('queue')">QUEUE <span id="qBadge"></span></div>
+    <div class="tab"     id="tab-playlists" onclick="swTab('playlists')">PLAYLIST <span id="plBadge"></span></div>
   </div>
 
   <!-- SEARCH -->
@@ -330,11 +330,11 @@
   <!-- QUEUE -->
   <div class="panel" id="pQueue">
     <div class="qa">
-      <button class="qbtn" onclick="clearQueue()">🗑 クリア</button>
+      <button class="qbtn" onclick="clearQueue()">CLEAR</button>
       <div style="flex:1"></div>
-      <button class="mode-btn" id="mShuffle" onclick="toggleMode('shuffle')">🔀 SHUFFLE</button>
-      <button class="mode-btn" id="mRepeat"  onclick="toggleMode('repeat')">🔁 REPEAT</button>
-      <button class="mode-btn" id="mRepeat1" onclick="toggleMode('repeat1')">🔂 ×1</button>
+      <button class="mode-btn" id="mShuffle" onclick="toggleMode('shuffle')">SHUFFLE</button>
+      <button class="mode-btn" id="mRepeat"  onclick="toggleMode('repeat')">REPEAT</button>
+      <button class="mode-btn" id="mRepeat1" onclick="toggleMode('repeat1')">REPEAT x1</button>
     </div>
     <div class="qlist" id="qlist"><div class="empty">キューが空です<br>SEARCH から追加しよう</div></div>
   </div>
@@ -361,18 +361,18 @@
 
 <!-- ═══ MUSIC BAR ═══ -->
 <div id="bar">
-  <button id="openBtn" onclick="toggleDrawer()">🎵</button>
+  <button id="openBtn" onclick="toggleDrawer()"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 13V5.5l9-2v7.5"/><circle cx="2" cy="13" r="2"/><circle cx="11" cy="11" r="2"/></svg></button>
   <div class="bar-inner">
     <button class="tr" onclick="playPrev()">⏮</button>
     <button class="tr" id="btnPP" onclick="togglePP()">▶</button>
     <button class="tr" onclick="playNext()">⏭</button>
     <div id="npWrap">
-      <div id="npTop">♪ MUSIC</div>
+      <div id="npTop">MUSIC</div>
       <div id="npTitle">曲を選んでください</div>
       <div id="npSub">SEARCH または PLAYLIST から</div>
     </div>
     <div class="vol">
-      <span class="vi">🔊</span>
+      <span class="vi"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M1 5h2l3-3v10L3 9H1z"/><path d="M8 4A3 3 0 0 1 8 10" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M9.5 2.5A5 5 0 0 1 9.5 11.5" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></span>
       <input type="range" id="vol" min="0" max="100" value="70" oninput="setVol(this.value)">
     </div>
   </div>
@@ -409,15 +409,15 @@
 // ════════════════════════════════════════
 const YT_KEY = 'AIzaSyCZbk49tTvV6sgnbMOMCwDbQWG28NfEroY';
 const GENRES = [
-  {l:'🕹 テトリス', q:'tetris music remix'},
-  {l:'⚡ テクノ',   q:'techno electronic music'},
-  {l:'🎮 ゲームBGM',q:'video game music bgm'},
-  {l:'🔥 EDM',     q:'EDM dance music'},
-  {l:'🎸 ロック',  q:'rock music energetic'},
-  {l:'🌙 Lo-Fi',   q:'lofi hip hop chill beats'},
-  {l:'🕹 レトロ',  q:'80s retro synthwave'},
-  {l:'🎹 ジャズ',  q:'jazz piano instrumental'},
-  {l:'🌊 チルアウト',q:'chillout ambient music'},
+  {l:'TETRIS', q:'tetris music remix'},
+  {l:'TECHNO',   q:'techno electronic music'},
+  {l:'GAME BGM',q:'video game music bgm'},
+  {l:'EDM',     q:'EDM dance music'},
+  {l:'ROCK',  q:'rock music energetic'},
+  {l:'LO-FI',   q:'lofi hip hop chill beats'},
+  {l:'RETRO',  q:'80s retro synthwave'},
+  {l:'JAZZ',  q:'jazz piano instrumental'},
+  {l:'CHILL',q:'chillout ambient music'},
 ];
 
 // ════════════════════════════════════════
@@ -543,7 +543,7 @@ async function doSearch(){
     }));
     renderResults();
     setStat(results.length?`${results.length}件見つかりました`:'結果なし','var(--acc3)');
-  }catch(err){ setStat('⚠ '+err.message,'var(--acc2)'); }
+  }catch(err){ setStat('[!] '+err.message,'var(--acc2)'); }
   document.getElementById('sgo').disabled=false;
 }
 
@@ -559,8 +559,8 @@ function renderResults(){
       <img class="ri-thumb" src="${item.thumb}" alt="" loading="lazy">
       <div class="ri-info"><div class="ri-ttl">${esc(item.title)}</div><div class="ri-ch">${esc(item.channel)}</div></div>
       <div class="ri-act">
-        <span class="ri-pl" title="プレイリストに追加">📋</span>
-        <span class="ri-add" title="キューに追加して再生">${inQ?'♪':'＋'}</span>
+        <span class="ri-pl" title="プレイリストに追加"><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="2" width="10" height="1.5" rx=".5"/><rect x="1" y="5" width="10" height="1.5" rx=".5"/><rect x="1" y="8" width="6" height="1.5" rx=".5"/><path d="M8 7v4l1.5-1 1.5 1V7h-3z"/></svg></span>
+        <span class="ri-add" title="キューに追加して再生">${inQ?'[ON]':'+'}</span>
       </div>`;
     div.querySelector('.ri-add').onclick=(e)=>{ e.stopPropagation(); addAndPlay(i); };
     div.querySelector('.ri-pl').onclick=(e)=>{ e.stopPropagation(); showDrop(item,e.currentTarget); };
@@ -640,7 +640,7 @@ function renderQueue(){
   queue.forEach((item,i)=>{
     const d=document.createElement('div');
     d.className='qi'+(i===qi?' nq':'');
-    d.innerHTML=`<span class="qi-n">${i+1}</span><span class="qi-t">${esc(item.title)}</span><span class="qi-del" data-i="${i}">✕</span>`;
+    d.innerHTML=`<span class="qi-n">${i+1}</span><span class="qi-t">${esc(item.title)}</span><span class="qi-del" data-i="${i}">x</span>`;
     d.onclick=e=>{ if(e.target.classList.contains('qi-del')) removeQ(+e.target.dataset.i); else playIdx(i); };
     list.appendChild(d);
   });
@@ -662,13 +662,16 @@ function updateQBadge(){
 function updateBar(){
   if(qi>=0&&queue[qi]){
     const it=queue[qi];
-    document.getElementById('npTop').textContent='♪ NOW PLAYING';
+    document.getElementById('npTop').textContent='NOW PLAYING';
     document.getElementById('npTitle').textContent=it.title;
     document.getElementById('npSub').textContent=it.channel;
+    // Broadcast for in-game music display
+    try{ localStorage.setItem('yt_nowplaying', JSON.stringify({title:it.title, channel:it.channel, id:it.id})); }catch(e){}
   } else {
-    document.getElementById('npTop').textContent='♪ MUSIC';
+    document.getElementById('npTop').textContent='MUSIC';
     document.getElementById('npTitle').textContent='曲を選んでください';
     document.getElementById('npSub').textContent='SEARCH または PLAYLIST から';
+    try{ localStorage.removeItem('yt_nowplaying'); }catch(e){}
   }
 }
 
@@ -678,7 +681,7 @@ function updateResultHighlight(id){
     el.querySelector('.ri-add').textContent='＋';
   });
   const el=document.getElementById('ri-'+id);
-  if(el){ el.classList.add('np'); el.querySelector('.ri-add').textContent='♪'; }
+  if(el){ el.classList.add('np'); el.querySelector('.ri-add').textContent='[ON]'; }
 }
 
 // ════════════════════════════════════════
@@ -776,11 +779,11 @@ function renderPlDetail(){
   head.innerHTML=`
     <span id="plTitle">${esc(pl.name)}</span>
     <button class="pl-act-btn play" onclick="playPlaylist('${pl.id}')">▶ 再生</button>
-    <button class="pl-act-btn share" onclick="sharePlaylist('${pl.id}')">🔗 共有</button>
-    <button class="pl-act-btn" onclick="renamePl('${pl.id}')">✏ 名前変更</button>
-    <button class="pl-act-btn danger" onclick="deletePl('${pl.id}')">🗑 削除</button>
+    <button class="pl-act-btn share" onclick="sharePlaylist('${pl.id}')">SHARE</button>
+    <button class="pl-act-btn" onclick="renamePl('${pl.id}')">RENAME</button>
+    <button class="pl-act-btn danger" onclick="deletePl('${pl.id}')">DEL</button>
   `;
-  if(!pl.songs.length){ songs.innerHTML='<div class="empty">曲がありません<br>SEARCH の 📋 ボタンで追加</div>'; return; }
+  if(!pl.songs.length){ songs.innerHTML='<div class="empty">曲がありません<br>SEARCH の + ボタンで追加</div>'; return; }
   songs.innerHTML='';
   pl.songs.forEach((s,i)=>{
     const d=document.createElement('div');
@@ -790,7 +793,7 @@ function renderPlDetail(){
       <span class="ps-t">${esc(s.title)}</span>
       <span class="ps-up" data-i="${i}" title="上へ">▲</span>
       <span class="ps-dn" data-i="${i}" title="下へ">▼</span>
-      <span class="ps-del" data-id="${s.id}" title="削除">✕</span>`;
+      <span class="ps-del" data-id="${s.id}" title="削除">x</span>`;
     d.querySelector('.ps-up').onclick=e=>{ e.stopPropagation(); moveSong(pl.id,i,-1); };
     d.querySelector('.ps-dn').onclick=e=>{ e.stopPropagation(); moveSong(pl.id,i,+1); };
     d.querySelector('.ps-del').onclick=e=>{ e.stopPropagation(); removeSongFromPl(pl.id,s.id); };
@@ -827,7 +830,7 @@ function showDrop(song, anchor){
     playlists.forEach(pl=>{
       const d=document.createElement('div');
       d.className='pld-item';
-      d.textContent=pl.name+(pl.songs.some(s=>s.id===song.id)?'  ✓':'');
+      d.textContent=pl.name+(pl.songs.some(s=>s.id===song.id)?'  [OK]':'');
       d.onclick=()=>{ addSongToPl(pl.id,song); closeDrop(); };
       items.appendChild(d);
     });

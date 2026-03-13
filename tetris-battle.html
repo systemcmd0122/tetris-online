@@ -270,7 +270,7 @@
 <!-- System message banner -->
 <div id="sysMsgBanner">
   <span id="sysMsgText"></span>
-  <button onclick="document.getElementById('sysMsgBanner').classList.remove('show')" style="margin-left:20px;background:transparent;border:1px solid var(--warn);color:var(--warn);font-family:'Orbitron',monospace;font-size:7px;padding:2px 8px;cursor:pointer;border-radius:2px;">✕</button>
+  <button onclick="document.getElementById('sysMsgBanner').classList.remove('show')" style="margin-left:20px;background:transparent;border:1px solid var(--warn);color:var(--warn);font-family:'Orbitron',monospace;font-size:7px;padding:2px 8px;cursor:pointer;border-radius:2px;">X</button>
 </div>
 
 <!-- ══ LOBBY ══ -->
@@ -286,8 +286,8 @@
       <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
     </div>
     <button class="btn btn-primary" onclick="createRoom()">＋ オンライン対戦（ルーム作成）</button>
-    <button class="btn btn-bot" onclick="toggleBotDifficulty()">🤖 VS BOT（ボット対戦）</button>
-    <a href="how-to.html" class="btn btn-secondary" style="text-decoration:none;text-align:center;display:block;">📖 あそびかた解説</a>
+    <button class="btn btn-bot" onclick="toggleBotDifficulty()"><span style="display:flex;align-items:center;justify-content:center;gap:8px"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><rect x="2" y="4" width="9" height="7" rx="1"/><rect x="4" y="2" width="5" height="2"/><rect x="4" y="6" width="2" height="2" fill="black" opacity=".4"/><rect x="7" y="6" width="2" height="2" fill="black" opacity=".4"/><rect x="0" y="6" width="2" height="1.5" rx=".5"/><rect x="11" y="6" width="2" height="1.5" rx=".5"/></svg>VS BOT（ボット対戦）</span></button>
+    <a href="how-to.html" class="btn btn-secondary" style="text-decoration:none;text-align:center;display:block;"><span style="display:flex;align-items:center;justify-content:center;gap:8px"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="5.5"/><path d="M6.5 4a1.5 1.5 0 0 1 1.5 1.5c0 1-1.5 1.5-1.5 2.5"/><circle cx="6.5" cy="10" r=".6" fill="currentColor" stroke="none"/></svg>あそびかた解説</span></a>
     <div class="bot-difficulty" id="botDifficulty">
       <div class="bot-difficulty-label">DIFFICULTY</div>
       <div class="diff-btns">
@@ -321,7 +321,7 @@
     <div class="room-code-display" onclick="copyRoomCode()" title="クリックでコピー">
       <span class="code-label">SHARE THIS CODE</span>
       <span class="code" id="displayRoomCode">----</span>
-      <div class="copy-hint">📋 クリックしてコピー</div>
+      <div class="copy-hint"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:4px"><rect x="1" y="3" width="7" height="7" rx="1"/><path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H8"/></svg>クリックしてコピー</div>
     </div>
     <div class="waiting-indicator">
       <div class="dot"></div><div class="dot"></div><div class="dot"></div>
@@ -335,8 +335,17 @@
 <div class="screen" id="gameScreen">
   <div class="game-header">
     <span class="game-title">TETRIS BATTLE</span>
+    <div id="oppMusicBanner" style="display:none;align-items:center;gap:6px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.3);border-radius:3px;padding:4px 10px;flex:1;margin:0 10px;min-width:0;overflow:hidden;">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="#aaff00" style="flex-shrink:0"><path d="M2 8V3l7-1.5v5"/><circle cx="1.5" cy="8" r="1.5"/><circle cx="7.5" cy="6.5" r="1.5"/></svg>
+      <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(170,255,0,0.7);flex-shrink:0;letter-spacing:1px;">OPP:</span>
+      <span id="oppMusicTitle" style="font-size:9px;color:#aaff00;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:1px;min-width:0;"></span>
+    </div>
     <div class="game-header-right">
-      <button class="sound-btn on" id="soundBtn" onclick="toggleSound()">🔊 ON</button>
+      <button class="sound-btn on" id="soundBtn" onclick="toggleSound()">
+        <svg id="soundIconOn" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M1 4h2l3-3v10L3 8H1z"/><path d="M8 3.5A3.5 3.5 0 0 1 8 8.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M9.5 2A5 5 0 0 1 9.5 10" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+        <svg id="soundIconOff" width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style="display:none"><path d="M1 4h2l3-3v10L3 8H1z"/><line x1="8" y1="4" x2="11" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="11" y1="4" x2="8" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span id="soundLabel">ON</span>
+      </button>
       <button class="btn btn-secondary" style="width:auto;padding:5px 12px;font-size:8px;" onclick="leaveRoom()">QUIT</button>
     </div>
   </div>
@@ -352,7 +361,7 @@
           <canvas id="myCanvas" width="200" height="400"></canvas>
           <div class="lock-flash" id="lockFlash"></div>
           <div class="action-popup" id="actionPopup"></div>
-          <div class="attack-count-badge" id="attackBadge">+0 ⚠</div>
+          <div class="attack-count-badge" id="attackBadge">+0 !</div>
         </div>
       </div>
     </div>
@@ -406,7 +415,7 @@
             <span class="atk-val recv" id="atkRecvDisplay">0</span>
           </div>
           <div class="atk-row">
-            <span class="atk-label">⚠ NEXT</span>
+            <span class="atk-label">! NEXT</span>
             <span class="atk-val recv" id="pendGarbDisplay">0</span>
           </div>
           <div class="pending-garb-row" id="pendGarbCells"></div>
@@ -463,7 +472,7 @@
 
 <!-- ══ FORCE STOP ══ -->
 <div id="forceStopOverlay">
-  <div class="fs-icon">🚫</div>
+  <div class="fs-icon"><svg width="72" height="72" viewBox="0 0 72 72" fill="none" stroke="#ff3355" stroke-width="5"><circle cx="36" cy="36" r="30"/><line x1="15" y1="15" x2="57" y2="57"/></svg></div>
   <div class="fs-title">ADMIN TERMINATED</div>
   <div class="fs-subtitle">管理者によって強制終了されました</div>
   <div class="fs-divider"></div>
@@ -568,7 +577,9 @@ function playSound(type){
 window.toggleSound=()=>{
   soundEnabled=!soundEnabled;
   const btn=document.getElementById('soundBtn');
-  btn.textContent=soundEnabled?'🔊 ON':'🔇 OFF';
+  document.getElementById('soundIconOn').style.display=soundEnabled?'':'none';
+  document.getElementById('soundIconOff').style.display=soundEnabled?'none':'';
+  document.getElementById('soundLabel').textContent=soundEnabled?'ON':'OFF';
   btn.className=soundEnabled?'sound-btn on':'sound-btn';
 };
 
@@ -946,7 +957,7 @@ function handleSysMsg(data){
   if(!data?.sysMsg||!data?.sysMsgTs)return;
   if(data.sysMsgTs<=_lastSysMsgTs)return;
   _lastSysMsgTs=data.sysMsgTs;
-  document.getElementById('sysMsgText').textContent='📢 '+data.sysMsg;
+  document.getElementById('sysMsgText').textContent='[!] '+data.sysMsg;
   const banner=document.getElementById('sysMsgBanner');
   banner.classList.add('show');
   setTimeout(()=>banner.classList.remove('show'),8000);
@@ -1017,6 +1028,7 @@ window.startBotGame=async(difficulty)=>{
   botCtrl=new BotController(botGame,difficulty);
   gameRunning=true;endedOnce=false;
 
+  let _lastMusicCheck=0;
   // Game loop
   const loop=ts=>{
     if(!gameRunning)return;
@@ -1045,7 +1057,7 @@ window.startBotGame=async(difficulty)=>{
         game.pendingGarbage+=res.garbageOut;
         statAtkRecv+=res.garbageOut;
         const badge=document.getElementById('attackBadge');
-        badge.textContent=`+${res.garbageOut} ⚠`;
+        badge.textContent=`+${res.garbageOut} !`;
         badge.classList.remove('show');void badge.offsetWidth;badge.classList.add('show');
         setTimeout(()=>badge.classList.remove('show'),1200);
         flashAttack();playSound('attack');
@@ -1054,6 +1066,20 @@ window.startBotGame=async(difficulty)=>{
 
     updateGameUI();
     document.getElementById('oppNameTag').textContent=`${oppName} (${botGame.score})`;
+
+    // Show own music on banner (bot mode)
+    if(ts-_lastMusicCheck>2000){
+      _lastMusicCheck=ts;
+      try{
+        const np=localStorage.getItem('yt_nowplaying');
+        const banner=document.getElementById('oppMusicBanner');
+        const titleEl=document.getElementById('oppMusicTitle');
+        if(banner&&titleEl){
+          if(np){const m=JSON.parse(np);titleEl.textContent='[YOU] '+(m.title||'');banner.style.display=m.title?'flex':'none';}
+          else{banner.style.display='none';}
+        }
+      }catch(e){}
+    }
 
     if(game.gameOver&&!endedOnce){endGame('LOSE');return;}
     if(botGame.gameOver&&!game.gameOver&&!endedOnce){endGame('WIN');return;}
@@ -1213,6 +1239,15 @@ async function startGame(preloadedData){
     const d=snap.val();if(!d)return;
     TetrisGame.drawOpponent(document.getElementById('opponentCanvas'),d);
     document.getElementById('oppNameTag').textContent=`${oppName} (${d.score||0})`;
+    // Show opponent's music
+    const banner=document.getElementById('oppMusicBanner');
+    const titleEl=document.getElementById('oppMusicTitle');
+    if(d.music){
+      titleEl.textContent=d.music;
+      banner.style.display='flex';
+    } else {
+      banner.style.display='none';
+    }
     if(d.gameOver&&!game?.gameOver&&gameRunning&&!endedOnce)endGame('WIN');
   });
 
@@ -1226,7 +1261,7 @@ async function startGame(preloadedData){
       game.pendingGarbage+=v.n;
       set(myGRef,{n:0});
       const badge=document.getElementById('attackBadge');
-      badge.textContent=`+${v.n} ⚠`;
+      badge.textContent=`+${v.n} !`;
       badge.classList.remove('show');void badge.offsetWidth;badge.classList.add('show');
       setTimeout(()=>badge.classList.remove('show'),1200);
       flashAttack();playSound('attack');
@@ -1258,7 +1293,14 @@ async function startGame(preloadedData){
 
     if(ts-lastPushTs>PUSH_RATE){
       lastPushTs=ts;
-      set(ref(db,`rooms/${roomCode}/game/${myRole}`),game.serialize()).catch(()=>{});
+      const gameData=game.serialize();
+      // Attach currently playing music info for opponent to see
+      try{
+        const np=localStorage.getItem('yt_nowplaying');
+        if(np){ const m=JSON.parse(np); gameData.music=m.title||''; }
+        else{ gameData.music=''; }
+      }catch(e){ gameData.music=''; }
+      set(ref(db,`rooms/${roomCode}/game/${myRole}`),gameData).catch(()=>{});
       if(pendingGarbageOut>0){
         const gn=pendingGarbageOut;pendingGarbageOut=0;
         get(oppGRef).then(s=>{const ex=s.val()?.n||0;set(oppGRef,{n:ex+gn}).catch(()=>{});});

@@ -112,14 +112,14 @@
     .menu { display: flex; flex-direction: column; gap: 14px; width: 100%; }
 
     /* BLOCK BUTTONS */
-    .menu-btn {
-      display: block; width: 100%; padding: 15px 20px;
+    .menu-btn { display: block; width: 100%; padding: 15px 20px;
       font-family: 'Press Start 2P', monospace;
       font-size: 10px; letter-spacing: 2px;
       text-decoration: none; text-align: center;
       border: none; cursor: pointer; transition: all .12s;
       position: relative; overflow: hidden; border-radius: 2px;
     }
+    .btn-icon-wrap { display: flex; align-items: center; justify-content: center; gap: 8px; }
     .menu-btn.primary {
       background: var(--acc); color: #000;
       box-shadow: 0 5px 0 rgba(0,80,100,.9), inset 0 1px 0 rgba(255,255,255,.4);
@@ -298,10 +298,10 @@
     <div class="card-corner bl"></div>
     <div class="card-corner br"></div>
     <div class="menu">
-      <a href="tetris-battle.html" class="menu-btn primary" style="background:linear-gradient(135deg,#7700ff,#cc00ff);box-shadow:0 5px 0 rgba(40,0,80,.9);" onclick="playSE('select')">🤖 ボット対戦</a>
-      <a href="tetris-multi.html" class="menu-btn primary" style="background:linear-gradient(135deg,#cc00ff,#ff0080);box-shadow:0 5px 0 rgba(80,0,60,.9);" onclick="playSE('select')">👥 マルチ対戦（2〜4人）</a>
-      <a href="how-to.html" class="menu-btn secondary" onclick="playSE('click')">📖 あそびかた</a>
-      <a href="updates.html" class="menu-btn secondary" onclick="playSE('click')">📋 更新履歴</a>
+      <a href="tetris-battle.html" class="menu-btn primary" style="background:linear-gradient(135deg,#7700ff,#cc00ff);box-shadow:0 5px 0 rgba(40,0,80,.9);" onclick="playSE('select')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="flex-shrink:0"><rect x="2" y="4" width="9" height="7" rx="1"/><rect x="4" y="2" width="5" height="2"/><rect x="4" y="6" width="2" height="2" fill="black" opacity=".4"/><rect x="7" y="6" width="2" height="2" fill="black" opacity=".4"/><rect x="0" y="6" width="2" height="1.5" rx=".5"/><rect x="11" y="6" width="2" height="1.5" rx=".5"/></svg>ボット対戦</span></a>
+      <a href="tetris-multi.html" class="menu-btn primary" style="background:linear-gradient(135deg,#cc00ff,#ff0080);box-shadow:0 5px 0 rgba(80,0,60,.9);" onclick="playSE('select')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="flex-shrink:0"><circle cx="4" cy="4" r="2.2"/><circle cx="9" cy="4" r="2.2"/><path d="M0 11c0-2.2 1.8-4 4-4h5c2.2 0 4 1.8 4 4H0z"/></svg>マルチ対戦（2〜4人）</span></a>
+      <a href="how-to.html" class="menu-btn secondary" onclick="playSE('click')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="5.5"/><path d="M6.5 4a1.5 1.5 0 0 1 1.5 1.5c0 1-1.5 1.5-1.5 2.5"/><circle cx="6.5" cy="10" r=".6" fill="currentColor" stroke="none"/></svg>あそびかた</span></a>
+      <a href="updates.html" class="menu-btn secondary" onclick="playSE('click')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="flex-shrink:0"><rect x="1" y="2" width="11" height="1.5" rx=".5"/><rect x="1" y="5.5" width="11" height="1.5" rx=".5"/><rect x="1" y="9" width="7" height="1.5" rx=".5"/></svg>更新履歴</span></a>
     </div>
     <!-- SOUND TOGGLE -->
     <div style="margin-top:18px;display:flex;align-items:center;justify-content:center;gap:10px;">
@@ -319,7 +319,7 @@
   " onmouseover="this.style.background='linear-gradient(135deg,rgba(170,255,0,0.18),rgba(0,245,255,0.10))';this.style.borderColor='rgba(170,255,0,0.7)'"
      onmouseout="this.style.background='linear-gradient(135deg,rgba(170,255,0,0.08),rgba(0,245,255,0.05))';this.style.borderColor='rgba(170,255,0,0.35)'"
      onclick="playSE('click')">
-    <span style="font-size:22px;flex-shrink:0;">🎵</span>
+    <span style="flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 22 22" fill="#aaff00"><path d="M8 17V7l10-2v10"/><circle cx="6" cy="17" r="2.5"/><circle cx="16" cy="15" r="2.5"/></svg></span>
     <div>
       <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:#aaff00;letter-spacing:1px;margin-bottom:4px;">BGM を流しながらプレイ</div>
       <div style="font-size:10px;color:var(--dim);letter-spacing:1px;">音楽を聴きながらプレイしたい方はこちら →</div>
@@ -327,7 +327,7 @@
   </a>
   <!-- Admin link: subtle, not in main menu -->
   <div style="margin-top:10px;">
-    <a href="admin.html" style="font-size:8px;color:var(--dim);text-decoration:none;letter-spacing:1px;opacity:0.4;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='0.4'">⚙ 管理</a>
+    <a href="admin.html" style="font-size:8px;color:var(--dim);text-decoration:none;letter-spacing:1px;opacity:0.4;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='0.4'">&#9881; 管理</a>
   </div>
 </div>
 <div class="footer">
