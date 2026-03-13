@@ -1,6 +1,16 @@
-export const APP_VERSION = "1.3.0";
+export const APP_VERSION = "1.4.0";
 
 export const UPDATE_LOG = [
+  {
+    version: "1.4.0",
+    title: "ナビ改善・BGM・SE追加・メニュー整理",
+    changes: [
+      "メニューから「1vs1 対戦」を削除し、「🤖 ボット対戦」と「👥 マルチ対戦」の2択に整理しました。",
+      "Web Audio APIによるチップチューンBGMをメニュー画面に追加しました。",
+      "ボタン選択音・クリック音・モーダル開閉音などのSE（効果音）を追加しました。",
+      "BGM・SEそれぞれのON/OFFトグルボタンをメニューに追加しました。"
+    ]
+  },
   {
     version: "1.3.0",
     title: "UI改善・バグ修正・操作性向上",
