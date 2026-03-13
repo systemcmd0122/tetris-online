@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TETRIS BATTLE — ボット対戦</title>
+<title>TETRIS BATTLE — リアルタイム対戦</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
   :root {
@@ -276,24 +276,32 @@
 <!-- ══ LOBBY ══ -->
 <div class="screen active" id="lobbyScreen">
   <div class="logo">TETRIS</div>
-  <div class="subtitle">VS BOT — SINGLE PLAYER</div>
+  <div class="subtitle">BATTLE — REAL-TIME PVP</div>
   <div class="card" style="position:relative;">
     <div class="px-corner tl"></div><div class="px-corner tr"></div>
     <div class="px-corner bl"></div><div class="px-corner br"></div>
-    <div class="card-title">🤖 DIFFICULTY SELECT</div>
+    <div class="card-title">▶ PLAYER SETUP</div>
     <div class="input-group">
       <label>PLAYER NAME</label>
       <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
     </div>
-    <div style="margin-bottom:18px;">
-      <div class="bot-difficulty-label" style="font-size:11px;color:rgba(204,0,255,.9);letter-spacing:3px;margin-bottom:12px;">SELECT DIFFICULTY</div>
+    <button class="btn btn-primary" onclick="createRoom()">＋ オンライン対戦（ルーム作成）</button>
+    <button class="btn btn-bot" onclick="toggleBotDifficulty()">🤖 VS BOT（ボット対戦）</button>
+    <a href="how-to.html" class="btn btn-secondary" style="text-decoration:none;text-align:center;display:block;">📖 あそびかた解説</a>
+    <div class="bot-difficulty" id="botDifficulty">
+      <div class="bot-difficulty-label">DIFFICULTY</div>
       <div class="diff-btns">
         <button class="diff-btn diff-easy" onclick="startBotGame(1)">EASY</button>
         <button class="diff-btn diff-normal" onclick="startBotGame(2)">NORMAL</button>
         <button class="diff-btn diff-hard" onclick="startBotGame(3)">HARD</button>
       </div>
     </div>
-    <a href="index.html" class="btn btn-danger" style="text-decoration:none;text-align:center;display:block;margin-top:8px;">← メニューに戻る</a>
+    <div class="divider">OR JOIN</div>
+    <div class="input-group">
+      <label>ROOM CODE</label>
+      <input type="text" id="roomCodeInput" placeholder="4桁コードを入力" maxlength="4" style="text-align:center;letter-spacing:10px;font-size:20px;">
+    </div>
+    <button class="btn btn-secondary" onclick="joinRoom()">→ ルームに参加</button>
   </div>
 </div>
 
@@ -1493,6 +1501,8 @@ function updateGameUI(){
   }
 }
 
+document.getElementById('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')window.joinRoom();});
+document.getElementById('roomCodeInput').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^0-9]/g,'');});
 document.getElementById('playerName').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase();});
 
 // ═══ TETRIS FALLING BG ═══
