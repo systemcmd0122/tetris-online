@@ -468,6 +468,16 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
               <div class="spec-name" id="specP2N">PLAYER 2</div>
               <canvas id="specCv2" class="spec-cv p2" width="200" height="400"></canvas>
             </div>
+            <div class="spec-col" id="specColP3" style="display:none">
+              <div class="spec-badge" style="background:rgba(170,255,0,0.1); border:1px solid var(--acc3); color:var(--acc3)">P3</div>
+              <div class="spec-name" id="specP3N">PLAYER 3</div>
+              <canvas id="specCv3" class="spec-cv" width="200" height="400" style="border-color:var(--acc3)"></canvas>
+            </div>
+            <div class="spec-col" id="specColP4" style="display:none">
+              <div class="spec-badge" style="background:rgba(255,170,0,0.1); border:1px solid var(--warn); color:var(--warn)">P4</div>
+              <div class="spec-name" id="specP4N">PLAYER 4</div>
+              <canvas id="specCv4" class="spec-cv" width="200" height="400" style="border-color:var(--warn)"></canvas>
+            </div>
           </div>
         </div>
       </div>
@@ -635,6 +645,11 @@ import{getFirestore,collection,addDoc,query,orderBy,limit,onSnapshot,deleteDoc,d
   from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import { APP_VERSION } from './config.js';
+import {
+  COLORS as ENGINE_COLORS, PIECES as ENGINE_PIECES,
+  COLS, ROWS, CELL
+} from './tetris-engine.js';
+
 const fbApp=initializeApp({
   apiKey:"AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
   authDomain:"tetris-online-9c827.firebaseapp.com",
@@ -684,17 +699,6 @@ window.doLogout=()=>{
 };
 
 // ══ TETRIS BOARD RENDERER ══
-const COLS=10,ROWS=20,CELL=20;
-const COLORS={I:'#00f5ff',O:'#f5d800',T:'#cc00ff',S:'#aaff00',Z:'#ff2244',J:'#1166ff',L:'#ff8800',G:'#2a3a55'};
-const PIECES={
-  I:[[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],[[0,0,1,0],[0,0,1,0],[0,0,1,0],[0,0,1,0]],[[0,0,0,0],[0,0,0,0],[1,1,1,1],[0,0,0,0]],[[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]]],
-  O:[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],
-  T:[[[0,1,0],[1,1,1],[0,0,0]],[[0,1,0],[0,1,1],[0,1,0]],[[0,0,0],[1,1,1],[0,1,0]],[[0,1,0],[1,1,0],[0,1,0]]],
-  S:[[[0,1,1],[1,1,0],[0,0,0]],[[0,1,0],[0,1,1],[0,0,1]],[[0,0,0],[0,1,1],[1,1,0]],[[1,0,0],[1,1,0],[0,1,0]]],
-  Z:[[[1,1,0],[0,1,1],[0,0,0]],[[0,0,1],[0,1,1],[0,1,0]],[[0,0,0],[1,1,0],[0,1,1]],[[0,1,0],[1,1,0],[1,0,0]]],
-  J:[[[1,0,0],[1,1,1],[0,0,0]],[[0,1,1],[0,1,0],[0,1,0]],[[0,0,0],[1,1,1],[0,0,1]],[[0,1,0],[0,1,0],[1,1,0]]],
-  L:[[[0,0,1],[1,1,1],[0,0,0]],[[0,1,0],[0,1,0],[0,1,1]],[[0,0,0],[1,1,1],[1,0,0]],[[1,1,0],[0,1,0],[0,1,0]]]
-};
 function drawBoard(cv,d){
   if(!d||!d.board)return;
   const cx=cv.getContext('2d');cx.clearRect(0,0,cv.width,cv.height);
@@ -704,14 +708,14 @@ function drawBoard(cv,d){
   d.board.forEach((row,r)=>{
     const isCl=cl.includes(r);
     row.forEach((cell,c)=>{
-      if(!cell)return;const col=COLORS[cell]||'#888';
+      if(!cell)return;const col=(cell==='G'?'#888888':ENGINE_COLORS[cell])||'#888';
       cx.globalAlpha=isCl?.35:1;cx.fillStyle=col+'cc';cx.fillRect(c*CELL+1,r*CELL+1,CELL-2,CELL-2);
       if(isCl){cx.fillStyle='rgba(255,255,255,.5)';cx.fillRect(c*CELL+1,r*CELL+1,CELL-2,CELL-2);}
       cx.fillStyle='rgba(255,255,255,.15)';cx.fillRect(c*CELL+1,r*CELL+1,CELL-2,3);cx.globalAlpha=1;
     });
   });
-  if(d.cur&&PIECES[d.cur.name]){const m=PIECES[d.cur.name][d.cur.rot||0];m.forEach((row,r)=>row.forEach((cell,c)=>{if(cell){const py=d.cur.y+r;if(py>=0){cx.fillStyle=(COLORS[d.cur.name]||'#888')+'99';cx.fillRect((d.cur.x+c)*CELL+1,py*CELL+1,CELL-2,CELL-2);}}}));}
-  if(d.over){cx.fillStyle='rgba(0,0,0,.8)';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#ff2244';cx.font='bold 11px "Press Start 2P"';cx.textAlign='center';cx.fillText('GAME OVER',cv.width/2,cv.height/2);}
+  if(d.cur&&ENGINE_PIECES[d.cur.name]){const m=ENGINE_PIECES[d.cur.name][d.cur.rot||0];m.forEach((row,r)=>row.forEach((cell,c)=>{if(cell){const py=d.cur.y+r;if(py>=0){cx.fillStyle=(ENGINE_COLORS[d.cur.name]||'#888')+'99';cx.fillRect((d.cur.x+c)*CELL+1,py*CELL+1,CELL-2,CELL-2);}}}));}
+  if(d.gameOver){cx.fillStyle='rgba(0,0,0,.8)';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#ff2244';cx.font='bold 11px "Press Start 2P"';cx.textAlign='center';cx.fillText('GAME OVER',cv.width/2,cx.height/2);}
 }
 
 // ══ ADMIN STATE ══
@@ -799,7 +803,7 @@ function renderTables(){
       <td>${statusBadge(r.status)}</td>
       <td>${r.p1?.name||'—'}</td>
       <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p1?.score??'—'}</td>
-      <td>${r.p2?.name||'—'}</td>
+      <td>${r.p2?.name || (r.p3?'+P3':(r.p4?'+P4':'—'))}</td>
       <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p2?.score??'—'}</td>
       <td style="color:var(--dim)">${r.game?.p1?.level??'—'}</td>
       <td style="color:var(--dim)">${fmtTime(r.ts)}</td>
@@ -924,14 +928,24 @@ window.startSpec=code=>{
   const r=roomsData[code];
   document.getElementById('specP1N').textContent=r?.p1?.name||'PLAYER 1';
   document.getElementById('specP2N').textContent=r?.p2?.name||'PLAYER 2';
+  if (r.p3) { document.getElementById('specColP3').style.display = 'flex'; document.getElementById('specP3N').textContent = r.p3.name; }
+  else { document.getElementById('specColP3').style.display = 'none'; }
+  if (r.p4) { document.getElementById('specColP4').style.display = 'flex'; document.getElementById('specP4N').textContent = r.p4.name; }
+  else { document.getElementById('specColP4').style.display = 'none'; }
   addLog(`観戦開始: ROOM ${code}`,'info');
 
   const cv1=document.getElementById('specCv1'),cv2=document.getElementById('specCv2');
+  const cv3=document.getElementById('specCv3'),cv4=document.getElementById('specCv4');
   const rp1=ref(db,`rooms/${code}/game/p1`);
   const rp2=ref(db,`rooms/${code}/game/p2`);
+  const rp3=ref(db,`rooms/${code}/game/p3`);
+  const rp4=ref(db,`rooms/${code}/game/p4`);
   onValue(rp1,s=>{const d=s.val();drawBoard(cv1,d);if(d){document.getElementById('ssP1Score').textContent=d.score||0;document.getElementById('ssP1Level').textContent=d.level||1;document.getElementById('ssP1Lines').textContent=d.lines||0;}});
   onValue(rp2,s=>{const d=s.val();drawBoard(cv2,d);if(d){document.getElementById('ssP2Score').textContent=d.score||0;document.getElementById('ssP2Level').textContent=d.level||1;document.getElementById('ssP2Lines').textContent=d.lines||0;}});
-  specUnsub.p1=rp1;specUnsub.p2=rp2;
+  onValue(rp3,s=>{const d=s.val();if(d)drawBoard(cv3,d);});
+  onValue(rp4,s=>{const d=s.val();if(d)drawBoard(cv4,d);});
+
+  specUnsub.p1=rp1;specUnsub.p2=rp2;specUnsub.p3=rp3;specUnsub.p4=rp4;
 
   // Update timer (store reference so we can clear it in stopSpec)
   if(specTimerIv)clearInterval(specTimerIv);
@@ -945,7 +959,9 @@ window.startSpec=code=>{
 window.stopSpec=()=>{
   if(specUnsub.p1)try{off(specUnsub.p1);}catch(e){}
   if(specUnsub.p2)try{off(specUnsub.p2);}catch(e){}
-  specUnsub={p1:null,p2:null};
+  if(specUnsub.p3)try{off(specUnsub.p3);}catch(e){}
+  if(specUnsub.p4)try{off(specUnsub.p4);}catch(e){}
+  specUnsub={p1:null,p2:null,p3:null,p4:null};
   if(specTimerIv){clearInterval(specTimerIv);specTimerIv=null;}
   if(specRoom)addLog(`観戦終了: ROOM ${specRoom}`,'info');
   specRoom=null;window.currentSpecRoom=null;

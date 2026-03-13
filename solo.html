@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TETRIS BATTLE — SOLO PLAY</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+  :root {
+    --bg:#020408; --surface:#0a0f1a; --border:#1a2540;
+    --accent:#00f5ff; --accent2:#ff0080; --accent3:#aaff00;
+    --text:#e0f0ff; --dim:#4a6080; --red:#ff3355; --warn:#ffaa00;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Orbitron',monospace;min-height:100vh;overflow:hidden}
+
+  canvas{display:block;image-rendering:pixelated}
+  .container{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:20px;position:relative;z-index:10}
+
+  .game-layout{display:flex;gap:20px;align-items:flex-start}
+  .side-panel{display:flex;flex-direction:column;gap:10px;min-width:100px}
+  .panel-box{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:12px;text-align:center}
+  .panel-title{font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:8px}
+  .panel-value{font-family:'Press Start 2P',monospace;font-size:14px;color:var(--accent3)}
+
+  #mainCanvas{border:2px solid var(--accent);box-shadow:0 0 20px rgba(0,245,255,0.3)}
+  #nextCanvas, #holdCanvas{background:rgba(0,0,0,0.3);border-radius:2px}
+
+  .menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(5px)}
+  .menu-overlay.hidden{display:none}
+  .menu-card{background:var(--surface);border:1px solid var(--border);padding:40px;border-radius:4px;width:100%;max-width:360px;text-align:center}
+  .menu-title{font-family:'Press Start 2P',monospace;font-size:18px;color:var(--accent);margin-bottom:30px}
+
+  .btn{display:block;width:100%;padding:15px;margin-bottom:12px;border:none;border-radius:2px;cursor:pointer;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:2px;transition:all 0.2s}
+  .btn-primary{background:var(--accent);color:#000}
+  .btn-secondary{background:transparent;border:2px solid var(--accent2);color:var(--accent2)}
+  .btn:hover{transform:translateY(-2px);opacity:0.9}
+
+  .stats-row{display:flex;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .stats-box{flex:1;background:var(--surface);border:1px solid var(--border);padding:10px;border-radius:4px}
+
+  #resultOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:110}
+  #resultOverlay.show{display:flex}
+  .result-title{font-family:'Press Start 2P',monospace;font-size:24px;color:var(--accent3);margin-bottom:20px}
+  .result-stats{margin-bottom:30px;width:100%;max-width:300px}
+  .rs-row{display:flex;justify-content:space-between;margin-bottom:10px;font-size:14px}
+  .rs-label{color:var(--dim)}
+  .rs-val{color:var(--text);font-family:'Press Start 2P',monospace}
+
+  #timerDisplay{font-size:18px;color:var(--accent2)}
+
+  .bg-elements{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.1}
+</style>
+</head>
+<body>
+
+<div class="bg-elements" id="bgCanvas"></div>
+
+<div class="container">
+  <div class="game-layout">
+    <div class="side-panel">
+      <div class="panel-box">
+        <div class="panel-title">HOLD</div>
+        <canvas id="holdCanvas" width="80" height="80"></canvas>
+      </div>
+      <div class="panel-box">
+        <div class="panel-title">LEVEL</div>
+        <div class="panel-value" id="levelDisplay">1</div>
+      </div>
+      <div class="panel-box" id="sprintTimerBox" style="display:none">
+        <div class="panel-title">TIME</div>
+        <div class="panel-value" id="timerDisplay">00:00.00</div>
+      </div>
+    </div>
+
+    <div style="position:relative">
+      <canvas id="mainCanvas" width="200" height="400"></canvas>
+    </div>
+
+    <div class="side-panel">
+      <div class="panel-box">
+        <div class="panel-title">NEXT</div>
+        <canvas id="nextCanvas" width="80" height="80"></canvas>
+      </div>
+      <div class="panel-box">
+        <div class="panel-title">SCORE</div>
+        <div class="panel-value" id="scoreDisplay">0</div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-title">LINES</div>
+        <div class="panel-value" id="linesDisplay">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px">
+    <button class="btn btn-secondary" style="width:auto;padding:8px 20px" onclick="location.href='index.html'">BACK TO MENU</button>
+  </div>
+</div>
+
+<div class="menu-overlay" id="modeSelectOverlay">
+  <div class="menu-card">
+    <div class="menu-title">SELECT MODE</div>
+  <button class="btn btn-primary" id="btnMarathon">MARATHON</button>
+  <button class="btn btn-primary" id="btnSprint">SPRINT (40 LINES)</button>
+    <button class="btn btn-secondary" onclick="location.href='index.html'">EXIT</button>
+
+    <div style="margin-top:30px; text-align:left; border-top:1px solid var(--border); padding-top:20px">
+      <div style="font-size:10px; color:var(--dim); margin-bottom:10px">PERSONAL BESTS</div>
+      <div class="stats-row">
+        <div class="stats-box">
+          <div class="panel-title">MARATHON</div>
+          <div class="panel-value" id="pbMarathon" style="font-size:10px">0</div>
+        </div>
+        <div class="stats-box">
+          <div class="panel-title">SPRINT</div>
+          <div class="panel-value" id="pbSprint" style="font-size:10px">--:--.--</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="resultOverlay">
+  <div class="result-title">GAME OVER</div>
+  <div class="result-stats">
+    <div class="rs-row"><span class="rs-label">SCORE</span><span class="rs-val" id="resScore">0</span></div>
+    <div class="rs-row"><span class="rs-label">LINES</span><span class="rs-val" id="resLines">0</span></div>
+    <div class="rs-row"><span class="rs-label">LEVEL</span><span class="rs-val" id="resLevel">1</span></div>
+    <div class="rs-row" id="resTimeRow" style="display:none"><span class="rs-label">TIME</span><span class="rs-val" id="resTime">00:00.00</span></div>
+  </div>
+  <button class="btn btn-primary" style="width:200px" onclick="location.reload()">TRY AGAIN</button>
+  <button class="btn btn-secondary" style="width:200px" onclick="location.href='index.html'">EXIT</button>
+</div>
+
+<script type="module">
+import {
+  TetrisGame, PIECES, COLORS, Bag, makePiece,
+  DAS, ARR, LOCK_DELAY
+} from './tetris-engine.js';
+
+window.game = null;
+let gameRunning = false;
+let currentMode = null;
+let startTime = 0;
+let animId = null;
+
+
+// Sound Engine
+let audioCtx = null;
+function getAudioCtx(){ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+function playSound(type){
+  try {
+    const ctx = getAudioCtx();
+    const g = ctx.createGain(); g.connect(ctx.destination);
+    const o = ctx.createOscillator(); o.connect(g);
+    const now = ctx.currentTime;
+    switch(type){
+      case 'move': o.frequency.setValueAtTime(220, now); g.gain.setValueAtTime(0.03, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.05); o.start(now); o.stop(now+0.05); break;
+      case 'rotate': o.frequency.setValueAtTime(330, now); o.frequency.exponentialRampToValueAtTime(440, now+0.06); g.gain.setValueAtTime(0.05, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.06); o.start(now); o.stop(now+0.06); break;
+      case 'lock': o.type = 'square'; o.frequency.setValueAtTime(180, now); g.gain.setValueAtTime(0.06, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.08); o.start(now); o.stop(now+0.08); break;
+      case 'clear1': o.type = 'sawtooth'; o.frequency.setValueAtTime(440, now); o.frequency.exponentialRampToValueAtTime(880, now+0.15); g.gain.setValueAtTime(0.08, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.15); o.start(now); o.stop(now+0.15); break;
+      case 'tetris': [440,554,659,880].forEach((f,i)=>{ const o2=ctx.createOscillator(),g2=ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.frequency.setValueAtTime(f,now+i*0.07); g2.gain.setValueAtTime(0.1,now+i*0.07); g2.gain.exponentialRampToValueAtTime(0.001,now+i*0.07+0.15); o2.start(now+i*0.07); o2.stop(now+i*0.07+0.15); }); break;
+      case 'harddrop': o.type = 'square'; o.frequency.setValueAtTime(160, now); o.frequency.exponentialRampToValueAtTime(80, now+0.1); g.gain.setValueAtTime(0.12, now); g.gain.exponentialRampToValueAtTime(0.001, now+0.1); o.start(now); o.stop(now+0.1); break;
+    }
+  } catch(e) {}
+}
+
+function formatTime(ms) {
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  const cs = Math.floor((ms % 1000) / 10);
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${cs.toString().padStart(2, '0')}`;
+}
+
+function updateUI() {
+  if (!window.game) return;
+  document.getElementById('scoreDisplay').textContent = window.game.score;
+  document.getElementById('linesDisplay').textContent = window.game.lines;
+  document.getElementById('levelDisplay').textContent = window.game.level;
+}
+
+const startSoloGame = (mode) => {
+  console.log("Starting solo game:", mode);
+  currentMode = mode;
+  document.getElementById('modeSelectOverlay').style.display = 'none';
+  if (mode === 'sprint') {
+    document.getElementById('sprintTimerBox').style.display = 'block';
+  }
+
+  const callbacks = {
+    onSound: playSound,
+    onUIUpdate: updateUI
+  };
+
+  window.game = new TetrisGame({
+    main: document.getElementById('mainCanvas'),
+    hold: document.getElementById('holdCanvas'),
+    next: document.getElementById('nextCanvas')
+  }, callbacks);
+
+  gameRunning = true;
+  startTime = performance.now();
+
+  const loop = (ts) => {
+    if (!gameRunning) return;
+
+    if (currentMode === 'sprint') {
+      const el = ts - startTime;
+      document.getElementById('timerDisplay').textContent = formatTime(el);
+      if (game.lines >= 40) {
+        endGame();
+        return;
+      }
+    }
+
+    game.update(ts);
+    game.draw();
+
+    if (game.gameOver) {
+      endGame();
+      return;
+    }
+
+    animId = requestAnimationFrame(loop);
+  };
+  animId = requestAnimationFrame(loop);
+};
+
+function endGame() {
+  gameRunning = false;
+  cancelAnimationFrame(animId);
+
+  const resScore = game.score;
+  const resLines = game.lines;
+  const resLevel = game.level;
+  const resTime = performance.now() - startTime;
+
+  document.getElementById('resScore').textContent = resScore;
+  document.getElementById('resLines').textContent = resLines;
+  document.getElementById('resLevel').textContent = resLevel;
+
+  if (currentMode === 'sprint') {
+    document.getElementById('resTimeRow').style.display = 'flex';
+    document.getElementById('resTime').textContent = formatTime(resTime);
+
+    const bestSprint = localStorage.getItem('pbSprint');
+    if (!bestSprint || resTime < parseFloat(bestSprint)) {
+      localStorage.setItem('pbSprint', resTime);
+    }
+  } else {
+    const bestMarathon = localStorage.getItem('pbMarathon') || 0;
+    if (resScore > parseInt(bestMarathon)) {
+      localStorage.setItem('pbMarathon', resScore);
+    }
+  }
+
+  document.getElementById('resultOverlay').classList.add('show');
+}
+
+// Input handling
+const keys = new Set();
+let dasTimer = null, dasDir = 0, arrTimer = null;
+let softDropInterval = null;
+
+function dasStart(dir){
+  if(dasDir===dir)return; dasStop(); dasDir=dir;
+  game?.move(dir);
+  dasTimer=setTimeout(()=>{arrTimer=setInterval(()=>{game?.move(dir);}, 33);}, 167);
+}
+function dasStop(){clearTimeout(dasTimer);clearInterval(arrTimer);dasTimer=null;arrTimer=null;dasDir=0;}
+
+document.addEventListener('keydown', e => {
+  if (keys.has(e.code)) return; keys.add(e.code);
+  if (!game || !gameRunning) return;
+  switch(e.code){
+    case 'ArrowLeft': e.preventDefault(); dasStart(-1); break;
+    case 'ArrowRight': e.preventDefault(); dasStart(1); break;
+    case 'ArrowUp': case 'KeyX': e.preventDefault(); game.rotate(1); break;
+    case 'KeyZ': e.preventDefault(); game.rotate(-1); break;
+    case 'Space': e.preventDefault(); game.hardDrop(); break;
+    case 'KeyC': case 'ShiftLeft': case 'ShiftRight': case 'Shift': e.preventDefault(); game.hold(); break;
+    case 'ArrowDown':
+      e.preventDefault();
+      game.softDrop();
+      softDropInterval = setInterval(() => { if (game && gameRunning) game.softDrop(); }, 50);
+      break;
+  }
+});
+
+document.addEventListener('keyup', e => {
+  keys.delete(e.code);
+  if (e.code === 'ArrowLeft' && dasDir === -1) dasStop();
+  if (e.code === 'ArrowRight' && dasDir === 1) dasStop();
+  if (e.code === 'ArrowDown') { clearInterval(softDropInterval); softDropInterval = null; }
+});
+
+// Load PB
+(function(){
+  const marathon = localStorage.getItem('pbMarathon') || 0;
+  const sprint = localStorage.getItem('pbSprint');
+  document.getElementById('pbMarathon').textContent = marathon;
+  document.getElementById('pbSprint').textContent = sprint ? formatTime(parseFloat(sprint)) : '--:--.--';
+})();
+
+document.getElementById('btnMarathon').addEventListener('click', () => startSoloGame('marathon'));
+document.getElementById('btnSprint').addEventListener('click', () => startSoloGame('sprint'));
+</script>
+
+</body>
+</html>
