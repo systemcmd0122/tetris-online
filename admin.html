@@ -1610,34 +1610,8 @@
                 <button class="sbtn" onclick="stopSpec()">← 戻る</button>
               </div>
             </div>
-            <div class="spec-arena">
-              <div class="spec-col">
-                <div class="spec-badge p1">P1</div>
-                <div class="spec-name" id="specP1N">PLAYER 1</div>
-                <canvas id="specCv1" class="spec-cv p1" width="200" height="400"></canvas>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:12px;align-self:center">
-                <div class="vs-txt">VS</div>
-                <div class="spec-stats-panel">
-                  <div class="ss-row"><span class="ss-label">P1 SCORE</span><span class="ss-v1" id="ssP1Score">0</span>
-                  </div>
-                  <div class="ss-row"><span class="ss-label">P2 SCORE</span><span class="ss-v2" id="ssP2Score">0</span>
-                  </div>
-                  <div class="ss-row"><span class="ss-label">P1 LEVEL</span><span class="ss-v1" id="ssP1Level">1</span>
-                  </div>
-                  <div class="ss-row"><span class="ss-label">P2 LEVEL</span><span class="ss-v2" id="ssP2Level">1</span>
-                  </div>
-                  <div class="ss-row"><span class="ss-label">P1 LINES</span><span class="ss-v1" id="ssP1Lines">0</span>
-                  </div>
-                  <div class="ss-row"><span class="ss-label">P2 LINES</span><span class="ss-v2" id="ssP2Lines">0</span>
-                  </div>
-                </div>
-              </div>
-              <div class="spec-col">
-                <div class="spec-badge p2">P2</div>
-                <div class="spec-name" id="specP2N">PLAYER 2</div>
-                <canvas id="specCv2" class="spec-cv p2" width="200" height="400"></canvas>
-              </div>
+            <div class="spec-arena" id="specArena">
+                <!-- Dynamically populated up to 4 players -->
             </div>
           </div>
         </div>
@@ -1897,7 +1871,7 @@
     }
 
     // ══ ADMIN STATE ══
-    let roomsData = {}; let specRoom = null, specUnsub = { p1: null, p2: null }, specStartTs = null, specTimerIv = null;
+    let roomsData = {}; let specRoom = null, specUnsub = {}, specStartTs = null, specTimerIv = null;
     let roomsListener = null; let logsUnsub = null; let defaultForceMsg = '管理者によってこのルームは強制終了されました';
     let totalRooms = 0;
 
@@ -1937,7 +1911,7 @@
       const r = Object.values(roomsData);
       const active = r.filter(x => x.status === 'ready').length;
       const waiting = r.filter(x => x.status === 'waiting').length;
-      const players = r.reduce((n, x) => n + (x.p1 ? 1 : 0) + (x.p2 ? 1 : 0), 0);
+      const players = r.reduce((n, x) => n + (x.p1 ? 1 : 0) + (x.p2 ? 1 : 0) + (x.p3 ? 1 : 0) + (x.p4 ? 1 : 0), 0);
       document.getElementById('st-active').textContent = active;
       document.getElementById('st-wait').textContent = waiting;
       document.getElementById('st-players').textContent = players;
@@ -1965,7 +1939,7 @@
       <td style="font-family:'Press Start 2P',monospace;color:var(--acc);letter-spacing:5px;font-size:11px">${code}</td>
       <td>${statusBadge(r.status)}</td>
       <td>${r.p1?.name || '—'}</td>
-      <td>${r.p2?.name || '—'}</td>
+      <td>${(r.p2 ? '👤' : '') + (r.p3 ? '👤' : '') + (r.p4 ? '👤' : '') || '—'}</td>
       <td style="color:var(--dim)">${fmtTime(r.ts)}</td>
       <td>${r.status === 'ready' ? `<button class="abtn abtn-watch" onclick="startSpec('${code}')">👁 観戦</button>` : ''}
           <button class="abtn abtn-stop" onclick="openFsModal('${code}')">🛑 停止</button>
@@ -1984,8 +1958,8 @@
       <td>${statusBadge(r.status)}</td>
       <td>${r.p1?.name || '—'}</td>
       <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p1?.score ?? '—'}</td>
-      <td>${r.p2?.name || '—'}</td>
-      <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p2?.score ?? '—'}</td>
+      <td>${[r.p2, r.p3, r.p4].filter(x => x).map(x => x.name).join(', ') || '—'}</td>
+      <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${Math.max(r.game?.p2?.score || 0, r.game?.p3?.score || 0, r.game?.p4?.score || 0) || '—'}</td>
       <td style="color:var(--dim)">${r.game?.p1?.level ?? '—'}</td>
       <td style="color:var(--dim)">${fmtTime(r.ts)}</td>
       <td>${r.status === 'ready' ? `<button class="abtn abtn-watch" onclick="startSpec('${code}')">👁</button>` : ''}
@@ -2110,16 +2084,41 @@
       specStartTs = Date.now();
 
       const r = roomsData[code];
-      document.getElementById('specP1N').textContent = r?.p1?.name || 'PLAYER 1';
-      document.getElementById('specP2N').textContent = r?.p2?.name || 'PLAYER 2';
-      addLog(`観戦開始: ROOM ${code}`, 'info');
+      const arena = document.getElementById('specArena');
+      arena.innerHTML = '';
 
-      const cv1 = document.getElementById('specCv1'), cv2 = document.getElementById('specCv2');
-      const rp1 = ref(db, `rooms/${code}/game/p1`);
-      const rp2 = ref(db, `rooms/${code}/game/p2`);
-      onValue(rp1, s => { const d = s.val(); drawBoard(cv1, d); if (d) { document.getElementById('ssP1Score').textContent = d.score || 0; document.getElementById('ssP1Level').textContent = d.level || 1; document.getElementById('ssP1Lines').textContent = d.lines || 0; } });
-      onValue(rp2, s => { const d = s.val(); drawBoard(cv2, d); if (d) { document.getElementById('ssP2Score').textContent = d.score || 0; document.getElementById('ssP2Level').textContent = d.level || 1; document.getElementById('ssP2Lines').textContent = d.lines || 0; } });
-      specUnsub.p1 = rp1; specUnsub.p2 = rp2;
+      const slots = ['p1', 'p2', 'p3', 'p4'];
+      slots.forEach((s, i) => {
+          if (!r[s]) return;
+          const col = document.createElement('div');
+          col.className = 'spec-col';
+          col.innerHTML = `
+            <div class="spec-badge ${s}">${s.toUpperCase()}</div>
+            <div class="spec-name">${r[s].name}</div>
+            <canvas id="specCv-${s}" class="spec-cv ${s}" width="160" height="320"></canvas>
+            <div class="spec-stats-panel" style="margin-top:10px">
+                <div class="ss-row"><span class="ss-label">SCORE</span><span class="ss-v1" id="ss-${s}-score">0</span></div>
+                <div class="ss-row"><span class="ss-label">LEVEL</span><span class="ss-v1" id="ss-${s}-level">1</span></div>
+                <div class="ss-row"><span class="ss-label">LINES</span><span class="ss-v1" id="ss-${s}-lines">0</span></div>
+            </div>
+          `;
+          arena.appendChild(col);
+
+          const cv = document.getElementById(`specCv-${s}`);
+          const rGame = ref(db, `rooms/${code}/game/${s}`);
+          const l = onValue(rGame, snap => {
+              const d = snap.val();
+              if (d) {
+                  drawBoard(cv, d);
+                  document.getElementById(`ss-${s}-score`).textContent = d.score || 0;
+                  document.getElementById(`ss-${s}-level`).textContent = d.level || 1;
+                  document.getElementById(`ss-${s}-lines`).textContent = d.lines || 0;
+              }
+          });
+          specUnsub[s] = { ref: rGame, fn: l };
+      });
+
+      addLog(`観戦開始: ROOM ${code}`, 'info');
 
       // Update timer (store reference so we can clear it in stopSpec)
       if (specTimerIv) clearInterval(specTimerIv);
@@ -2131,9 +2130,10 @@
       }, 1000);
     };
     window.stopSpec = () => {
-      if (specUnsub.p1) try { off(specUnsub.p1); } catch (e) { }
-      if (specUnsub.p2) try { off(specUnsub.p2); } catch (e) { }
-      specUnsub = { p1: null, p2: null };
+      Object.keys(specUnsub).forEach(s => {
+          if (specUnsub[s]) try { off(specUnsub[s].ref, 'value', specUnsub[s].fn); } catch (e) {}
+      });
+      specUnsub = {};
       if (specTimerIv) { clearInterval(specTimerIv); specTimerIv = null; }
       if (specRoom) addLog(`観戦終了: ROOM ${specRoom}`, 'info');
       specRoom = null; window.currentSpecRoom = null;

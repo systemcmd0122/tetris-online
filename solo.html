@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TETRIS SOLO — 1人プレイ</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+    :root {
+      --bg: #020408; --surface: #0a0f1a; --border: #1a2540;
+      --accent: #00f5ff; --accent2: #ff0080; --accent3: #aaff00;
+      --text: #e0f0ff; --dim: #4a6080;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Orbitron', monospace; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      overflow: hidden; touch-action: none;
+    }
+    #bgCanvas { position: fixed; inset: 0; z-index: 0; opacity: 0.15; pointer-events: none; }
+    .container { position: relative; z-index: 10; display: flex; gap: 20px; align-items: flex-start; }
+    .side-panel { display: flex; flex-direction: column; gap: 10px; width: 100px; }
+    .main-panel { position: relative; }
+    canvas { display: block; background: rgba(0,0,0,0.5); border: 1px solid var(--border); }
+    #myCanvas { border-color: var(--accent); box-shadow: 0 0 20px rgba(0,245,255,0.2); }
+
+    .panel-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 2px; padding: 10px; text-align: center;
+    }
+    .panel-label { font-size: 9px; color: var(--dim); letter-spacing: 1px; margin-bottom: 5px; }
+    .panel-value { font-family: 'Press Start 2P', monospace; font-size: 12px; color: var(--accent3); }
+    .panel-value.timer { font-size: 10px; color: var(--accent); }
+
+    .overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.85);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 20px; z-index: 100;
+    }
+    .overlay.hidden { display: none; }
+    .overlay-title { font-family: 'Press Start 2P', monospace; font-size: 20px; color: var(--accent); }
+    .btn {
+      padding: 12px 24px; background: var(--accent); color: #000;
+      font-family: 'Orbitron', monospace; font-weight: bold; border: none;
+      border-radius: 2px; cursor: pointer; letter-spacing: 2px;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,245,255,0.4); }
+
+    .mode-select { gap: 10px; display: flex; flex-direction: column; }
+
+    .mobile-controls {
+      display: none; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      margin-top: 20px; width: 100%; max-width: 320px;
+    }
+    .m-btn {
+      height: 60px; background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); font-size: 20px; display: flex; align-items: center;
+      justify-content: center; border-radius: 4px; user-select: none;
+    }
+    .m-btn:active { background: var(--accent); color: #000; }
+
+    @media (max-height: 600px) {
+      .container { transform: scale(0.8); }
+    }
+    @media (max-width: 600px) {
+      .mobile-controls { display: grid; }
+      .container { transform: scale(0.9); }
+    }
+
+    .top-bar {
+      position: fixed; top: 0; left: 0; right: 0; padding: 10px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(10,15,26,0.8); border-bottom: 1px solid var(--border);
+    }
+    .back-link { color: var(--dim); text-decoration: none; font-size: 12px; }
+    .back-link:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+
+  <div class="top-bar">
+    <a href="index.html" class="back-link">◀ MENU</a>
+    <div id="modeDisplay" style="color:var(--accent2); font-weight:bold; letter-spacing:2px;">MARATHON</div>
+    <div style="font-size:10px; color:var(--dim);">VER 1.4.0</div>
+  </div>
+
+  <div class="container">
+    <div class="side-panel">
+      <div class="panel-box">
+        <div class="panel-label">HOLD</div>
+        <canvas id="holdCanvas" width="80" height="80"></canvas>
+      </div>
+      <div class="panel-box">
+        <div class="panel-label">LEVEL</div>
+        <div class="panel-value" id="levelVal">1</div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-label">LINES</div>
+        <div class="panel-value" id="linesVal">0</div>
+      </div>
+    </div>
+
+    <div class="main-panel">
+      <canvas id="myCanvas" width="200" height="400"></canvas>
+
+      <div id="startOverlay" class="overlay">
+        <div class="overlay-title">TETRIS SOLO</div>
+        <div class="mode-select">
+          <button class="btn" onclick="startGame('marathon')">MARATHON</button>
+          <button class="btn" style="background:var(--accent2)" onclick="startGame('sprint')">40 LINES SPRINT</button>
+        </div>
+      </div>
+
+      <div id="pauseOverlay" class="overlay hidden">
+        <div class="overlay-title">PAUSED</div>
+        <button class="btn" onclick="togglePause()">RESUME</button>
+        <button class="btn" style="background:var(--dim)" onclick="location.reload()">RESTART</button>
+      </div>
+
+      <div id="overOverlay" class="overlay hidden">
+        <div class="overlay-title" id="overTitle">GAME OVER</div>
+        <div id="finalScore" style="font-family:'Press Start 2P'; font-size:14px; color:var(--accent3);"></div>
+        <div id="bestScore" style="font-size:10px; color:var(--dim); margin-top:5px;"></div>
+        <button class="btn" style="margin-top:20px;" onclick="location.reload()">PLAY AGAIN</button>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="panel-box">
+        <div class="panel-label">NEXT</div>
+        <canvas id="nextCanvas" width="80" height="80"></canvas>
+      </div>
+      <div class="panel-box">
+        <div class="panel-label">SCORE</div>
+        <div class="panel-value" id="scoreVal">0</div>
+      </div>
+      <div class="panel-box" id="timerBox" style="display:none">
+        <div class="panel-label">TIME</div>
+        <div class="panel-value timer" id="timerVal">00:00.00</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mobile-controls">
+    <div class="m-btn" id="m-left">←</div>
+    <div class="m-btn" id="m-rotate">↻</div>
+    <div class="m-btn" id="m-right">→</div>
+    <div class="m-btn" id="m-soft">↓</div>
+    <div class="m-btn" id="m-hard">▼</div>
+    <div class="m-btn" id="m-hold">C</div>
+  </div>
+
+  <script type="module">
+    import { TetrisGame } from './tetris-engine.js';
+    import { GAME_CONFIG } from './config.js';
+
+    let game = null;
+    let mode = 'marathon';
+    let isPaused = false;
+    let gameRunning = false;
+    let startTime = 0;
+    let elapsedTime = 0;
+    let totalPausedTime = 0;
+    let pauseStartTime = 0;
+    let timerInterval = null;
+
+    window.startGame = (selectedMode) => {
+      mode = selectedMode;
+      document.getElementById('startOverlay').classList.add('hidden');
+      document.getElementById('modeDisplay').textContent = mode.toUpperCase();
+      if (mode === 'sprint') {
+        document.getElementById('timerBox').style.display = 'block';
+      }
+
+      game = new TetrisGame('myCanvas', 'holdCanvas', 'nextCanvas', {
+        onSound: playSound,
+        onUIUpdate: updateUI
+      });
+
+      gameRunning = true;
+      startTime = performance.now();
+      totalPausedTime = 0;
+      if (mode === 'sprint') {
+        timerInterval = setInterval(updateTimer, 10);
+      }
+      requestAnimationFrame(loop);
+    };
+
+    function updateTimer() {
+      if (isPaused || !gameRunning) return;
+      elapsedTime = performance.now() - startTime - totalPausedTime;
+      const ms = Math.floor((elapsedTime % 1000) / 10).toString().padStart(2, '0');
+      const s = Math.floor((elapsedTime / 1000) % 60).toString().padStart(2, '0');
+      const m = Math.floor(elapsedTime / 60000).toString().padStart(2, '0');
+      document.getElementById('timerVal').textContent = `${m}:${s}.${ms}`;
+    }
+
+    function loop(ts) {
+      if (!gameRunning || isPaused) return;
+      game.update(ts);
+      game.draw();
+      updateUI();
+
+      if (game.gameOver) {
+        endGame();
+        return;
+      }
+
+      if (mode === 'sprint' && game.lines >= 40) {
+        gameRunning = false;
+        endGame(true);
+        return;
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    function updateUI() {
+      document.getElementById('scoreVal').textContent = game.score;
+      document.getElementById('levelVal').textContent = game.level;
+      document.getElementById('linesVal').textContent = game.lines;
+    }
+
+    function endGame(cleared = false) {
+      gameRunning = false;
+      clearInterval(timerInterval);
+      const overOverlay = document.getElementById('overOverlay');
+      const overTitle = document.getElementById('overTitle');
+      const finalScore = document.getElementById('finalScore');
+      const bestScore = document.getElementById('bestScore');
+
+      overOverlay.classList.remove('hidden');
+
+      if (mode === 'sprint') {
+        if (cleared) {
+          overTitle.textContent = 'FINISH!';
+          finalScore.textContent = document.getElementById('timerVal').textContent;
+          const best = localStorage.getItem('sprint_best') || 999999999;
+          if (elapsedTime < best) {
+            localStorage.setItem('sprint_best', elapsedTime);
+            bestScore.textContent = 'NEW PERSONAL BEST!';
+          } else {
+            const bms = Math.floor((best % 1000) / 10).toString().padStart(2, '0');
+            const bs = Math.floor((best / 1000) % 60).toString().padStart(2, '0');
+            const bm = Math.floor(best / 60000).toString().padStart(2, '0');
+            bestScore.textContent = `BEST: ${bm}:${bs}.${bms}`;
+          }
+        } else {
+          overTitle.textContent = 'GAME OVER';
+          finalScore.textContent = `${game.lines}/40 LINES`;
+        }
+      } else {
+        overTitle.textContent = 'GAME OVER';
+        finalScore.textContent = `SCORE: ${game.score}`;
+        const best = localStorage.getItem('marathon_best') || 0;
+        if (game.score > best) {
+          localStorage.setItem('marathon_best', game.score);
+          bestScore.textContent = 'NEW HIGH SCORE!';
+        } else {
+          bestScore.textContent = `BEST: ${best}`;
+        }
+      }
+    }
+
+    window.togglePause = () => {
+      if (!gameRunning || game.gameOver) return;
+      isPaused = !isPaused;
+      document.getElementById('pauseOverlay').classList.toggle('hidden');
+      if (isPaused) {
+        pauseStartTime = performance.now();
+      } else {
+        totalPausedTime += performance.now() - pauseStartTime;
+        requestAnimationFrame(loop);
+      }
+    };
+
+    // Keyboard
+    const keys = new Set();
+    document.addEventListener('keydown', e => {
+      if (!game || !gameRunning || isPaused) {
+        if (e.code === 'Escape' || e.code === 'KeyP') togglePause();
+        return;
+      }
+      if (keys.has(e.code)) return;
+      keys.add(e.code);
+      switch(e.code) {
+        case 'ArrowLeft': game.move(-1); break;
+        case 'ArrowRight': game.move(1); break;
+        case 'ArrowUp': case 'KeyX': game.rotate(1); break;
+        case 'KeyZ': game.rotate(-1); break;
+        case 'Space': game.hardDrop(); break;
+        case 'KeyC': case 'ShiftLeft': case 'ShiftRight': game.hold(); break;
+        case 'Escape': case 'KeyP': togglePause(); break;
+      }
+    });
+    document.addEventListener('keyup', e => keys.delete(e.code));
+
+    // Soft Drop
+    let softDropIv = null;
+    document.addEventListener('keydown', e => {
+      if (e.code === 'ArrowDown' && !softDropIv && gameRunning && !isPaused) {
+        game.softDrop();
+        softDropIv = setInterval(() => game.softDrop(), 50);
+      }
+    });
+    document.addEventListener('keyup', e => {
+      if (e.code === 'ArrowDown') { clearInterval(softDropIv); softDropIv = null; }
+    });
+
+    // Mobile
+    const setupM = (id, fn, interval = null) => {
+      const el = document.getElementById(id);
+      let iv = null;
+      const start = (e) => {
+        e.preventDefault();
+        if (!game || !gameRunning || isPaused) return;
+        fn();
+        if (interval) iv = setInterval(fn, interval);
+      };
+      const stop = () => { clearInterval(iv); iv = null; };
+      el.addEventListener('touchstart', start);
+      el.addEventListener('touchend', stop);
+    };
+    setupM('m-left', () => game.move(-1), 100);
+    setupM('m-right', () => game.move(1), 100);
+    setupM('m-soft', () => game.softDrop(), 50);
+    setupM('m-rotate', () => game.rotate(1));
+    setupM('m-hard', () => game.hardDrop());
+    setupM('m-hold', () => game.hold());
+
+    // Sound
+    let audioCtx = null;
+    function getAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+    function playSound(type) {
+      try {
+        const ctx = getAudioCtx();
+        const g = ctx.createGain(); g.connect(ctx.destination);
+        const o = ctx.createOscillator(); o.connect(g);
+        const now = ctx.currentTime;
+        switch (type) {
+          case 'move': o.frequency.setValueAtTime(220, now); g.gain.setValueAtTime(.03, now); g.gain.exponentialRampToValueAtTime(.001, now + .05); o.start(now); o.stop(now + .05); break;
+          case 'rotate': o.frequency.setValueAtTime(330, now); o.frequency.exponentialRampToValueAtTime(440, now + .06); g.gain.setValueAtTime(.05, now); g.gain.exponentialRampToValueAtTime(.001, now + .06); o.start(now); o.stop(now + .06); break;
+          case 'lock': o.type = 'square'; o.frequency.setValueAtTime(180, now); g.gain.setValueAtTime(.06, now); g.gain.exponentialRampToValueAtTime(.001, now + .08); o.start(now); o.stop(now + .08); break;
+          case 'clear1': o.type = 'sawtooth'; o.frequency.setValueAtTime(440, now); o.frequency.exponentialRampToValueAtTime(880, now + .15); g.gain.setValueAtTime(.08, now); g.gain.exponentialRampToValueAtTime(.001, now + .15); o.start(now); o.stop(now + .15); break;
+          case 'tetris': [440, 554, 659, 880].forEach((f, i) => { const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.frequency.setValueAtTime(f, now + i * .07); g2.gain.setValueAtTime(.1, now + i * .07); g2.gain.exponentialRampToValueAtTime(.001, now + i * .07 + .15); o2.start(now + i * .07); o2.stop(now + i * .07 + .15); }); break;
+          case 'harddrop': o.type = 'square'; o.frequency.setValueAtTime(160, now); o.frequency.exponentialRampToValueAtTime(80, now + .1); g.gain.setValueAtTime(.12, now); g.gain.exponentialRampToValueAtTime(.001, now + .1); o.start(now); o.stop(now + .1); break;
+        }
+      } catch (e) { }
+    }
+
+    // BG
+    (function () {
+      const canvas = document.getElementById('bgCanvas');
+      const ctx = canvas.getContext('2d');
+      let W, H;
+      function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+      resize(); window.addEventListener('resize', resize);
+      function frame() {
+        ctx.clearRect(0, 0, W, H);
+        ctx.strokeStyle = 'rgba(0, 245, 255, 0.05)';
+        ctx.lineWidth = 1;
+        const size = 40;
+        for (let x = 0; x < W; x += size) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+        }
+        for (let y = 0; y < H; y += size) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        }
+        requestAnimationFrame(frame);
+      }
+      frame();
+    })();
+
+    // URL parameter mode selection
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('mode') === 'sprint') {
+        setTimeout(() => startGame('sprint'), 100);
+    } else if (urlParams.get('mode') === 'marathon') {
+        setTimeout(() => startGame('marathon'), 100);
+    }
+  </script>
+</body>
+</html>
