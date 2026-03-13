@@ -300,6 +300,7 @@
     <div class="menu">
       <a href="tetris-battle.html" class="menu-btn primary" style="background:linear-gradient(135deg,#7700ff,#cc00ff);box-shadow:0 5px 0 rgba(40,0,80,.9);" onclick="playSE('select')">🤖 ボット対戦</a>
       <a href="tetris-multi.html" class="menu-btn primary" style="background:linear-gradient(135deg,#cc00ff,#ff0080);box-shadow:0 5px 0 rgba(80,0,60,.9);" onclick="playSE('select')">👥 マルチ対戦（2〜4人）</a>
+      <button class="menu-btn secondary" onclick="openMusicPlayer()" style="color:var(--acc3);border-color:var(--acc3);background:rgba(170,255,0,0.05);">🎵 ミュージックプレイヤー</button>
       <a href="how-to.html" class="menu-btn secondary" onclick="playSE('click')">📖 あそびかた</a>
       <a href="updates.html" class="menu-btn secondary" onclick="playSE('click')">📋 更新履歴</a>
     </div>
@@ -376,6 +377,27 @@ const SE = {
 };
 
 window.playSE = (name) => { if(!_seOn) return; try{ SE[name]&&SE[name](); }catch(e){} };
+
+let _musicWin = null;
+window.openMusicPlayer = () => {
+  playSE('select');
+  // ウィンドウが既に開いていれば前面に出す
+  if (_musicWin && !_musicWin.closed) {
+    _musicWin.focus();
+    return;
+  }
+  const w = 400, h = 620;
+  const left = Math.max(0, window.screen.width  - w - 20);
+  const top  = Math.max(0, (window.screen.height - h) / 2);
+  _musicWin = window.open(
+    'youtube-player.html',
+    'TetrisMusicPlayer',
+    `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+  );
+  if (!_musicWin) {
+    alert('ポップアップがブロックされました。\nブラウザのポップアップ許可設定を確認してください。');
+  }
+};
 
 window.toggleSE = () => {
   _seOn = !_seOn;

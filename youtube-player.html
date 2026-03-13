@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎵 MUSIC — TETRIS BATTLE</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+    :root {
+      --bg: #04060f; --s0: #080d18; --s1: #0d1525;
+      --acc: #00f5ff; --acc2: #ff0080; --acc3: #aaff00;
+      --tx: #e0f0ff; --dim: #4a6080;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background: var(--bg); color: var(--tx);
+      font-family: 'Orbitron', monospace;
+      display: flex; flex-direction: column;
+      user-select: none;
+    }
+    .rainbow-bar {
+      height: 3px; flex-shrink: 0;
+      background: linear-gradient(90deg,#cc00ff,#0066ff,#00f5ff,#aaff00,#ff8800,#ff0040,#cc00ff);
+      background-size: 300% 100%; animation: rbShift 3s linear infinite;
+    }
+    @keyframes rbShift { 0%{background-position:0%} 100%{background-position:300%} }
+
+    .header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; background: var(--s0);
+      border-bottom: 1px solid rgba(0,245,255,0.1); flex-shrink: 0;
+    }
+    .header-logo {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px; color: var(--acc);
+      text-shadow: 0 0 8px rgba(0,245,255,.5); flex: 1;
+    }
+    .hdr-btn {
+      background: none; border: 1px solid rgba(0,245,255,0.2);
+      color: var(--dim); font-size: 11px; padding: 3px 7px;
+      border-radius: 2px; cursor: pointer; transition: all .15s;
+    }
+    .hdr-btn:hover { color: var(--acc2); border-color: var(--acc2); }
+
+    .tabs {
+      display: flex; background: var(--s0);
+      border-bottom: 1px solid rgba(0,245,255,0.1); flex-shrink: 0;
+    }
+    .tab {
+      flex: 1; padding: 8px 4px; text-align: center;
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      color: var(--dim); cursor: pointer; transition: all .15s;
+      border-bottom: 2px solid transparent; letter-spacing: 1px;
+    }
+    .tab.active { color: var(--acc); border-bottom-color: var(--acc); }
+    .tab:hover:not(.active) { color: var(--tx); }
+
+    .panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .panel.active { display: flex; }
+
+    /* PLAYER */
+    #panelPlayer { padding: 10px; gap: 8px; }
+    #ytWrap {
+      position: relative; width: 100%; padding-top: 56.25%;
+      background: #000; border-radius: 2px; overflow: hidden; flex-shrink: 0;
+    }
+    #ytWrap #player { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .yt-placeholder {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px; background: #000812;
+    }
+    .yt-placeholder .ph-icon { font-size: 32px; opacity: .4; }
+    .yt-placeholder p {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px; color: var(--dim); text-align: center; line-height: 1.9;
+    }
+    .np-box {
+      background: var(--s1); border: 1px solid rgba(0,245,255,0.12);
+      border-radius: 3px; padding: 8px 10px; flex-shrink: 0;
+    }
+    .np-label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px; color: var(--acc3); letter-spacing: 2px; margin-bottom: 4px;
+    }
+    .np-title {
+      font-size: 11px; font-weight: 700; color: var(--acc);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .np-channel { font-size: 10px; color: var(--dim); margin-top: 2px; }
+
+    .transport {
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .tr-btn {
+      background: rgba(0,245,255,0.07); border: 1px solid rgba(0,245,255,0.2);
+      color: var(--acc); font-size: 13px; padding: 6px 10px;
+      border-radius: 2px; cursor: pointer; transition: all .15s;
+    }
+    .tr-btn:hover { background: rgba(0,245,255,0.18); }
+    .tr-btn:active { transform: scale(.93); }
+    .tr-btn.playpause { font-size: 16px; padding: 6px 14px; }
+
+    .vol-row {
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .vol-icon { font-size: 13px; color: var(--dim); flex-shrink: 0; }
+    input[type=range] {
+      -webkit-appearance: none; flex: 1; height: 3px;
+      background: linear-gradient(90deg, var(--acc) var(--pct,70%), rgba(74,96,128,0.4) var(--pct,70%));
+      border-radius: 2px; cursor: pointer; outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px;
+      background: var(--acc); border-radius: 50%; box-shadow: 0 0 5px var(--acc);
+    }
+    .vol-val {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px; color: var(--dim); width: 26px; text-align: right;
+    }
+    .mode-row { display: flex; gap: 5px; flex-shrink: 0; }
+    .mode-btn {
+      flex: 1; font-family: 'Press Start 2P', monospace;
+      font-size: 6px; padding: 5px 4px; border-radius: 2px;
+      border: 1px solid rgba(74,96,128,0.35); color: var(--dim);
+      background: transparent; cursor: pointer; transition: all .15s; text-align: center;
+    }
+    .mode-btn.on { background: rgba(0,245,255,0.1); border-color: var(--acc); color: var(--acc); }
+
+    /* SEARCH */
+    #panelSearch { padding: 10px; gap: 8px; }
+    .genre-scroll {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; flex-shrink: 0;
+    }
+    .genre-scroll::-webkit-scrollbar { height: 3px; }
+    .genre-scroll::-webkit-scrollbar-thumb { background: var(--acc3); border-radius: 2px; }
+    .genre-btn {
+      background: rgba(170,255,0,0.07); border: 1px solid rgba(170,255,0,0.25);
+      color: var(--acc3); font-family: 'Press Start 2P', monospace;
+      font-size: 6px; padding: 5px 8px; border-radius: 2px;
+      cursor: pointer; transition: all .12s; white-space: nowrap; flex-shrink: 0;
+    }
+    .genre-btn:hover { background: rgba(170,255,0,0.18); }
+    .search-row { display: flex; gap: 6px; flex-shrink: 0; }
+    .search-input {
+      flex: 1; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,245,255,0.2);
+      color: var(--tx); font-family: 'Orbitron', monospace; font-size: 11px;
+      padding: 7px 10px; border-radius: 2px; outline: none; transition: border-color .2s;
+    }
+    .search-input:focus { border-color: var(--acc); }
+    .search-input::placeholder { color: var(--dim); }
+    .search-go {
+      background: var(--acc); color: #000; border: none;
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      padding: 7px 10px; border-radius: 2px; cursor: pointer; transition: opacity .15s;
+    }
+    .search-go:hover { opacity: .85; }
+    .search-go:disabled { opacity: .35; cursor: not-allowed; }
+    .status-line {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px; color: var(--dim); flex-shrink: 0; min-height: 14px; letter-spacing: 1px;
+    }
+    .spinner {
+      display: inline-block; width: 10px; height: 10px;
+      border: 2px solid rgba(0,245,255,0.2); border-top-color: var(--acc);
+      border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 5px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .results-list {
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;
+    }
+    .results-list::-webkit-scrollbar { width: 3px; }
+    .results-list::-webkit-scrollbar-thumb { background: var(--acc); border-radius: 2px; }
+    .ri {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.08);
+      border-radius: 2px; padding: 7px 8px; cursor: pointer; transition: all .12s;
+    }
+    .ri:hover { background: rgba(0,245,255,0.1); border-color: rgba(0,245,255,0.25); }
+    .ri.playing { border-color: var(--acc3); background: rgba(170,255,0,0.07); }
+    .ri-thumb {
+      width: 48px; height: 36px; object-fit: cover;
+      border-radius: 1px; flex-shrink: 0; background: var(--s1);
+    }
+    .ri-info { flex: 1; overflow: hidden; }
+    .ri-title {
+      font-size: 10px; font-weight: 700; color: var(--tx);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ri-ch { font-size: 9px; color: var(--dim); margin-top: 2px; }
+    .ri-add {
+      color: var(--acc3); font-size: 16px; flex-shrink: 0;
+      opacity: 0; transition: opacity .12s; padding: 0 4px;
+    }
+    .ri:hover .ri-add { opacity: 1; }
+    .ri.playing .ri-add { opacity: 1; animation: ppulse 1s ease-in-out infinite; }
+    @keyframes ppulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .empty-msg {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px; color: var(--dim);
+      text-align: center; padding: 20px 10px; line-height: 2.2;
+    }
+
+    /* QUEUE */
+    #panelQueue { padding: 10px; gap: 8px; }
+    .queue-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .q-btn {
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      padding: 6px 10px; border-radius: 2px; cursor: pointer;
+      border: 1px solid rgba(74,96,128,0.35); color: var(--dim); background: transparent; transition: all .15s;
+    }
+    .q-btn:hover { color: var(--acc2); border-color: var(--acc2); }
+    .queue-count-label {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--dim);
+    }
+    .queue-list {
+      flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+    }
+    .queue-list::-webkit-scrollbar { width: 3px; }
+    .queue-list::-webkit-scrollbar-thumb { background: var(--acc3); border-radius: 2px; }
+    .qi {
+      display: flex; align-items: center; gap: 7px;
+      background: rgba(170,255,0,0.04); border: 1px solid rgba(170,255,0,0.08);
+      border-radius: 2px; padding: 7px 8px; cursor: pointer; transition: all .12s;
+    }
+    .qi:hover { background: rgba(170,255,0,0.1); }
+    .qi.playing-q { border-color: var(--acc3); }
+    .qi-num {
+      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--dim); width: 14px; flex-shrink: 0;
+    }
+    .qi-title { flex: 1; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--tx); }
+    .qi-del {
+      color: var(--acc2); font-size: 13px; opacity: 0.4;
+      transition: opacity .15s; padding: 1px 4px; flex-shrink: 0;
+    }
+    .qi:hover .qi-del { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="rainbow-bar"></div>
+
+<div class="header">
+  <span class="header-logo">🎵 MUSIC PLAYER</span>
+  <button class="hdr-btn" onclick="window.close()">✕</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="tab-player" onclick="switchTab('player')">▶ PLAYER</div>
+  <div class="tab" id="tab-search" onclick="switchTab('search')">🔍 SEARCH</div>
+  <div class="tab" id="tab-queue"  onclick="switchTab('queue')">📋 QUEUE <span id="qCount"></span></div>
+</div>
+
+<!-- PLAYER PANEL -->
+<div class="panel active" id="panelPlayer">
+  <div id="ytWrap">
+    <div class="yt-placeholder" id="ytPlaceholder">
+      <div class="ph-icon">▶</div>
+      <p>SEARCH で曲を探して<br>追加しよう</p>
+    </div>
+    <div id="player"></div>
+  </div>
+  <div class="np-box">
+    <div class="np-label">▶ NOW PLAYING</div>
+    <div class="np-title" id="npTitle">—</div>
+    <div class="np-channel" id="npChannel">—</div>
+  </div>
+  <div class="transport">
+    <button class="tr-btn" onclick="playPrev()">⏮</button>
+    <button class="tr-btn playpause" id="btnPP" onclick="togglePlayPause()">▶</button>
+    <button class="tr-btn" onclick="playNext()">⏭</button>
+    <div style="flex:1"></div>
+  </div>
+  <div class="vol-row">
+    <span class="vol-icon">🔊</span>
+    <input type="range" id="volSlider" min="0" max="100" value="70" oninput="setVolume(this.value)">
+    <span class="vol-val" id="volVal">70</span>
+  </div>
+  <div class="mode-row">
+    <button class="mode-btn" id="mShuffle"   onclick="toggleShuffle()">🔀 SHUFFLE</button>
+    <button class="mode-btn" id="mRepeat"    onclick="toggleRepeat()">🔁 REPEAT</button>
+    <button class="mode-btn" id="mRepeatOne" onclick="toggleRepeatOne()">🔂 ×1</button>
+  </div>
+</div>
+
+<!-- SEARCH PANEL -->
+<div class="panel" id="panelSearch">
+  <div class="genre-scroll" id="genreRow"></div>
+  <div class="search-row">
+    <input type="text" id="searchInput" class="search-input"
+           placeholder="曲名・アーティスト・ジャンル..."
+           onkeydown="if(event.key==='Enter')doSearch()">
+    <button class="search-go" id="searchBtn" onclick="doSearch()">GO</button>
+  </div>
+  <div class="status-line" id="statusLine"></div>
+  <div class="results-list" id="resultsList">
+    <div class="empty-msg">上の検索バーで<br>曲を探してみよう</div>
+  </div>
+</div>
+
+<!-- QUEUE PANEL -->
+<div class="panel" id="panelQueue">
+  <div class="queue-actions">
+    <button class="q-btn" onclick="clearQueue()">🗑 クリア</button>
+    <span style="flex:1"></span>
+    <span class="queue-count-label" id="queueCountLabel"></span>
+  </div>
+  <div class="queue-list" id="queueList">
+    <div class="empty-msg">キューが空です<br>SEARCH タブから曲を追加</div>
+  </div>
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+const YT_API_KEY = 'AIzaSyCZbk49tTvV6sgnbMOMCwDbQWG28NfEroY';
+
+const GENRES = [
+  { label:'🕹 テトリス',   q:'tetris music remix' },
+  { label:'⚡ テクノ',     q:'techno electronic music' },
+  { label:'🎮 ゲームBGM',  q:'video game music bgm' },
+  { label:'🔥 EDM',       q:'EDM dance music' },
+  { label:'🎸 ロック',     q:'rock music energetic' },
+  { label:'🌙 Lo-Fi',     q:'lofi hip hop chill beats' },
+  { label:'🕹 レトロ',    q:'80s retro synthwave' },
+  { label:'🎹 ジャズ',    q:'jazz piano instrumental' },
+  { label:'🌊 チルアウト', q:'chillout ambient music' },
+];
+
+let ytPlayer = null, ytReady = false;
+let queue = [], queueIdx = -1;
+let shuffle = false, repeatAll = false, repeatOne = false;
+let searchResults = [];
+
+// ── TABS ──
+function switchTab(name) {
+  ['player','search','queue'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===name);
+    document.getElementById('panel'+t[0].toUpperCase()+t.slice(1)).classList.toggle('active', t===name);
+  });
+}
+
+// ── GENRES ──
+(function(){
+  const row = document.getElementById('genreRow');
+  GENRES.forEach(g => {
+    const b = document.createElement('button');
+    b.className = 'genre-btn'; b.textContent = g.label;
+    b.onclick = () => { document.getElementById('searchInput').value = g.q; switchTab('search'); doSearch(); };
+    row.appendChild(b);
+  });
+})();
+
+// ── YouTube IFrame API ──
+function onYouTubeIframeAPIReady() {
+  ytPlayer = new YT.Player('player', {
+    height: '100%', width: '100%',
+    playerVars: { autoplay: 0, controls: 1, rel: 0, modestbranding: 1 },
+    events: {
+      onReady: () => {
+        ytReady = true;
+        const saved = localStorage.getItem('yt_vol');
+        if (saved !== null) {
+          setVolume(saved);
+          document.getElementById('volSlider').value = saved;
+        }
+      },
+      onStateChange: onStateChange,
+      onError: () => { setStatus('⚠ 再生エラー。次の曲へ…', 'var(--acc2)'); setTimeout(playNext, 1500); }
+    }
+  });
+}
+
+function onStateChange(e) {
+  const s = e.data;
+  if (s === YT.PlayerState.ENDED) {
+    if (repeatOne) { ytPlayer.seekTo(0); ytPlayer.playVideo(); }
+    else playNext();
+  }
+  if (s === YT.PlayerState.PLAYING) {
+    document.getElementById('btnPP').textContent = '⏸';
+    document.getElementById('ytPlaceholder').style.display = 'none';
+  }
+  if (s === YT.PlayerState.PAUSED || s === YT.PlayerState.CUED) {
+    document.getElementById('btnPP').textContent = '▶';
+  }
+}
+
+// ── SEARCH ──
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  setStatus('<span class="spinner"></span>検索中…', 'var(--dim)');
+  document.getElementById('searchBtn').disabled = true;
+  document.getElementById('resultsList').innerHTML = '';
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=20&q=${encodeURIComponent(q)}&key=${YT_API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    searchResults = (data.items || [])
+      .filter(i => i.id && i.id.videoId)
+      .map(i => ({
+        id: i.id.videoId,
+        title: i.snippet.title,
+        channel: i.snippet.channelTitle,
+        thumb: i.snippet.thumbnails?.default?.url || ''
+      }));
+    renderResults();
+    setStatus(searchResults.length ? `${searchResults.length}件見つかりました` : '結果なし', 'var(--acc3)');
+  } catch (err) {
+    setStatus('⚠ エラー: ' + err.message, 'var(--acc2)');
+  }
+  document.getElementById('searchBtn').disabled = false;
+}
+
+function renderResults() {
+  const list = document.getElementById('resultsList');
+  if (!searchResults.length) { list.innerHTML = '<div class="empty-msg">結果が見つかりませんでした</div>'; return; }
+  list.innerHTML = '';
+  searchResults.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'ri'; div.id = 'ri-' + item.id;
+    const inQ = queue.some(q => q.id === item.id);
+    div.innerHTML = `
+      <img class="ri-thumb" src="${item.thumb}" alt="" loading="lazy">
+      <div class="ri-info">
+        <div class="ri-title">${esc(item.title)}</div>
+        <div class="ri-ch">${esc(item.channel)}</div>
+      </div>
+      <span class="ri-add">${inQ ? '♪' : '＋'}</span>
+    `;
+    div.onclick = () => addAndPlay(i);
+    list.appendChild(div);
+  });
+}
+
+function addAndPlay(idx) {
+  const item = searchResults[idx];
+  const existing = queue.findIndex(q => q.id === item.id);
+  if (existing !== -1) {
+    playIdx(existing);
+  } else {
+    queue.push(item);
+    updateQueueBadge();
+    playIdx(queue.length - 1);
+  }
+  document.querySelectorAll('.ri').forEach(el => {
+    el.classList.remove('playing');
+    el.querySelector('.ri-add').textContent = '＋';
+  });
+  const el = document.getElementById('ri-' + item.id);
+  if (el) { el.classList.add('playing'); el.querySelector('.ri-add').textContent = '♪'; }
+}
+
+// ── PLAYBACK ──
+function playIdx(idx) {
+  if (idx < 0 || idx >= queue.length) return;
+  queueIdx = idx;
+  const item = queue[idx];
+  if (!ytReady || !ytPlayer) { setStatus('⚠ プレーヤー準備中…', 'var(--acc2)'); return; }
+  ytPlayer.loadVideoById(item.id);
+  ytPlayer.playVideo();
+  updateNP();
+  renderQueue();
+  document.getElementById('ytPlaceholder').style.display = 'none';
+  switchTab('player');
+}
+
+function updateNP() {
+  if (queueIdx >= 0 && queue[queueIdx]) {
+    document.getElementById('npTitle').textContent = queue[queueIdx].title;
+    document.getElementById('npChannel').textContent = queue[queueIdx].channel;
+  } else {
+    document.getElementById('npTitle').textContent = '—';
+    document.getElementById('npChannel').textContent = '—';
+  }
+}
+
+function togglePlayPause() {
+  if (!ytPlayer || !ytReady) return;
+  const s = ytPlayer.getPlayerState();
+  if (s === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+  else if (s === YT.PlayerState.PAUSED) ytPlayer.playVideo();
+  else if (queue.length) playIdx(queueIdx >= 0 ? queueIdx : 0);
+}
+
+function playNext() {
+  if (!queue.length) return;
+  let n;
+  if (repeatOne) { n = queueIdx; }
+  else if (shuffle) { n = Math.floor(Math.random() * queue.length); }
+  else { n = queueIdx + 1; if (n >= queue.length) n = repeatAll ? 0 : -1; }
+  if (n >= 0) playIdx(n);
+  else { queueIdx = -1; updateNP(); document.getElementById('btnPP').textContent = '▶'; }
+}
+
+function playPrev() {
+  if (!queue.length) return;
+  let p = queueIdx - 1;
+  if (p < 0) p = repeatAll ? queue.length - 1 : 0;
+  playIdx(p);
+}
+
+function setVolume(val) {
+  val = Number(val);
+  if (ytPlayer && ytReady) ytPlayer.setVolume(val);
+  document.getElementById('volSlider').style.setProperty('--pct', val + '%');
+  document.getElementById('volVal').textContent = val;
+  localStorage.setItem('yt_vol', val);
+}
+
+function toggleShuffle()   { shuffle = !shuffle;     document.getElementById('mShuffle').classList.toggle('on', shuffle); }
+function toggleRepeat()    { repeatAll = !repeatAll; if (repeatAll) repeatOne = false; document.getElementById('mRepeat').classList.toggle('on', repeatAll); document.getElementById('mRepeatOne').classList.remove('on'); }
+function toggleRepeatOne() { repeatOne = !repeatOne; if (repeatOne) repeatAll = false; document.getElementById('mRepeatOne').classList.toggle('on', repeatOne); document.getElementById('mRepeat').classList.remove('on'); }
+
+// ── QUEUE ──
+function renderQueue() {
+  const list = document.getElementById('queueList');
+  if (!queue.length) { list.innerHTML = '<div class="empty-msg">キューが空です<br>SEARCH タブから曲を追加</div>'; return; }
+  list.innerHTML = '';
+  queue.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'qi' + (i === queueIdx ? ' playing-q' : '');
+    div.innerHTML = `<span class="qi-num">${i+1}</span><span class="qi-title">${esc(item.title)}</span><span class="qi-del" data-idx="${i}">✕</span>`;
+    div.onclick = (e) => { if (e.target.classList.contains('qi-del')) removeQ(+e.target.dataset.idx); else playIdx(i); };
+    list.appendChild(div);
+  });
+  updateQueueBadge();
+}
+
+function removeQ(idx) {
+  if (idx === queueIdx && ytPlayer && ytReady) { ytPlayer.stopVideo(); queueIdx = -1; }
+  else if (idx < queueIdx) queueIdx--;
+  queue.splice(idx, 1);
+  renderQueue(); updateNP();
+}
+
+function clearQueue() {
+  if (ytPlayer && ytReady) ytPlayer.stopVideo();
+  queue = []; queueIdx = -1;
+  renderQueue(); updateNP();
+  document.getElementById('btnPP').textContent = '▶';
+  document.getElementById('ytPlaceholder').style.display = 'flex';
+}
+
+function updateQueueBadge() {
+  const n = queue.length;
+  document.getElementById('qCount').textContent = n ? `(${n})` : '';
+  document.getElementById('queueCountLabel').textContent = n ? `${n}曲` : '';
+}
+
+// ── UTILS ──
+function setStatus(html, color) { const el = document.getElementById('statusLine'); el.innerHTML = html; el.style.color = color || 'var(--acc)'; }
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── VOLUME INIT ──
+(function(){
+  const saved = localStorage.getItem('yt_vol');
+  if (saved !== null) {
+    document.getElementById('volSlider').value = saved;
+    document.getElementById('volSlider').style.setProperty('--pct', saved + '%');
+    document.getElementById('volVal').textContent = saved;
+  }
+})();
+</script>
+</body>
+</html>
