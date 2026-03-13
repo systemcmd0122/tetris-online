@@ -58,6 +58,7 @@
 </head>
 <body>
   <div class="logo">HOW TO PLAY</div>
+  <div style="text-align:center;font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:20px;" id="versionDisp"></div>
 
   <h2>基本的な操作方法</h2>
   <div class="controls">
@@ -89,6 +90,11 @@
   <p>ミノが画面の一番上まで積み上がってしまった方が負けとなります。相手にプレッシャーを与えてミスを誘いましょう！</p>
 
   <a href="index.html" class="back-btn">◀ メニューに戻る</a>
+
+  <script type="module">
+    import { APP_VERSION } from './config.js';
+    document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
+  </script>
 
 </body>
 </html>

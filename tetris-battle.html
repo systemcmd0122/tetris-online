@@ -883,40 +883,7 @@ class BotController{
   }
 
   drawVisualization(){
-    if(!this.lastEval||!this.lastEval.details)return;
-    const ctx=this.game.ctx;
-    const ev=this.lastEval;
-    // Draw target ghost
-    const m=PIECES[this.game.current.name][ev.rot];
-    ctx.globalAlpha=0.25;
-    ctx.fillStyle='#ffffff';
-    // Find landing Y for target
-    let ty=-2;
-    while(this.game.valid({name:this.game.current.name,rot:ev.rot,x:ev.x,y:ty+1}))ty++;
-    m.forEach((row,r)=>row.forEach((cell,c)=>{
-      if(cell){
-        const py=ty+r;
-        if(py>=0)ctx.fillRect((ev.x+c)*CELL+2,py*CELL+2,CELL-4,CELL-4);
-      }
-    }));
-    ctx.globalAlpha=1;
-
-    // Draw heuristics
-    ctx.fillStyle='rgba(0,0,0,0.6)';
-    ctx.fillRect(5,5,110,75);
-    ctx.strokeStyle=this.difficulty===3?'#ff3355':(this.difficulty===2?'#ffaa00':'#aaff00');
-    ctx.lineWidth=1;
-    ctx.strokeRect(5,5,110,75);
-    ctx.fillStyle='#fff';
-    ctx.font='7px monospace';
-    const d=ev.details;
-    ctx.fillText(`SCORE: ${ev.score.toFixed(1)}`,10,15);
-    ctx.fillText(`HEIGHT: ${d.aH}`,10,25);
-    ctx.fillText(`HOLES: ${d.holes}`,10,35);
-    ctx.fillText(`BUMP: ${d.bump}`,10,45);
-    ctx.fillText(`CLEAR: ${d.cleared}`,10,55);
-    ctx.fillText(`C_WGT: ${d.clearedWeight.toFixed(1)}`,10,65);
-    ctx.fillText(`QUEUE: ${this.moveQueue.length}`,10,75);
+    // Debug visualization disabled in production
   }
 }
 
@@ -930,6 +897,8 @@ let botMode=false,botGame=null,botCtrl=null;
 let statMaxCombo=0,statAtkSent=0,statAtkRecv=0,statTetris=0;
 const genCode=()=>Math.floor(1000+Math.random()*9000).toString();
 const _listeners={opp:null,room:null,garb:null,wait:null};
+// ── Input state (declared here so resetState can reference them) ──
+let softDropInterval=null;
 
 // ── Clear canvases before countdown so old board isn't shown ──
 function clearBoards(){
@@ -1415,7 +1384,13 @@ document.addEventListener('keydown',e=>{
     case'ArrowUp':    e.preventDefault();game.rotate(1);break;
     case'KeyX':       e.preventDefault();game.rotate(1);break;
     case'KeyZ':       e.preventDefault();game.rotate(-1);break;
-    case'ArrowDown':  e.preventDefault();break; // handled by softdrop interval below
+    case'ArrowDown':
+      e.preventDefault();
+      if(!softDropInterval){
+        game.softDrop();
+        softDropInterval=setInterval(()=>{if(game&&gameRunning)game.softDrop();},50);
+      }
+      break;
     case'Space':      e.preventDefault();game.hardDrop();break;
     case'KeyC':       e.preventDefault();game.hold();break;
     case'ShiftLeft':  e.preventDefault();game.hold();break;
@@ -1427,29 +1402,30 @@ document.addEventListener('keyup',e=>{
   keys.delete(e.code);
   if(e.code==='ArrowLeft'&&dasDir===-1)dasStop();
   if(e.code==='ArrowRight'&&dasDir===1)dasStop();
-});
-
-// Soft drop with continuous interval
-let softDropInterval=null;
-document.addEventListener('keydown',e=>{
-  if(e.code==='ArrowDown'&&!softDropInterval&&game&&gameRunning){
-    e.preventDefault();
-    game?.softDrop();
-    softDropInterval=setInterval(()=>{if(game&&gameRunning)game.softDrop();},50);
-  }
-});
-document.addEventListener('keyup',e=>{
   if(e.code==='ArrowDown'){clearInterval(softDropInterval);softDropInterval=null;}
 });
 
-// Mobile controls
-function setupMobile(id,fn,repeat=false){
+// Mobile controls — DAS/ARR for left/right, repeat for soft drop
+function setupMobile(id,fn,repeatMs=false){
   const btn=document.getElementById(id);if(!btn)return;
-  let iv=null;
-  const start=e=>{e.preventDefault();if(!game||!gameRunning)return;fn();if(repeat)iv=setInterval(()=>{if(game&&gameRunning)fn();},repeat);};
-  const stop=()=>{clearInterval(iv);iv=null;};
+  let iv=null,dasT=null;
+  const start=e=>{
+    e.preventDefault();
+    if(!game||!gameRunning)return;
+    fn();
+    if(repeatMs){
+      // DAS for movement buttons
+      if(id==='btnLeft'||id==='btnRight'){
+        dasT=setTimeout(()=>{iv=setInterval(()=>{if(game&&gameRunning)fn();},ARR);},DAS);
+      } else {
+        iv=setInterval(()=>{if(game&&gameRunning)fn();},repeatMs);
+      }
+    }
+  };
+  const stop=()=>{clearTimeout(dasT);clearInterval(iv);dasT=null;iv=null;};
   btn.addEventListener('touchstart',start,{passive:false});
-  btn.addEventListener('touchend',stop);
+  btn.addEventListener('touchend',stop,{passive:true});
+  btn.addEventListener('touchcancel',stop,{passive:true});
   btn.addEventListener('mousedown',start);
   btn.addEventListener('mouseup',stop);
   btn.addEventListener('mouseleave',stop);

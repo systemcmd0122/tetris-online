@@ -805,16 +805,49 @@ function dasStop(){clearTimeout(dasTimer);clearInterval(arrTimer);dasTimer=null;
 document.addEventListener('keydown',e=>{
   if(keys.has(e.code))return;keys.add(e.code);if(!game||!gameRunning)return;
   switch(e.code){
-    case'ArrowLeft':e.preventDefault();dasStart(-1);break;case'ArrowRight':e.preventDefault();dasStart(1);break;
-    case'ArrowUp':case'KeyX':e.preventDefault();game.rotate(1);break;case'KeyZ':e.preventDefault();game.rotate(-1);break;
-    case'ArrowDown':e.preventDefault();break;case'Space':e.preventDefault();game.hardDrop();break;
+    case'ArrowLeft':e.preventDefault();dasStart(-1);break;
+    case'ArrowRight':e.preventDefault();dasStart(1);break;
+    case'ArrowUp':case'KeyX':e.preventDefault();game.rotate(1);break;
+    case'KeyZ':e.preventDefault();game.rotate(-1);break;
+    case'ArrowDown':
+      e.preventDefault();
+      if(!sdi){game.softDrop();sdi=setInterval(()=>{if(game&&gameRunning)game.softDrop();},50);}
+      break;
+    case'Space':e.preventDefault();game.hardDrop();break;
     case'KeyC':case'ShiftLeft':case'ShiftRight':e.preventDefault();game.hold();break;
   }
 });
-document.addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='ArrowLeft'&&dasDir===-1)dasStop();if(e.code==='ArrowRight'&&dasDir===1)dasStop();});
-document.addEventListener('keydown',e=>{if(e.code==='ArrowDown'&&!sdi&&game&&gameRunning){e.preventDefault();game.softDrop();sdi=setInterval(()=>{if(game&&gameRunning)game.softDrop();},50);}});
-document.addEventListener('keyup',e=>{if(e.code==='ArrowDown'){clearInterval(sdi);sdi=null;}});
-function setupMob(id,fn,rep=false){const btn=document.getElementById(id);if(!btn)return;let iv=null;const st=e=>{e.preventDefault();if(!game||!gameRunning)return;fn();if(rep)iv=setInterval(()=>{if(game&&gameRunning)fn();},rep);};const sp=()=>{clearInterval(iv);iv=null;};btn.addEventListener('touchstart',st,{passive:false});btn.addEventListener('touchend',sp);btn.addEventListener('mousedown',st);btn.addEventListener('mouseup',sp);btn.addEventListener('mouseleave',sp);}
+document.addEventListener('keyup',e=>{
+  keys.delete(e.code);
+  if(e.code==='ArrowLeft'&&dasDir===-1)dasStop();
+  if(e.code==='ArrowRight'&&dasDir===1)dasStop();
+  if(e.code==='ArrowDown'){clearInterval(sdi);sdi=null;}
+});
+
+// Mobile controls with DAS for left/right
+function setupMob(id,fn,rep=false){
+  const btn=document.getElementById(id);if(!btn)return;
+  let iv=null,dasT=null;
+  const st=e=>{
+    e.preventDefault();
+    if(!game||!gameRunning)return;
+    fn();
+    if(rep){
+      if(id==='btnLeft'||id==='btnRight'){
+        dasT=setTimeout(()=>{iv=setInterval(()=>{if(game&&gameRunning)fn();},ARR);},DAS);
+      } else {
+        iv=setInterval(()=>{if(game&&gameRunning)fn();},rep);
+      }
+    }
+  };
+  const sp=()=>{clearTimeout(dasT);clearInterval(iv);dasT=null;iv=null;};
+  btn.addEventListener('touchstart',st,{passive:false});
+  btn.addEventListener('touchend',sp,{passive:true});
+  btn.addEventListener('touchcancel',sp,{passive:true});
+  btn.addEventListener('mousedown',st);
+  btn.addEventListener('mouseup',sp);
+  btn.addEventListener('mouseleave',sp);
+}
 setupMob('btnLeft',()=>game?.move(-1),ARR);setupMob('btnRight',()=>game?.move(1),ARR);setupMob('btnDown',()=>game?.softDrop(),50);setupMob('btnRotate',()=>game?.rotate(1));setupMob('btnRotateL',()=>game?.rotate(-1));setupMob('btnHardDrop',()=>game?.hardDrop());setupMob('btnHold',()=>game?.hold());
 (function(){let tx=0,ty=0;const c=document.getElementById('myCanvas');c.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});c.addEventListener('touchend',e=>{if(!game||!gameRunning)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.abs(dy)>50&&dy>0&&Math.abs(dy)>Math.abs(dx)*1.5)game.hardDrop();},{passive:true});})();
 document.getElementById('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')window.joinRoom();});
