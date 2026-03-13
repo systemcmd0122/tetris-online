@@ -1,2423 +1,1230 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TETRIS BATTLE — Admin Console</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
-
-    :root {
-      --bg: #010306;
-      --s0: #080d18;
-      --s1: #0d1525;
-      --s2: #111a2e;
-      --b0: #1a2540;
-      --b1: #243050;
-      --b2: #2e3d65;
-      --acc: #00f5ff;
-      --acc2: #ff0080;
-      --acc3: #aaff00;
-      --warn: #ffaa00;
-      --admin: #ff6600;
-      --red: #ff3355;
-      --green: #00ff88;
-      --blue: #4488ff;
-      --tx: #e0f0ff;
-      --dim: #4a6080;
-      --dim2: #2a3a55;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0
-    }
-
-    html,
-    body {
-      height: 100%;
-      overflow: hidden
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--tx);
-      font-family: 'Orbitron', monospace
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: linear-gradient(rgba(0, 245, 255, .015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 245, 255, .015) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0
-    }
-
-    /* ══ LOGIN ══ */
-    #loginWrap {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 200;
-      background: var(--bg)
-    }
-
-    #loginWrap.hidden {
-      display: none
-    }
-
-    .login-logo {
-      font-family: 'Press Start 2P', monospace;
-      font-size: clamp(13px, 2.5vw, 22px);
-      color: var(--acc2);
-      text-shadow: 0 0 20px rgba(255, 0, 128, .7);
-      letter-spacing: 4px;
-      margin-bottom: 6px;
-      text-align: center
-    }
-
-    .login-tagline {
-      font-size: 11px;
-      color: var(--dim);
-      letter-spacing: 4px;
-      margin-bottom: 36px;
-      text-align: center
-    }
-
-    .login-card {
-      background: var(--s0);
-      border: 1px solid var(--b0);
-      border-radius: 6px;
-      padding: 36px 32px;
-      width: min(380px, 90vw);
-      position: relative;
-      overflow: hidden
-    }
-
-    .login-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--acc2), var(--acc), var(--acc2))
-    }
-
-    .lc-title {
-      font-size: 12px;
-      color: var(--acc2);
-      letter-spacing: 3px;
-      margin-bottom: 24px;
-      display: flex;
-      align-items: center;
-      gap: 8px
-    }
-
-    .pw-wrap {
-      margin-bottom: 20px
-    }
-
-    .pw-label {
-      display: block;
-      font-size: 11px;
-      color: var(--dim);
-      letter-spacing: 3px;
-      margin-bottom: 9px
-    }
-
-    .pw-input {
-      width: 100%;
-      background: rgba(255, 0, 128, .04);
-      border: 1px solid var(--b1);
-      border-radius: 3px;
-      color: var(--tx);
-      font-family: 'Orbitron', monospace;
-      font-size: 15px;
-      padding: 13px 15px;
-      outline: none;
-      letter-spacing: 4px;
-      transition: all .2s
-    }
-
-    .pw-input:focus {
-      border-color: var(--acc2);
-      box-shadow: 0 0 0 1px rgba(255, 0, 128, .2), 0 0 20px rgba(255, 0, 128, .1)
-    }
-
-    .pw-btn {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 3px;
-      cursor: pointer;
-      font-family: 'Orbitron', monospace;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      background: linear-gradient(135deg, var(--acc2), #cc0066);
-      color: #fff;
-      box-shadow: 0 4px 20px rgba(255, 0, 128, .25);
-      transition: all .2s
-    }
-
-    .pw-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 30px rgba(255, 0, 128, .45)
-    }
-
-    .pw-err {
-      font-size: 11px;
-      color: var(--red);
-      letter-spacing: 2px;
-      margin-top: 12px;
-      text-align: center;
-      min-height: 18px;
-      transition: opacity .2s
-    }
-
-    /* ══ SHELL ══ */
-    #shell {
-      display: none;
-      height: 100vh;
-      flex-direction: column
-    }
-
-    #shell.active {
-      display: flex
-    }
-
-    /* Top bar */
-    .topbar {
-      height: 52px;
-      background: var(--s0);
-      border-bottom: 1px solid var(--b0);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      position: relative;
-      z-index: 10;
-      flex-shrink: 0
-    }
-
-    .topbar-logo {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 10px;
-      color: var(--acc2);
-      text-shadow: 0 0 15px rgba(255, 0, 128, .5);
-      letter-spacing: 3px
-    }
-
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 12px
-    }
-
-    .badge-online {
-      font-size: 7px;
-      padding: 4px 10px;
-      border-radius: 2px;
-      letter-spacing: 2px;
-      border: 1px solid var(--green);
-      color: var(--green);
-      background: rgba(0, 255, 136, .07)
-    }
-
-    .topbar-btn {
-      background: transparent;
-      border: 1px solid var(--b1);
-      color: var(--dim);
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-      padding: 5px 12px;
-      border-radius: 2px;
-      cursor: pointer;
-      transition: all .2s
-    }
-
-    .topbar-btn:hover {
-      border-color: var(--acc2);
-      color: var(--acc2)
-    }
-
-    /* Layout */
-    .shell-body {
-      display: flex;
-      flex: 1;
-      overflow: hidden
-    }
-
-    /* Sidebar */
-    .sidebar {
-      width: 210px;
-      background: var(--s0);
-      border-right: 1px solid var(--b0);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      flex-shrink: 0
-    }
-
-    .sb-section {
-      padding: 14px 16px 4px;
-      font-size: 10px;
-      color: var(--dim2);
-      letter-spacing: 4px;
-      text-transform: uppercase;
-      border-bottom: 1px solid var(--dim2)
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 11px 16px;
-      cursor: pointer;
-      font-size: 12px;
-      color: var(--dim);
-      letter-spacing: 1px;
-      border-left: 2px solid transparent;
-      transition: all .15s;
-      user-select: none
-    }
-
-    .nav-item:hover {
-      color: var(--tx);
-      background: rgba(0, 245, 255, .04)
-    }
-
-    .nav-item.active {
-      color: var(--acc);
-      border-left-color: var(--acc);
-      background: rgba(0, 245, 255, .06)
-    }
-
-    .nav-icon {
-      font-size: 14px;
-      width: 20px;
-      text-align: center;
-      flex-shrink: 0
-    }
-
-    .nav-badge {
-      margin-left: auto;
-      background: var(--acc2);
-      color: #fff;
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 10px;
-      font-family: 'Press Start 2P', monospace;
-      flex-shrink: 0
-    }
-
-    @media(max-width:900px) {
-      .sidebar {
-        width: 52px
-      }
-
-      .nav-item span:not(.nav-icon) {
-        display: none
-      }
-
-      .nav-item {
-        justify-content: center;
-        padding: 13px
-      }
-
-      .nav-badge,
-      .sb-section {
-        display: none
-      }
-    }
-
-    /* Main */
-    .main {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      position: relative;
-      z-index: 1
-    }
-
-    /* Panels */
-    .panel {
-      display: none
-    }
-
-    .panel.active {
-      display: block
-    }
-
-    /* Stats grid */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 12px;
-      margin-bottom: 22px
-    }
-
-    .sc {
-      background: var(--s1);
-      border: 1px solid var(--b0);
-      border-radius: 4px;
-      padding: 16px;
-      position: relative;
-      overflow: hidden
-    }
-
-    .sc::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px
-    }
-
-    .sc.c1::after {
-      background: var(--acc)
-    }
-
-    .sc.c2::after {
-      background: var(--acc2)
-    }
-
-    .sc.c3::after {
-      background: var(--acc3)
-    }
-
-    .sc.c4::after {
-      background: var(--warn)
-    }
-
-    .sc-label {
-      font-size: 11px;
-      color: var(--dim);
-      letter-spacing: 2px;
-      margin-bottom: 10px
-    }
-
-    .sc-val {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 22px
-    }
-
-    .sc-val.c1 {
-      color: var(--acc);
-      text-shadow: 0 0 15px rgba(0, 245, 255, .4)
-    }
-
-    .sc-val.c2 {
-      color: var(--acc2);
-      text-shadow: 0 0 15px rgba(255, 0, 128, .4)
-    }
-
-    .sc-val.c3 {
-      color: var(--acc3);
-      text-shadow: 0 0 15px rgba(170, 255, 0, .4)
-    }
-
-    .sc-val.c4 {
-      color: var(--warn)
-    }
-
-    /* Panel headers */
-    .ph {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 18px;
-      gap: 12px;
-      flex-wrap: wrap
-    }
-
-    .ph-left .ph-title {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 12px;
-      color: var(--acc);
-      text-shadow: 0 0 12px rgba(0, 245, 255, .4)
-    }
-
-    .ph-left .ph-sub {
-      font-size: 11px;
-      color: var(--dim);
-      letter-spacing: 2px;
-      margin-top: 5px
-    }
-
-    /* Tables */
-    .tbl-wrap {
-      background: var(--s1);
-      border: 1px solid var(--b0);
-      border-radius: 4px;
-      overflow: hidden;
-      margin-bottom: 20px
-    }
-
-    .tbl-head {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--b0);
-      display: flex;
-      justify-content: space-between;
-      align-items: center
-    }
-
-    .tbl-head-title {
-      font-size: 8px;
-      color: var(--acc);
-      letter-spacing: 2px;
-      display: flex;
-      align-items: center;
-      gap: 8px
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse
-    }
-
-    th {
-      padding: 10px 14px;
-      font-size: 10px;
-      color: var(--dim);
-      letter-spacing: 2px;
-      text-align: left;
-      border-bottom: 1px solid var(--b0);
-      background: rgba(0, 245, 255, .015);
-      white-space: nowrap
-    }
-
-    td {
-      padding: 11px 14px;
-      font-size: 12px;
-      border-bottom: 1px solid var(--dim2);
-      vertical-align: middle;
-      white-space: nowrap
-    }
-
-    tr:last-child td {
-      border-bottom: none
-    }
-
-    tr:hover td {
-      background: rgba(0, 245, 255, .02)
-    }
-
-    /* Badges */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 8px;
-      border-radius: 2px;
-      font-size: 10px;
-      letter-spacing: 1px
-    }
-
-    .badge-wait {
-      background: rgba(255, 170, 0, .1);
-      border: 1px solid var(--warn);
-      color: var(--warn)
-    }
-
-    .badge-live {
-      background: rgba(0, 255, 136, .1);
-      border: 1px solid var(--green);
-      color: var(--green)
-    }
-
-    .badge-end {
-      background: rgba(80, 80, 80, .1);
-      border: 1px solid #444;
-      color: #555
-    }
-
-    .live-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--green);
-      animation: ldot 1s ease-in-out infinite
-    }
-
-    @keyframes ldot {
-
-      0%,
-      100% {
-        transform: scale(1);
-        opacity: 1
-      }
-
-      50% {
-        transform: scale(1.4);
-        opacity: .6
-      }
-    }
-
-    /* Action buttons */
-    .abtn {
-      padding: 4px 10px;
-      border-radius: 2px;
-      font-family: 'Orbitron', monospace;
-      font-size: 10px;
-      letter-spacing: 1px;
-      cursor: pointer;
-      transition: all .15s;
-      background: transparent;
-      border: 1px solid;
-      margin: 1px
-    }
-
-    .abtn-watch {
-      border-color: var(--acc);
-      color: var(--acc)
-    }
-
-    .abtn-watch:hover {
-      background: rgba(0, 245, 255, .1)
-    }
-
-    .abtn-stop {
-      border-color: var(--red);
-      color: var(--red)
-    }
-
-    .abtn-stop:hover {
-      background: rgba(255, 51, 85, .12)
-    }
-
-    .abtn-del {
-      border-color: #555;
-      color: #666
-    }
-
-    .abtn-del:hover {
-      border-color: var(--red);
-      color: var(--red)
-    }
-
-    .abtn-msg {
-      border-color: var(--warn);
-      color: var(--warn)
-    }
-
-    .abtn-msg:hover {
-      background: rgba(255, 170, 0, .1)
-    }
-
-    .empty-td {
-      text-align: center;
-      color: var(--dim);
-      font-size: 11px;
-      letter-spacing: 2px;
-      padding: 28px !important
-    }
-
-    /* Small buttons */
-    .sbtn {
-      background: transparent;
-      border: 1px solid var(--b1);
-      color: var(--dim);
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-      padding: 6px 14px;
-      border-radius: 2px;
-      cursor: pointer;
-      transition: all .2s
-    }
-
-    .sbtn:hover {
-      border-color: var(--acc);
-      color: var(--acc)
-    }
-
-    .sbtn-red {
-      border-color: rgba(255, 51, 85, .4);
-      color: var(--red)
-    }
-
-    .sbtn-red:hover {
-      background: rgba(255, 51, 85, .1)
-    }
-
-    .sbtn-warn {
-      border-color: rgba(255, 170, 0, .4);
-      color: var(--warn)
-    }
-
-    .sbtn-warn:hover {
-      background: rgba(255, 170, 0, .1)
-    }
-
-    /* Spectate */
-    .spec-arena {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 16px
-    }
-
-    .spec-col {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 7px
-    }
-
-    .spec-badge {
-      font-size: 11px;
-      letter-spacing: 3px;
-      padding: 4px 14px;
-      border-radius: 2px
-    }
-
-    .spec-badge.p1 {
-      background: rgba(0, 245, 255, .1);
-      border: 1px solid var(--acc);
-      color: var(--acc)
-    }
-
-    .spec-badge.p2 {
-      background: rgba(255, 0, 128, .1);
-      border: 1px solid var(--acc2);
-      color: var(--acc2)
-    }
-
-    .spec-name {
-      font-size: 12px;
-      color: var(--dim);
-      letter-spacing: 1px
-    }
-
-    canvas.spec-cv {
-      image-rendering: pixelated
-    }
-
-    canvas.spec-cv.p1 {
-      border: 1px solid rgba(0, 245, 255, .6);
-      box-shadow: 0 0 16px rgba(0, 245, 255, .25)
-    }
-
-    canvas.spec-cv.p2 {
-      border: 1px solid rgba(255, 0, 128, .5);
-      box-shadow: 0 0 16px rgba(255, 0, 128, .25)
-    }
-
-    .vs-txt {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 16px;
-      background: linear-gradient(180deg, var(--acc), var(--acc2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      filter: drop-shadow(0 0 6px rgba(0, 245, 255, .4));
-      align-self: center
-    }
-
-    .live-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 8px;
-      color: var(--red);
-      letter-spacing: 2px
-    }
-
-    .spec-stats-panel {
-      background: var(--s1);
-      border: 1px solid var(--b0);
-      border-radius: 4px;
-      padding: 14px;
-      min-width: 130px
-    }
-
-    .ss-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 5px 0;
-      border-bottom: 1px solid var(--b1);
-      font-size: 11px
-    }
-
-    .ss-row:last-child {
-      border-bottom: none
-    }
-
-    .ss-label {
-      color: var(--dim);
-      letter-spacing: 1px;
-      font-size: 11px
-    }
-
-    .ss-v1 {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 11px;
-      color: var(--acc)
-    }
-
-    .ss-v2 {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 11px;
-      color: var(--acc2)
-    }
-
-    /* Log */
-    .log-box {
-      background: var(--s1);
-      border: 1px solid var(--b0);
-      border-radius: 4px;
-      padding: 14px;
-      max-height: calc(100vh - 240px);
-      overflow-y: auto;
-      font-size: 11px;
-      line-height: 2
-    }
-
-    .log-entry {
-      display: flex;
-      gap: 12px;
-      padding: 3px 0;
-      border-bottom: 1px solid var(--dim2)
-    }
-
-    .log-entry:last-child {
-      border-bottom: none
-    }
-
-    .log-ts {
-      color: var(--dim);
-      white-space: nowrap;
-      flex-shrink: 0;
-      font-family: monospace
-    }
-
-    .log-src {
-      font-size: 8px;
-      padding: 2px 4px;
-      border-radius: 2px;
-      background: var(--b2);
-      color: var(--dim);
-      text-transform: uppercase
-    }
-
-    .log-msg {
-      flex: 1
-    }
-
-    .log-msg.info {
-      color: var(--acc)
-    }
-
-    .log-msg.success {
-      color: var(--green)
-    }
-
-    .log-msg.warn {
-      color: var(--warn)
-    }
-
-    .log-msg.error {
-      color: var(--red)
-    }
-
-    .log-msg.admin {
-      color: var(--admin)
-    }
-
-    /* Settings */
-    .settings-grid {
-      display: grid;
-      gap: 14px;
-      max-width: 660px
-    }
-
-    .setting-item {
-      background: var(--s1);
-      border: 1px solid var(--b0);
-      border-radius: 4px;
-      padding: 18px 20px
-    }
-
-    .si-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px
-    }
-
-    .si-info .si-name {
-      font-size: 13px;
-      color: var(--tx);
-      letter-spacing: 2px;
-      margin-bottom: 5px
-    }
-
-    .si-info .si-desc {
-      font-size: 11px;
-      color: var(--dim);
-      letter-spacing: 1px;
-      line-height: 1.6
-    }
-
-    .si-body {
-      margin-top: 14px;
-      display: none
-    }
-
-    .si-body.open {
-      display: block
-    }
-
-    .confirm-box {
-      background: rgba(255, 51, 85, .06);
-      border: 1px solid rgba(255, 51, 85, .25);
-      border-radius: 3px;
-      padding: 16px;
-      animation: cfIn .2s ease
-    }
-
-    @keyframes cfIn {
-      from {
-        opacity: 0;
-        transform: translateY(-6px)
-      }
-
-      to {
-        opacity: 1;
-        transform: none
-      }
-    }
-
-    .cf-msg {
-      font-size: 11px;
-      color: var(--red);
-      letter-spacing: 1px;
-      line-height: 1.8;
-      margin-bottom: 12px
-    }
-
-    .cf-input {
-      width: 100%;
-      background: rgba(255, 51, 85, .05);
-      border: 1px solid rgba(255, 51, 85, .35);
-      border-radius: 2px;
-      color: var(--tx);
-      font-family: 'Orbitron', monospace;
-      font-size: 13px;
-      padding: 9px 12px;
-      outline: none;
-      margin-bottom: 12px;
-      transition: all .2s
-    }
-
-    .cf-input:focus {
-      border-color: var(--red);
-      box-shadow: 0 0 12px rgba(255, 51, 85, .2)
-    }
-
-    .cf-btns {
-      display: flex;
-      gap: 8px
-    }
-
-    .cf-yes {
-      padding: 8px 18px;
-      border: 1px solid var(--red);
-      color: #fff;
-      background: var(--red);
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-      cursor: pointer;
-      border-radius: 2px;
-      transition: all .2s
-    }
-
-    .cf-yes:hover {
-      box-shadow: 0 0 16px rgba(255, 51, 85, .4)
-    }
-
-    .cf-no {
-      padding: 8px 18px;
-      border: 1px solid var(--b1);
-      color: var(--dim);
-      background: transparent;
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-      cursor: pointer;
-      border-radius: 2px
-    }
-
-    .warn-box {
-      background: rgba(255, 170, 0, .06);
-      border: 1px solid rgba(255, 170, 0, .25);
-      border-radius: 3px;
-      padding: 16px;
-      animation: cfIn .2s ease
-    }
-
-    .wf-msg {
-      font-size: 11px;
-      color: var(--warn);
-      letter-spacing: 1px;
-      line-height: 1.8;
-      margin-bottom: 12px
-    }
-
-    .wf-input {
-      width: 100%;
-      background: rgba(255, 170, 0, .04);
-      border: 1px solid rgba(255, 170, 0, .3);
-      border-radius: 2px;
-      color: var(--tx);
-      font-family: 'Orbitron', monospace;
-      font-size: 13px;
-      padding: 9px 12px;
-      outline: none;
-      margin-bottom: 12px;
-      transition: all .2s
-    }
-
-    .wf-input:focus {
-      border-color: var(--warn)
-    }
-
-    .wf-yes {
-      padding: 8px 18px;
-      border: 1px solid var(--warn);
-      color: #000;
-      background: var(--warn);
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-      cursor: pointer;
-      border-radius: 2px
-    }
-
-    /* Force stop confirmation modal */
-    .fs-confirm-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, .85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 180;
-      backdrop-filter: blur(4px);
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .fs-confirm-modal.show {
-      display: flex;
-      animation: modalIn .2s ease
-    }
-
-    @keyframes modalIn {
-      from {
-        opacity: 0;
-        transform: scale(.95)
-      }
-
-      to {
-        opacity: 1;
-        transform: scale(1)
-      }
-    }
-
-    .fs-confirm-box {
-      background: var(--s0);
-      border: 1px solid rgba(255, 51, 85, .4);
-      border-radius: 6px;
-      padding: 30px;
-      width: min(460px, 92vw);
-      position: relative;
-      overflow: hidden
-    }
-
-    .fs-confirm-box::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--red), var(--acc2), var(--red))
-    }
-
-    .fsc-icon {
-      font-size: 40px;
-      text-align: center;
-      margin-bottom: 14px
-    }
-
-    .fsc-title {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 13px;
-      color: var(--red);
-      letter-spacing: 2px;
-      margin-bottom: 6px;
-      text-align: center
-    }
-
-    .fsc-room {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 16px;
-      color: var(--acc);
-      text-align: center;
-      letter-spacing: 8px;
-      margin-bottom: 18px;
-      padding: 10px;
-      background: rgba(0, 245, 255, .05);
-      border: 1px solid rgba(0, 245, 255, .2);
-      border-radius: 3px
-    }
-
-    .fsc-label {
-      font-size: 11px;
-      color: var(--dim);
-      letter-spacing: 3px;
-      margin-bottom: 8px
-    }
-
-    .fsc-input {
-      width: 100%;
-      background: rgba(255, 51, 85, .05);
-      border: 1px solid rgba(255, 51, 85, .3);
-      border-radius: 2px;
-      color: var(--tx);
-      font-family: 'Orbitron', monospace;
-      font-size: 13px;
-      padding: 10px 14px;
-      outline: none;
-      margin-bottom: 14px;
-      transition: all .2s
-    }
-
-    .fsc-input:focus {
-      border-color: var(--red);
-      box-shadow: 0 0 15px rgba(255, 51, 85, .2)
-    }
-
-    .fsc-btns {
-      display: flex;
-      gap: 10px
-    }
-
-    .fsc-go {
-      flex: 1;
-      padding: 11px;
-      border: 1px solid var(--red);
-      color: #fff;
-      background: var(--red);
-      font-family: 'Orbitron', monospace;
-      font-size: 12px;
-      letter-spacing: 2px;
-      cursor: pointer;
-      border-radius: 2px;
-      transition: all .2s
-    }
-
-    .fsc-go:hover {
-      box-shadow: 0 0 20px rgba(255, 51, 85, .5)
-    }
-
-    .fsc-cancel {
-      flex: 1;
-      padding: 11px;
-      border: 1px solid var(--b1);
-      color: var(--dim);
-      background: transparent;
-      font-family: 'Orbitron', monospace;
-      font-size: 12px;
-      letter-spacing: 2px;
-      cursor: pointer;
-      border-radius: 2px
-    }
-
-    /* Room message modal */
-    .modal-bg {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, .7);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 150;
-      backdrop-filter: blur(3px)
-    }
-
-    .modal-bg.show {
-      display: flex
-    }
-
-    .modal {
-      background: var(--s0);
-      border: 1px solid var(--b1);
-      border-radius: 6px;
-      padding: 28px;
-      width: min(420px, 90vw);
-      position: relative
-    }
-
-    .modal::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--warn), var(--acc))
-    }
-
-    .modal-title {
-      font-size: 13px;
-      color: var(--warn);
-      letter-spacing: 3px;
-      margin-bottom: 18px
-    }
-
-    .modal-input {
-      width: 100%;
-      background: rgba(255, 170, 0, .04);
-      border: 1px solid rgba(255, 170, 0, .3);
-      border-radius: 3px;
-      color: var(--tx);
-      font-family: 'Orbitron', monospace;
-      font-size: 13px;
-      padding: 12px 14px;
-      outline: none;
-      margin-bottom: 16px;
-      transition: all .2s
-    }
-
-    .modal-input:focus {
-      border-color: var(--warn);
-      box-shadow: 0 0 15px rgba(255, 170, 0, .15)
-    }
-
-    .modal-btns {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end
-    }
-
-    .modal-send {
-      padding: 10px 22px;
-      border: none;
-      background: linear-gradient(135deg, var(--warn), #cc7700);
-      color: #000;
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-      cursor: pointer;
-      border-radius: 2px;
-      transition: all .2s
-    }
-
-    .modal-send:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(255, 170, 0, .4)
-    }
-
-    .modal-cancel {
-      padding: 10px 18px;
-      border: 1px solid var(--b1);
-      color: var(--dim);
-      background: transparent;
-      font-family: 'Orbitron', monospace;
-      font-size: 11px;
-      letter-spacing: 2px;
-      cursor: pointer;
-      border-radius: 2px
-    }
-
-    /* Toast */
-    .toast {
-      position: fixed;
-      top: 16px;
-      right: 20px;
-      background: var(--s0);
-      border: 1px solid var(--acc);
-      color: var(--acc);
-      font-size: 12px;
-      letter-spacing: 2px;
-      padding: 10px 18px;
-      border-radius: 3px;
-      z-index: 500;
-      display: none;
-      animation: toastIn .25s ease
-    }
-
-    .toast.show {
-      display: block
-    }
-
-    .toast.err {
-      border-color: var(--red);
-      color: var(--red)
-    }
-
-    .toast.ok {
-      border-color: var(--green);
-      color: var(--green)
-    }
-
-    .toast.warn {
-      border-color: var(--warn);
-      color: var(--warn)
-    }
-
-    @keyframes toastIn {
-      from {
-        opacity: 0;
-        transform: translateX(10px)
-      }
-
-      to {
-        opacity: 1;
-        transform: none
-      }
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 4px;
-      height: 4px
-    }
-
-    ::-webkit-scrollbar-track {
-      background: var(--bg)
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--b1);
-      border-radius: 2px
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--b2)
-    }
-
-    /* Tetris BG */
-    #bgCanvas {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      opacity: .1;
-      pointer-events: none
-    }
-
-    .scanlines-ov {
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.12) 2px, rgba(0, 0, 0, 0.12) 4px)
-    }
-
-    /* Admin loader */
-    #adminLoader {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      z-index: 300;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 24px;
-      transition: opacity .4s ease
-    }
-
-    #adminLoader.hide {
-      opacity: 0;
-      pointer-events: none
-    }
-
-    .al-logo {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 14px;
-      color: var(--acc2);
-      text-shadow: 0 0 20px rgba(255, 0, 128, .8);
-      letter-spacing: 4px
-    }
-
-    .al-bar {
-      display: flex;
-      gap: 4px
-    }
-
-    .al-b {
-      width: 18px;
-      height: 18px;
-      border-radius: 3px;
-      background: #0d1525;
-      border: 1px solid #1a2540;
-      position: relative;
-      transition: background .08s
-    }
-
-    .al-b.lit::after {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      right: 2px;
-      height: 3px;
-      background: rgba(255, 255, 255, .3);
-      border-radius: 1px
-    }
-
-    .al-txt {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 7px;
-      color: var(--dim);
-      letter-spacing: 3px;
-      animation: alBlink 1s step-end infinite
-    }
-
-    @keyframes alBlink {
-
-      0%,
-      100% {
-        opacity: 1
-      }
-
-      50% {
-        opacity: .2
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TETRIS BATTLE — Admin Console</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+:root{
+  --bg:#010306;--s0:#080d18;--s1:#0d1525;--s2:#111a2e;
+  --b0:#1a2540;--b1:#243050;--b2:#2e3d65;
+  --acc:#00f5ff;--acc2:#ff0080;--acc3:#aaff00;--warn:#ffaa00;--admin:#ff6600;
+  --red:#ff3355;--green:#00ff88;--blue:#4488ff;
+  --tx:#e0f0ff;--dim:#4a6080;--dim2:#2a3a55;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--tx);font-family:'Orbitron',monospace}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(0,245,255,.015) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,245,255,.015) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* ══ LOGIN ══ */
+#loginWrap{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;z-index:200;background:var(--bg)}
+#loginWrap.hidden{display:none}
+.login-logo{font-family:'Press Start 2P',monospace;font-size:clamp(13px,2.5vw,22px);
+  color:var(--acc2);text-shadow:0 0 20px rgba(255,0,128,.7);letter-spacing:4px;margin-bottom:6px;
+  text-align:center}
+.login-tagline{font-size:11px;color:var(--dim);letter-spacing:4px;margin-bottom:36px;text-align:center}
+.login-card{background:var(--s0);border:1px solid var(--b0);border-radius:6px;
+  padding:36px 32px;width:min(380px,90vw);position:relative;overflow:hidden}
+.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--acc2),var(--acc),var(--acc2))}
+.lc-title{font-size:12px;color:var(--acc2);letter-spacing:3px;margin-bottom:24px;
+  display:flex;align-items:center;gap:8px}
+.pw-wrap{margin-bottom:20px}
+.pw-label{display:block;font-size:11px;color:var(--dim);letter-spacing:3px;margin-bottom:9px}
+.pw-input{width:100%;background:rgba(255,0,128,.04);border:1px solid var(--b1);border-radius:3px;
+  color:var(--tx);font-family:'Orbitron',monospace;font-size:15px;padding:13px 15px;
+  outline:none;letter-spacing:4px;transition:all .2s}
+.pw-input:focus{border-color:var(--acc2);box-shadow:0 0 0 1px rgba(255,0,128,.2),0 0 20px rgba(255,0,128,.1)}
+.pw-btn{width:100%;padding:14px;border:none;border-radius:3px;cursor:pointer;
+  font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:3px;
+  background:linear-gradient(135deg,var(--acc2),#cc0066);color:#fff;
+  box-shadow:0 4px 20px rgba(255,0,128,.25);transition:all .2s}
+.pw-btn:hover{transform:translateY(-2px);box-shadow:0 6px 30px rgba(255,0,128,.45)}
+.pw-err{font-size:11px;color:var(--red);letter-spacing:2px;margin-top:12px;text-align:center;min-height:18px;transition:opacity .2s}
+
+/* ══ SHELL ══ */
+#shell{display:none;height:100vh;flex-direction:column}
+#shell.active{display:flex}
+
+/* Top bar */
+.topbar{height:52px;background:var(--s0);border-bottom:1px solid var(--b0);
+  display:flex;align-items:center;justify-content:space-between;padding:0 20px;
+  position:relative;z-index:10;flex-shrink:0}
+.topbar-logo{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--acc2);
+  text-shadow:0 0 15px rgba(255,0,128,.5);letter-spacing:3px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.badge-online{font-size:7px;padding:4px 10px;border-radius:2px;letter-spacing:2px;
+  border:1px solid var(--green);color:var(--green);background:rgba(0,255,136,.07)}
+.topbar-btn{background:transparent;border:1px solid var(--b1);color:var(--dim);
+  font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;padding:5px 12px;
+  border-radius:2px;cursor:pointer;transition:all .2s}
+.topbar-btn:hover{border-color:var(--acc2);color:var(--acc2)}
+
+/* Layout */
+.shell-body{display:flex;flex:1;overflow:hidden}
+
+/* Sidebar */
+.sidebar{width:210px;background:var(--s0);border-right:1px solid var(--b0);
+  display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.sb-section{padding:14px 16px 4px;font-size:10px;color:var(--dim2);letter-spacing:4px;
+  text-transform:uppercase;border-bottom:1px solid var(--dim2)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;
+  font-size:12px;color:var(--dim);letter-spacing:1px;border-left:2px solid transparent;
+  transition:all .15s;user-select:none}
+.nav-item:hover{color:var(--tx);background:rgba(0,245,255,.04)}
+.nav-item.active{color:var(--acc);border-left-color:var(--acc);background:rgba(0,245,255,.06)}
+.nav-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--acc2);color:#fff;font-size:9px;
+  padding:2px 6px;border-radius:10px;font-family:'Press Start 2P',monospace;flex-shrink:0}
+@media(max-width:900px){
+  .sidebar{width:52px}
+  .nav-item span:not(.nav-icon){display:none}
+  .nav-item{justify-content:center;padding:13px}
+  .nav-badge,.sb-section{display:none}
+}
+
+/* Main */
+.main{flex:1;overflow-y:auto;padding:20px;position:relative;z-index:1}
+
+/* Panels */
+.panel{display:none}
+.panel.active{display:block}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+.sc{background:var(--s1);border:1px solid var(--b0);border-radius:4px;padding:16px;position:relative;overflow:hidden}
+.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc.c1::after{background:var(--acc)}.sc.c2::after{background:var(--acc2)}
+.sc.c3::after{background:var(--acc3)}.sc.c4::after{background:var(--warn)}
+.sc-label{font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:10px}
+.sc-val{font-family:'Press Start 2P',monospace;font-size:22px}
+.sc-val.c1{color:var(--acc);text-shadow:0 0 15px rgba(0,245,255,.4)}
+.sc-val.c2{color:var(--acc2);text-shadow:0 0 15px rgba(255,0,128,.4)}
+.sc-val.c3{color:var(--acc3);text-shadow:0 0 15px rgba(170,255,0,.4)}
+.sc-val.c4{color:var(--warn)}
+
+/* Panel headers */
+.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.ph-left .ph-title{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--acc);
+  text-shadow:0 0 12px rgba(0,245,255,.4)}
+.ph-left .ph-sub{font-size:11px;color:var(--dim);letter-spacing:2px;margin-top:5px}
+
+/* Tables */
+.tbl-wrap{background:var(--s1);border:1px solid var(--b0);border-radius:4px;overflow:hidden;margin-bottom:20px}
+.tbl-head{padding:12px 16px;border-bottom:1px solid var(--b0);display:flex;justify-content:space-between;align-items:center}
+.tbl-head-title{font-size:8px;color:var(--acc);letter-spacing:2px;display:flex;align-items:center;gap:8px}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;font-size:10px;color:var(--dim);letter-spacing:2px;text-align:left;
+  border-bottom:1px solid var(--b0);background:rgba(0,245,255,.015);white-space:nowrap}
+td{padding:11px 14px;font-size:12px;border-bottom:1px solid var(--dim2);vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(0,245,255,.02)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:2px;font-size:10px;letter-spacing:1px}
+.badge-wait{background:rgba(255,170,0,.1);border:1px solid var(--warn);color:var(--warn)}
+.badge-live{background:rgba(0,255,136,.1);border:1px solid var(--green);color:var(--green)}
+.badge-end{background:rgba(80,80,80,.1);border:1px solid #444;color:#555}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:ldot 1s ease-in-out infinite}
+@keyframes ldot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.6}}
+
+/* Action buttons */
+.abtn{padding:4px 10px;border-radius:2px;font-family:'Orbitron',monospace;font-size:10px;
+  letter-spacing:1px;cursor:pointer;transition:all .15s;background:transparent;border:1px solid;margin:1px}
+.abtn-watch{border-color:var(--acc);color:var(--acc)}.abtn-watch:hover{background:rgba(0,245,255,.1)}
+.abtn-stop{border-color:var(--red);color:var(--red)}.abtn-stop:hover{background:rgba(255,51,85,.12)}
+.abtn-del{border-color:#555;color:#666}.abtn-del:hover{border-color:var(--red);color:var(--red)}
+.abtn-msg{border-color:var(--warn);color:var(--warn)}.abtn-msg:hover{background:rgba(255,170,0,.1)}
+
+.empty-td{text-align:center;color:var(--dim);font-size:11px;letter-spacing:2px;padding:28px!important}
+
+/* Small buttons */
+.sbtn{background:transparent;border:1px solid var(--b1);color:var(--dim);font-family:'Orbitron',monospace;
+  font-size:11px;letter-spacing:2px;padding:6px 14px;border-radius:2px;cursor:pointer;transition:all .2s}
+.sbtn:hover{border-color:var(--acc);color:var(--acc)}
+.sbtn-red{border-color:rgba(255,51,85,.4);color:var(--red)}.sbtn-red:hover{background:rgba(255,51,85,.1)}
+.sbtn-warn{border-color:rgba(255,170,0,.4);color:var(--warn)}.sbtn-warn:hover{background:rgba(255,170,0,.1)}
+
+/* Spectate */
+.spec-arena{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.spec-col{display:flex;flex-direction:column;align-items:center;gap:7px}
+.spec-badge{font-size:11px;letter-spacing:3px;padding:4px 14px;border-radius:2px}
+.spec-badge.p1{background:rgba(0,245,255,.1);border:1px solid var(--acc);color:var(--acc)}
+.spec-badge.p2{background:rgba(255,0,128,.1);border:1px solid var(--acc2);color:var(--acc2)}
+.spec-name{font-size:12px;color:var(--dim);letter-spacing:1px}
+canvas.spec-cv{image-rendering:pixelated}
+canvas.spec-cv.p1{border:1px solid rgba(0,245,255,.6);box-shadow:0 0 16px rgba(0,245,255,.25)}
+canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(255,0,128,.25)}
+.vs-txt{font-family:'Press Start 2P',monospace;font-size:16px;
+  background:linear-gradient(180deg,var(--acc),var(--acc2));-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 6px rgba(0,245,255,.4));align-self:center}
+.live-label{display:flex;align-items:center;gap:8px;font-size:8px;color:var(--red);letter-spacing:2px}
+.spec-stats-panel{background:var(--s1);border:1px solid var(--b0);border-radius:4px;padding:14px;min-width:130px}
+.ss-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;
+  border-bottom:1px solid var(--b1);font-size:11px}
+.ss-row:last-child{border-bottom:none}
+.ss-label{color:var(--dim);letter-spacing:1px;font-size:11px}
+.ss-v1{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--acc)}
+.ss-v2{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--acc2)}
+
+/* Log */
+.log-box{background:var(--s1);border:1px solid var(--b0);border-radius:4px;padding:14px;
+  max-height:calc(100vh - 240px);overflow-y:auto;font-size:11px;line-height:2}
+.log-entry{display:flex;gap:12px;padding:3px 0;border-bottom:1px solid var(--dim2)}
+.log-entry:last-child{border-bottom:none}
+.log-ts{color:var(--dim);white-space:nowrap;flex-shrink:0;font-family:monospace}
+.log-src{font-size:8px;padding:2px 4px;border-radius:2px;background:var(--b2);color:var(--dim);text-transform:uppercase}
+.log-msg{flex:1}
+.log-msg.info{color:var(--acc)}.log-msg.success{color:var(--green)}
+.log-msg.warn{color:var(--warn)}.log-msg.error{color:var(--red)}
+.log-msg.admin{color:var(--admin)}
+
+/* Settings */
+.settings-grid{display:grid;gap:14px;max-width:660px}
+.setting-item{background:var(--s1);border:1px solid var(--b0);border-radius:4px;padding:18px 20px}
+.si-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.si-info .si-name{font-size:13px;color:var(--tx);letter-spacing:2px;margin-bottom:5px}
+.si-info .si-desc{font-size:11px;color:var(--dim);letter-spacing:1px;line-height:1.6}
+.si-body{margin-top:14px;display:none}
+.si-body.open{display:block}
+.confirm-box{background:rgba(255,51,85,.06);border:1px solid rgba(255,51,85,.25);
+  border-radius:3px;padding:16px;animation:cfIn .2s ease}
+@keyframes cfIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.cf-msg{font-size:11px;color:var(--red);letter-spacing:1px;line-height:1.8;margin-bottom:12px}
+.cf-input{width:100%;background:rgba(255,51,85,.05);border:1px solid rgba(255,51,85,.35);
+  border-radius:2px;color:var(--tx);font-family:'Orbitron',monospace;font-size:13px;
+  padding:9px 12px;outline:none;margin-bottom:12px;transition:all .2s}
+.cf-input:focus{border-color:var(--red);box-shadow:0 0 12px rgba(255,51,85,.2)}
+.cf-btns{display:flex;gap:8px}
+.cf-yes{padding:8px 18px;border:1px solid var(--red);color:#fff;background:var(--red);
+  font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;cursor:pointer;border-radius:2px;transition:all .2s}
+.cf-yes:hover{box-shadow:0 0 16px rgba(255,51,85,.4)}
+.cf-no{padding:8px 18px;border:1px solid var(--b1);color:var(--dim);background:transparent;
+  font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;cursor:pointer;border-radius:2px}
+.warn-box{background:rgba(255,170,0,.06);border:1px solid rgba(255,170,0,.25);border-radius:3px;padding:16px;animation:cfIn .2s ease}
+.wf-msg{font-size:11px;color:var(--warn);letter-spacing:1px;line-height:1.8;margin-bottom:12px}
+.wf-input{width:100%;background:rgba(255,170,0,.04);border:1px solid rgba(255,170,0,.3);
+  border-radius:2px;color:var(--tx);font-family:'Orbitron',monospace;font-size:13px;
+  padding:9px 12px;outline:none;margin-bottom:12px;transition:all .2s}
+.wf-input:focus{border-color:var(--warn)}
+.wf-yes{padding:8px 18px;border:1px solid var(--warn);color:#000;background:var(--warn);
+  font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;cursor:pointer;border-radius:2px}
+
+/* Force stop confirmation modal */
+.fs-confirm-modal {
+  position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;
+  justify-content:center;z-index:180;backdrop-filter:blur(4px);flex-direction:column;gap:0;
+}
+.fs-confirm-modal.show{display:flex;animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.fs-confirm-box{background:var(--s0);border:1px solid rgba(255,51,85,.4);border-radius:6px;
+  padding:30px;width:min(460px,92vw);position:relative;overflow:hidden}
+.fs-confirm-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--red),var(--acc2),var(--red))}
+.fsc-icon{font-size:40px;text-align:center;margin-bottom:14px}
+.fsc-title{font-family:'Press Start 2P',monospace;font-size:13px;color:var(--red);
+  letter-spacing:2px;margin-bottom:6px;text-align:center}
+.fsc-room{font-family:'Press Start 2P',monospace;font-size:16px;color:var(--acc);
+  text-align:center;letter-spacing:8px;margin-bottom:18px;padding:10px;
+  background:rgba(0,245,255,.05);border:1px solid rgba(0,245,255,.2);border-radius:3px}
+.fsc-label{font-size:11px;color:var(--dim);letter-spacing:3px;margin-bottom:8px}
+.fsc-input{width:100%;background:rgba(255,51,85,.05);border:1px solid rgba(255,51,85,.3);
+  border-radius:2px;color:var(--tx);font-family:'Orbitron',monospace;font-size:13px;
+  padding:10px 14px;outline:none;margin-bottom:14px;transition:all .2s}
+.fsc-input:focus{border-color:var(--red);box-shadow:0 0 15px rgba(255,51,85,.2)}
+.fsc-btns{display:flex;gap:10px}
+.fsc-go{flex:1;padding:11px;border:1px solid var(--red);color:#fff;background:var(--red);
+  font-family:'Orbitron',monospace;font-size:12px;letter-spacing:2px;cursor:pointer;
+  border-radius:2px;transition:all .2s}
+.fsc-go:hover{box-shadow:0 0 20px rgba(255,51,85,.5)}
+.fsc-cancel{flex:1;padding:11px;border:1px solid var(--b1);color:var(--dim);
+  background:transparent;font-family:'Orbitron',monospace;font-size:12px;
+  letter-spacing:2px;cursor:pointer;border-radius:2px}
+
+/* Room message modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;
+  justify-content:center;z-index:150;backdrop-filter:blur(3px)}
+.modal-bg.show{display:flex}
+.modal{background:var(--s0);border:1px solid var(--b1);border-radius:6px;
+  padding:28px;width:min(420px,90vw);position:relative}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--warn),var(--acc))}
+.modal-title{font-size:13px;color:var(--warn);letter-spacing:3px;margin-bottom:18px}
+.modal-input{width:100%;background:rgba(255,170,0,.04);border:1px solid rgba(255,170,0,.3);
+  border-radius:3px;color:var(--tx);font-family:'Orbitron',monospace;font-size:13px;
+  padding:12px 14px;outline:none;margin-bottom:16px;transition:all .2s}
+.modal-input:focus{border-color:var(--warn);box-shadow:0 0 15px rgba(255,170,0,.15)}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end}
+.modal-send{padding:10px 22px;border:none;background:linear-gradient(135deg,var(--warn),#cc7700);
+  color:#000;font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;
+  cursor:pointer;border-radius:2px;transition:all .2s}
+.modal-send:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(255,170,0,.4)}
+.modal-cancel{padding:10px 18px;border:1px solid var(--b1);color:var(--dim);background:transparent;
+  font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;cursor:pointer;border-radius:2px}
+
+/* Toast */
+.toast{position:fixed;top:16px;right:20px;background:var(--s0);border:1px solid var(--acc);
+  color:var(--acc);font-size:12px;letter-spacing:2px;padding:10px 18px;border-radius:3px;
+  z-index:500;display:none;animation:toastIn .25s ease}
+.toast.show{display:block}
+.toast.err{border-color:var(--red);color:var(--red)}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.warn{border-color:var(--warn);color:var(--warn)}
+@keyframes toastIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--b1);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--b2)}
+
+/* Tetris BG */
+#bgCanvas{position:fixed;inset:0;z-index:0;opacity:.1;pointer-events:none}
+.scanlines-ov{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px)}
+
+/* Admin loader */
+#adminLoader{position:fixed;inset:0;background:var(--bg);z-index:300;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
+  transition:opacity .4s ease}
+#adminLoader.hide{opacity:0;pointer-events:none}
+.al-logo{font-family:'Press Start 2P',monospace;font-size:14px;color:var(--acc2);
+  text-shadow:0 0 20px rgba(255,0,128,.8);letter-spacing:4px}
+.al-bar{display:flex;gap:4px}
+.al-b{width:18px;height:18px;border-radius:3px;background:#0d1525;border:1px solid #1a2540;
+  position:relative;transition:background .08s}
+.al-b.lit::after{content:'';position:absolute;top:2px;left:2px;right:2px;height:3px;
+  background:rgba(255,255,255,.3);border-radius:1px}
+.al-txt{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--dim);
+  letter-spacing:3px;animation:alBlink 1s step-end infinite}
+@keyframes alBlink{0%,100%{opacity:1}50%{opacity:.2}}
+</style>
 </head>
-
 <body>
 
-  <!-- ══ LOGIN ══ -->
-  <canvas id="bgCanvas"></canvas>
-  <div class="scanlines-ov"></div>
+<!-- ══ LOGIN ══ -->
+<canvas id="bgCanvas"></canvas>
+<div class="scanlines-ov"></div>
 
-  <!-- ADMIN LOADER -->
-  <div id="adminLoader">
-    <div class="al-logo">ADMIN CONSOLE</div>
-    <div class="al-bar" id="alBar"></div>
-    <div class="al-txt" id="alTxt">AUTHENTICATING...</div>
+<!-- ADMIN LOADER -->
+<div id="adminLoader">
+  <div class="al-logo">ADMIN CONSOLE</div>
+  <div class="al-bar" id="alBar"></div>
+  <div class="al-txt" id="alTxt">AUTHENTICATING...</div>
+</div>
+
+<div id="loginWrap">
+  <div class="login-logo">⬡ TETRIS BATTLE</div>
+  <div class="login-tagline">ADMINISTRATOR CONSOLE</div>
+  <div class="login-card">
+    <div class="lc-title">🔒 認証が必要です</div>
+    <div class="pw-wrap">
+      <label class="pw-label">ADMIN PASSWORD</label>
+      <input type="password" class="pw-input" id="pwIn" placeholder="••••••••" autocomplete="off">
+    </div>
+    <button class="pw-btn" onclick="doLogin()">→ ログイン</button>
+    <div class="pw-err" id="pwErr"></div>
   </div>
+</div>
 
-  <div id="loginWrap">
-    <div class="login-logo">⬡ TETRIS BATTLE</div>
-    <div class="login-tagline">ADMINISTRATOR CONSOLE</div>
-    <div class="login-card">
-      <div class="lc-title">🔒 認証が必要です</div>
-      <div class="pw-wrap">
-        <label class="pw-label">ADMIN PASSWORD</label>
-        <input type="password" class="pw-input" id="pwIn" placeholder="••••••••" autocomplete="off">
-      </div>
-      <button class="pw-btn" onclick="doLogin()">→ ログイン</button>
-      <div class="pw-err" id="pwErr"></div>
+<!-- ══ ADMIN SHELL ══ -->
+<div id="shell">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:15px">
+      <div class="topbar-logo">⬡ ADMIN CONSOLE</div>
+      <div id="versionDisp" style="font-size:9px;color:var(--acc2);font-weight:bold;letter-spacing:1px">VER ---</div>
+    </div>
+    <div class="topbar-right">
+      <span class="badge-online" id="connBadge">● CONNECTED</span>
+      <div style="font-size:7px;color:var(--dim);letter-spacing:1px" id="clockDisp"></div>
+      <button class="topbar-btn" onclick="doLogout()">LOGOUT</button>
     </div>
   </div>
 
-  <!-- ══ ADMIN SHELL ══ -->
-  <div id="shell">
-    <div class="topbar">
-      <div style="display:flex;align-items:center;gap:15px">
-        <div class="topbar-logo">⬡ ADMIN CONSOLE</div>
-        <div id="versionDisp" style="font-size:9px;color:var(--acc2);font-weight:bold;letter-spacing:1px">VER ---</div>
+  <div class="shell-body">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sb-section">MONITOR</div>
+      <div class="nav-item active" onclick="gotoPanel('dashboard',this)">
+        <span class="nav-icon">📊</span><span>Dashboard</span>
+        <span class="nav-badge" id="navBadge">0</span>
       </div>
-      <div class="topbar-right">
-        <span class="badge-online" id="connBadge">● CONNECTED</span>
-        <div style="font-size:7px;color:var(--dim);letter-spacing:1px" id="clockDisp"></div>
-        <button class="topbar-btn" onclick="doLogout()">LOGOUT</button>
+      <div class="nav-item" onclick="gotoPanel('rooms',this)">
+        <span class="nav-icon">🎮</span><span>Room List</span>
       </div>
-    </div>
+      <div class="nav-item" onclick="gotoPanel('spectate',this)">
+        <span class="nav-icon">👁</span><span>Spectate</span>
+      </div>
+      <div class="sb-section">TOOLS</div>
+      <div class="nav-item" onclick="gotoPanel('broadcast',this)">
+        <span class="nav-icon">📢</span><span>Broadcast</span>
+      </div>
+      <div class="nav-item" onclick="gotoPanel('log',this)">
+        <span class="nav-icon">📋</span><span>Event Log</span>
+      </div>
+      <div class="nav-item" onclick="gotoPanel('settings',this)">
+        <span class="nav-icon">⚙</span><span>Settings</span>
+      </div>
+    </nav>
 
-    <div class="shell-body">
-      <!-- Sidebar -->
-      <nav class="sidebar">
-        <div class="sb-section">MONITOR</div>
-        <div class="nav-item active" onclick="gotoPanel('dashboard',this)">
-          <span class="nav-icon">📊</span><span>Dashboard</span>
-          <span class="nav-badge" id="navBadge">0</span>
-        </div>
-        <div class="nav-item" onclick="gotoPanel('rooms',this)">
-          <span class="nav-icon">🎮</span><span>Room List</span>
-        </div>
-        <div class="nav-item" onclick="gotoPanel('spectate',this)">
-          <span class="nav-icon">👁</span><span>Spectate</span>
-        </div>
-        <div class="sb-section">TOOLS</div>
-        <div class="nav-item" onclick="gotoPanel('broadcast',this)">
-          <span class="nav-icon">📢</span><span>Broadcast</span>
-        </div>
-        <div class="nav-item" onclick="gotoPanel('log',this)">
-          <span class="nav-icon">📋</span><span>Event Log</span>
-        </div>
-        <div class="nav-item" onclick="gotoPanel('settings',this)">
-          <span class="nav-icon">⚙</span><span>Settings</span>
-        </div>
-      </nav>
+    <!-- Main content -->
+    <div class="main">
 
-      <!-- Main content -->
-      <div class="main">
+      <!-- ── DASHBOARD ── -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="ph">
+          <div class="ph-left">
+            <div class="ph-title">DASHBOARD</div>
+            <div class="ph-sub">リアルタイム統計 — 自動更新中</div>
+          </div>
+          <button class="sbtn" onclick="refreshAll()">↻ 更新</button>
+        </div>
+        <div class="stats-grid">
+          <div class="sc c1"><div class="sc-label">ACTIVE BATTLES</div><div class="sc-val c1" id="st-active">0</div></div>
+          <div class="sc c2"><div class="sc-label">WAITING ROOMS</div><div class="sc-val c2" id="st-wait">0</div></div>
+          <div class="sc c3"><div class="sc-label">ONLINE PLAYERS</div><div class="sc-val c3" id="st-players">0</div></div>
+          <div class="sc c4"><div class="sc-label">TOTAL ROOMS</div><div class="sc-val c4" id="st-total">0</div></div>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-head">
+            <div class="tbl-head-title"><div class="live-dot"></div>LIVE ROOMS</div>
+            <button class="sbtn" onclick="refreshAll()">↻</button>
+          </div>
+          <table>
+            <thead><tr><th>CODE</th><th>STATUS</th><th>P1</th><th>P2</th><th>CREATED</th><th>ACTIONS</th></tr></thead>
+            <tbody id="dashTbody"><tr><td class="empty-td" colspan="6">読み込み中...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
 
-        <!-- ── DASHBOARD ── -->
-        <div class="panel active" id="panel-dashboard">
+      <!-- ── ROOM LIST ── -->
+      <div class="panel" id="panel-rooms">
+        <div class="ph">
+          <div class="ph-left"><div class="ph-title">ROOM LIST</div><div class="ph-sub">全ルームの詳細管理</div></div>
+          <button class="sbtn" onclick="refreshAll()">↻ 更新</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>CODE</th><th>STATUS</th><th>P1 NAME</th><th>P1 SCORE</th><th>P2 NAME</th><th>P2 SCORE</th><th>LEVEL</th><th>CREATED</th><th>ACTIONS</th></tr></thead>
+            <tbody id="roomsTbody"><tr><td class="empty-td" colspan="9">読み込み中...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── SPECTATE ── -->
+      <div class="panel" id="panel-spectate">
+        <div id="spectateList">
           <div class="ph">
-            <div class="ph-left">
-              <div class="ph-title">DASHBOARD</div>
-              <div class="ph-sub">リアルタイム統計 — 自動更新中</div>
-            </div>
-            <button class="sbtn" onclick="refreshAll()">↻ 更新</button>
-          </div>
-          <div class="stats-grid">
-            <div class="sc c1">
-              <div class="sc-label">ACTIVE BATTLES</div>
-              <div class="sc-val c1" id="st-active">0</div>
-            </div>
-            <div class="sc c2">
-              <div class="sc-label">WAITING ROOMS</div>
-              <div class="sc-val c2" id="st-wait">0</div>
-            </div>
-            <div class="sc c3">
-              <div class="sc-label">ONLINE PLAYERS</div>
-              <div class="sc-val c3" id="st-players">0</div>
-            </div>
-            <div class="sc c4">
-              <div class="sc-label">TOTAL ROOMS</div>
-              <div class="sc-val c4" id="st-total">0</div>
-            </div>
-          </div>
-          <div class="tbl-wrap">
-            <div class="tbl-head">
-              <div class="tbl-head-title">
-                <div class="live-dot"></div>LIVE ROOMS
-              </div>
-              <button class="sbtn" onclick="refreshAll()">↻</button>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>CODE</th>
-                  <th>STATUS</th>
-                  <th>P1</th>
-                  <th>P2</th>
-                  <th>CREATED</th>
-                  <th>ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody id="dashTbody">
-                <tr>
-                  <td class="empty-td" colspan="6">読み込み中...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ── ROOM LIST ── -->
-        <div class="panel" id="panel-rooms">
-          <div class="ph">
-            <div class="ph-left">
-              <div class="ph-title">ROOM LIST</div>
-              <div class="ph-sub">全ルームの詳細管理</div>
-            </div>
+            <div class="ph-left"><div class="ph-title">SPECTATE</div><div class="ph-sub">対戦をリアルタイム観戦</div></div>
             <button class="sbtn" onclick="refreshAll()">↻ 更新</button>
           </div>
           <div class="tbl-wrap">
             <table>
-              <thead>
-                <tr>
-                  <th>CODE</th>
-                  <th>STATUS</th>
-                  <th>P1 NAME</th>
-                  <th>P1 SCORE</th>
-                  <th>P2 NAME</th>
-                  <th>P2 SCORE</th>
-                  <th>LEVEL</th>
-                  <th>CREATED</th>
-                  <th>ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody id="roomsTbody">
-                <tr>
-                  <td class="empty-td" colspan="9">読み込み中...</td>
-                </tr>
-              </tbody>
+              <thead><tr><th>CODE</th><th>PLAYER 1</th><th>P1 SCORE</th><th>PLAYER 2</th><th>P2 SCORE</th><th>ACTION</th></tr></thead>
+              <tbody id="specTbody"><tr><td class="empty-td" colspan="6">アクティブな対戦なし</td></tr></tbody>
             </table>
           </div>
         </div>
-
-        <!-- ── SPECTATE ── -->
-        <div class="panel" id="panel-spectate">
-          <div id="spectateList">
-            <div class="ph">
-              <div class="ph-left">
-                <div class="ph-title">SPECTATE</div>
-                <div class="ph-sub">対戦をリアルタイム観戦</div>
+        <div id="spectateView" style="display:none">
+          <div class="ph">
+            <div class="ph-left">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="live-label"><div class="live-dot"></div>LIVE</div>
+                <div class="ph-title" style="font-size:10px">ROOM <span id="specCode">----</span></div>
               </div>
-              <button class="sbtn" onclick="refreshAll()">↻ 更新</button>
+              <div class="ph-sub" id="specTimer">--:--</div>
             </div>
-            <div class="tbl-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>CODE</th>
-                    <th>PLAYER 1</th>
-                    <th>P1 SCORE</th>
-                    <th>PLAYER 2</th>
-                    <th>P2 SCORE</th>
-                    <th>ACTION</th>
-                  </tr>
-                </thead>
-                <tbody id="specTbody">
-                  <tr>
-                    <td class="empty-td" colspan="6">アクティブな対戦なし</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="abtn abtn-stop" onclick="openFsModal(currentSpecRoom)">🛑 強制停止</button>
+              <button class="sbtn" onclick="stopSpec()">← 戻る</button>
             </div>
           </div>
-          <div id="spectateView" style="display:none">
-            <div class="ph">
-              <div class="ph-left">
-                <div style="display:flex;align-items:center;gap:10px">
-                  <div class="live-label">
-                    <div class="live-dot"></div>LIVE
-                  </div>
-                  <div class="ph-title" style="font-size:10px">ROOM <span id="specCode">----</span></div>
-                </div>
-                <div class="ph-sub" id="specTimer">--:--</div>
-              </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="abtn abtn-stop" onclick="openFsModal(currentSpecRoom)">🛑 強制停止</button>
-                <button class="sbtn" onclick="stopSpec()">← 戻る</button>
+          <div class="spec-arena">
+            <div class="spec-col">
+              <div class="spec-badge p1">P1</div>
+              <div class="spec-name" id="specP1N">PLAYER 1</div>
+              <canvas id="specCv1" class="spec-cv p1" width="200" height="400"></canvas>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;align-self:center">
+              <div class="vs-txt">VS</div>
+              <div class="spec-stats-panel">
+                <div class="ss-row"><span class="ss-label">P1 SCORE</span><span class="ss-v1" id="ssP1Score">0</span></div>
+                <div class="ss-row"><span class="ss-label">P2 SCORE</span><span class="ss-v2" id="ssP2Score">0</span></div>
+                <div class="ss-row"><span class="ss-label">P1 LEVEL</span><span class="ss-v1" id="ssP1Level">1</span></div>
+                <div class="ss-row"><span class="ss-label">P2 LEVEL</span><span class="ss-v2" id="ssP2Level">1</span></div>
+                <div class="ss-row"><span class="ss-label">P1 LINES</span><span class="ss-v1" id="ssP1Lines">0</span></div>
+                <div class="ss-row"><span class="ss-label">P2 LINES</span><span class="ss-v2" id="ssP2Lines">0</span></div>
               </div>
             </div>
-            <div class="spec-arena">
-              <div class="spec-col">
-                <div class="spec-badge p1">P1</div>
-                <div class="spec-name" id="specP1N">PLAYER 1</div>
-                <canvas id="specCv1" class="spec-cv p1" width="200" height="400"></canvas>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:12px;align-self:center">
-                <div class="vs-txt">VS</div>
-                <div class="spec-stats-panel">
-                  <div class="ss-row"><span class="ss-label">P1 SCORE</span><span class="ss-v1" id="ssP1Score">0</span>
-                  </div>
-                  <div class="ss-row"><span class="ss-label">P2 SCORE</span><span class="ss-v2" id="ssP2Score">0</span>
-                  </div>
-                  <div class="ss-row"><span class="ss-label">P1 LEVEL</span><span class="ss-v1" id="ssP1Level">1</span>
-                  </div>
-                  <div class="ss-row"><span class="ss-label">P2 LEVEL</span><span class="ss-v2" id="ssP2Level">1</span>
-                  </div>
-                  <div class="ss-row"><span class="ss-label">P1 LINES</span><span class="ss-v1" id="ssP1Lines">0</span>
-                  </div>
-                  <div class="ss-row"><span class="ss-label">P2 LINES</span><span class="ss-v2" id="ssP2Lines">0</span>
-                  </div>
-                </div>
-              </div>
-              <div class="spec-col">
-                <div class="spec-badge p2">P2</div>
-                <div class="spec-name" id="specP2N">PLAYER 2</div>
-                <canvas id="specCv2" class="spec-cv p2" width="200" height="400"></canvas>
-              </div>
+            <div class="spec-col">
+              <div class="spec-badge p2">P2</div>
+              <div class="spec-name" id="specP2N">PLAYER 2</div>
+              <canvas id="specCv2" class="spec-cv p2" width="200" height="400"></canvas>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- ── BROADCAST ── -->
-        <div class="panel" id="panel-broadcast">
-          <div class="ph">
-            <div class="ph-left">
-              <div class="ph-title">BROADCAST</div>
-              <div class="ph-sub">全ルームへメッセージ送信</div>
-            </div>
-          </div>
-          <div class="settings-grid">
-            <div class="setting-item">
-              <div class="si-header">
-                <div class="si-info">
-                  <div class="si-name">メッセージ配信</div>
-                  <div class="si-desc">現在アクティブな全ルームにシステムメッセージを送信します</div>
-                </div>
-              </div>
-              <div style="margin-top:16px">
-                <div style="font-size:7px;color:var(--dim);letter-spacing:2px;margin-bottom:8px">MESSAGE</div>
-                <input id="bcMsg" class="wf-input" type="text" placeholder="System message..."
-                  style="width:100%;margin-bottom:12px">
-                <div style="display:flex;gap:8px;flex-wrap:wrap">
-                  <button class="wf-yes" onclick="sendBroadcast()">📢 全ルームに送信</button>
-                  <button class="sbtn" onclick="clearBcMsg()">クリア</button>
-                </div>
-                <div style="font-size:7px;color:var(--dim);letter-spacing:1px;margin-top:10px" id="bcStatus"></div>
-              </div>
-            </div>
-            <div class="setting-item">
+      <!-- ── BROADCAST ── -->
+      <div class="panel" id="panel-broadcast">
+        <div class="ph"><div class="ph-left"><div class="ph-title">BROADCAST</div><div class="ph-sub">全ルームへメッセージ送信</div></div></div>
+        <div class="settings-grid">
+          <div class="setting-item">
+            <div class="si-header">
               <div class="si-info">
-                <div class="si-name">強制停止メッセージ設定</div>
-                <div class="si-desc">強制停止時にプレイヤーに表示するデフォルトメッセージ</div>
+                <div class="si-name">メッセージ配信</div>
+                <div class="si-desc">現在アクティブな全ルームにシステムメッセージを送信します</div>
               </div>
-              <div style="margin-top:16px">
-                <input id="defMsg" class="wf-input" type="text" value="管理者によってこのルームは強制終了されました"
-                  style="width:100%;margin-bottom:12px">
-                <button class="sbtn" onclick="saveDefMsg()">保存</button>
+            </div>
+            <div style="margin-top:16px">
+              <div style="font-size:7px;color:var(--dim);letter-spacing:2px;margin-bottom:8px">MESSAGE</div>
+              <input id="bcMsg" class="wf-input" type="text" placeholder="System message..." style="width:100%;margin-bottom:12px">
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="wf-yes" onclick="sendBroadcast()">📢 全ルームに送信</button>
+                <button class="sbtn" onclick="clearBcMsg()">クリア</button>
               </div>
+              <div style="font-size:7px;color:var(--dim);letter-spacing:1px;margin-top:10px" id="bcStatus"></div>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="si-info">
+              <div class="si-name">強制停止メッセージ設定</div>
+              <div class="si-desc">強制停止時にプレイヤーに表示するデフォルトメッセージ</div>
+            </div>
+            <div style="margin-top:16px">
+              <input id="defMsg" class="wf-input" type="text" value="管理者によってこのルームは強制終了されました" style="width:100%;margin-bottom:12px">
+              <button class="sbtn" onclick="saveDefMsg()">保存</button>
             </div>
           </div>
         </div>
-
-        <!-- ── LOG ── -->
-        <div class="panel" id="panel-log">
-          <div class="ph">
-            <div class="ph-left">
-              <div class="ph-title">EVENT LOG</div>
-              <div class="ph-sub">管理操作・システムイベント履歴 (Firestore)</div>
-            </div>
-            <button class="sbtn sbtn-red" onclick="clearAllLogs()">🗑 全削除</button>
-          </div>
-          <div class="log-box" id="logBox"></div>
-        </div>
-
-        <!-- ── SETTINGS ── -->
-        <div class="panel" id="panel-settings">
-          <div class="ph">
-            <div class="ph-left">
-              <div class="ph-title">SETTINGS</div>
-              <div class="ph-sub">危険な操作 — 慎重に実行してください</div>
-            </div>
-          </div>
-          <div class="settings-grid">
-            <!-- Nuke -->
-            <div class="setting-item">
-              <div class="si-header">
-                <div class="si-info">
-                  <div class="si-name">NUKE ALL ROOMS</div>
-                  <div class="si-desc">全ルームを即座に削除します。全プレイヤーが切断されます。</div>
-                </div>
-                <button class="sbtn sbtn-red" onclick="toggleSiBody('nukeBody')">NUKE ▼</button>
-              </div>
-              <div class="si-body" id="nukeBody">
-                <div class="confirm-box">
-                  <div class="cf-msg">⚠ この操作は取り消せません。<br>全プレイヤーは即座に「管理者強制停止」画面に移動します。<br>確認のため <b>NUKE</b> と入力してください。
-                  </div>
-                  <input type="text" class="cf-input" id="nukeConfIn" placeholder="NUKE">
-                  <div class="cf-btns">
-                    <button class="cf-yes" onclick="nukeAll()">実行</button>
-                    <button class="cf-no" onclick="toggleSiBody('nukeBody')">キャンセル</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Cleanup -->
-            <div class="setting-item">
-              <div class="si-header">
-                <div class="si-info">
-                  <div class="si-name">CLEANUP ENDED ROOMS</div>
-                  <div class="si-desc">status が ended / force_ended のルームをFirebaseから削除します。</div>
-                </div>
-                <button class="sbtn sbtn-warn" onclick="cleanupRooms()">CLEANUP</button>
-              </div>
-            </div>
-            <!-- Force stop all active -->
-            <div class="setting-item">
-              <div class="si-header">
-                <div class="si-info">
-                  <div class="si-name">FORCE STOP ALL ROOMS</div>
-                  <div class="si-desc">対戦中（ready）と待機中（waiting）の全ルームを強制停止します。</div>
-                </div>
-                <button class="sbtn sbtn-red" onclick="stopAllActive()">STOP ALL</button>
-              </div>
-            </div>
-            <!-- Bot Settings -->
-            <div class="setting-item">
-              <div class="si-header">
-                <div class="si-info">
-                  <div class="si-name">BOT CONFIGURATION</div>
-                  <div class="si-desc">ボットの反応速度とミス率を調整します。</div>
-                </div>
-                <button class="sbtn" onclick="toggleSiBody('botConfigBody')">EDIT ▼</button>
-              </div>
-              <div class="si-body" id="botConfigBody">
-                <div style="margin-top:16px; display:grid; gap:12px;">
-                  <div>
-                    <div style="font-size:10px; color:var(--dim); margin-bottom:5px;">DELAYS (Easy, Normal, Hard) - ms
-                    </div>
-                    <div style="display:flex; gap:5px;">
-                      <input type="number" id="botDelay0" class="cf-input" style="margin-bottom:0">
-                      <input type="number" id="botDelay1" class="cf-input" style="margin-bottom:0">
-                      <input type="number" id="botDelay2" class="cf-input" style="margin-bottom:0">
-                    </div>
-                  </div>
-                  <div>
-                    <div style="font-size:10px; color:var(--dim); margin-bottom:5px;">NOISE (Easy, Normal, Hard) - 0.0
-                      to 1.0</div>
-                    <div style="display:flex; gap:5px;">
-                      <input type="number" step="0.01" id="botNoise0" class="cf-input" style="margin-bottom:0">
-                      <input type="number" step="0.01" id="botNoise1" class="cf-input" style="margin-bottom:0">
-                      <input type="number" step="0.01" id="botNoise2" class="cf-input" style="margin-bottom:0">
-                    </div>
-                  </div>
-                  <button class="pw-btn" style="width:auto; align-self:start; padding:10px 20px;"
-                    onclick="saveBotConfig()">SAVE CONFIG</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /main -->
-    </div><!-- /shell-body -->
-  </div><!-- /shell -->
-
-  <!-- Force stop confirmation modal -->
-  <div class="fs-confirm-modal" id="fsModal">
-    <div class="fs-confirm-box">
-      <div class="fsc-icon">🛑</div>
-      <div class="fsc-title">FORCE STOP ROOM</div>
-      <div class="fsc-room" id="fsModalCode">----</div>
-      <div class="fsc-label">停止メッセージ（プレイヤーに表示）</div>
-      <input type="text" class="fsc-input" id="fsModalMsg" placeholder="管理者によってこのルームは強制終了されました">
-      <div class="fsc-btns">
-        <button class="fsc-cancel" onclick="closeFsModal()">キャンセル</button>
-        <button class="fsc-go" onclick="execFsModal()">🛑 強制停止実行</button>
       </div>
+
+      <!-- ── LOG ── -->
+      <div class="panel" id="panel-log">
+        <div class="ph">
+          <div class="ph-left"><div class="ph-title">EVENT LOG</div><div class="ph-sub">管理操作・システムイベント履歴 (Firestore)</div></div>
+          <button class="sbtn sbtn-red" onclick="clearAllLogs()">🗑 全削除</button>
+        </div>
+        <div class="log-box" id="logBox"></div>
+      </div>
+
+      <!-- ── SETTINGS ── -->
+      <div class="panel" id="panel-settings">
+        <div class="ph"><div class="ph-left"><div class="ph-title">SETTINGS</div><div class="ph-sub">危険な操作 — 慎重に実行してください</div></div></div>
+        <div class="settings-grid">
+          <!-- Nuke -->
+          <div class="setting-item">
+            <div class="si-header">
+              <div class="si-info">
+                <div class="si-name">NUKE ALL ROOMS</div>
+                <div class="si-desc">全ルームを即座に削除します。全プレイヤーが切断されます。</div>
+              </div>
+              <button class="sbtn sbtn-red" onclick="toggleSiBody('nukeBody')">NUKE ▼</button>
+            </div>
+            <div class="si-body" id="nukeBody">
+              <div class="confirm-box">
+                <div class="cf-msg">⚠ この操作は取り消せません。<br>全プレイヤーは即座に「管理者強制停止」画面に移動します。<br>確認のため <b>NUKE</b> と入力してください。</div>
+                <input type="text" class="cf-input" id="nukeConfIn" placeholder="NUKE">
+                <div class="cf-btns">
+                  <button class="cf-yes" onclick="nukeAll()">実行</button>
+                  <button class="cf-no" onclick="toggleSiBody('nukeBody')">キャンセル</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Cleanup -->
+          <div class="setting-item">
+            <div class="si-header">
+              <div class="si-info">
+                <div class="si-name">CLEANUP ENDED ROOMS</div>
+                <div class="si-desc">status が ended / force_ended のルームをFirebaseから削除します。</div>
+              </div>
+              <button class="sbtn sbtn-warn" onclick="cleanupRooms()">CLEANUP</button>
+            </div>
+          </div>
+          <!-- Force stop all active -->
+          <div class="setting-item">
+            <div class="si-header">
+              <div class="si-info">
+                <div class="si-name">FORCE STOP ALL ROOMS</div>
+                <div class="si-desc">対戦中（ready）と待機中（waiting）の全ルームを強制停止します。</div>
+              </div>
+              <button class="sbtn sbtn-red" onclick="stopAllActive()">STOP ALL</button>
+            </div>
+          </div>
+          <!-- Bot Settings -->
+          <div class="setting-item">
+            <div class="si-header">
+              <div class="si-info">
+                <div class="si-name">BOT CONFIGURATION</div>
+                <div class="si-desc">ボットの反応速度とミス率を調整します。</div>
+              </div>
+              <button class="sbtn" onclick="toggleSiBody('botConfigBody')">EDIT ▼</button>
+            </div>
+            <div class="si-body" id="botConfigBody">
+              <div style="margin-top:16px; display:grid; gap:12px;">
+                <div>
+                  <div style="font-size:10px; color:var(--dim); margin-bottom:5px;">DELAYS (Easy, Normal, Hard) - ms</div>
+                  <div style="display:flex; gap:5px;">
+                    <input type="number" id="botDelay0" class="cf-input" style="margin-bottom:0">
+                    <input type="number" id="botDelay1" class="cf-input" style="margin-bottom:0">
+                    <input type="number" id="botDelay2" class="cf-input" style="margin-bottom:0">
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:10px; color:var(--dim); margin-bottom:5px;">NOISE (Easy, Normal, Hard) - 0.0 to 1.0</div>
+                  <div style="display:flex; gap:5px;">
+                    <input type="number" step="0.01" id="botNoise0" class="cf-input" style="margin-bottom:0">
+                    <input type="number" step="0.01" id="botNoise1" class="cf-input" style="margin-bottom:0">
+                    <input type="number" step="0.01" id="botNoise2" class="cf-input" style="margin-bottom:0">
+                  </div>
+                </div>
+                <button class="pw-btn" style="width:auto; align-self:start; padding:10px 20px;" onclick="saveBotConfig()">SAVE CONFIG</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /shell-body -->
+</div><!-- /shell -->
+
+<!-- Force stop confirmation modal -->
+<div class="fs-confirm-modal" id="fsModal">
+  <div class="fs-confirm-box">
+    <div class="fsc-icon">🛑</div>
+    <div class="fsc-title">FORCE STOP ROOM</div>
+    <div class="fsc-room" id="fsModalCode">----</div>
+    <div class="fsc-label">停止メッセージ（プレイヤーに表示）</div>
+    <input type="text" class="fsc-input" id="fsModalMsg" placeholder="管理者によってこのルームは強制終了されました">
+    <div class="fsc-btns">
+      <button class="fsc-cancel" onclick="closeFsModal()">キャンセル</button>
+      <button class="fsc-go" onclick="execFsModal()">🛑 強制停止実行</button>
     </div>
   </div>
+</div>
 
-  <!-- Room message modal -->
-  <div class="modal-bg" id="msgModal">
-    <div class="modal">
-      <div class="modal-title">📢 ルームにメッセージ送信</div>
-      <div style="font-size:7px;color:var(--dim);letter-spacing:2px;margin-bottom:14px">ROOM: <span id="msgRoomCode"
-          style="color:var(--acc);font-family:'Press Start 2P',monospace;letter-spacing:6px">----</span></div>
-      <input type="text" class="modal-input" id="msgInput" placeholder="メッセージを入力...">
-      <div class="modal-btns">
-        <button class="modal-cancel" onclick="closeMsgModal()">キャンセル</button>
-        <button class="modal-send" onclick="sendRoomMsg()">送信</button>
-      </div>
+<!-- Room message modal -->
+<div class="modal-bg" id="msgModal">
+  <div class="modal">
+    <div class="modal-title">📢 ルームにメッセージ送信</div>
+    <div style="font-size:7px;color:var(--dim);letter-spacing:2px;margin-bottom:14px">ROOM: <span id="msgRoomCode" style="color:var(--acc);font-family:'Press Start 2P',monospace;letter-spacing:6px">----</span></div>
+    <input type="text" class="modal-input" id="msgInput" placeholder="メッセージを入力...">
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeMsgModal()">キャンセル</button>
+      <button class="modal-send" onclick="sendRoomMsg()">送信</button>
     </div>
   </div>
+</div>
 
-  <div class="toast" id="toast"></div>
+<div class="toast" id="toast"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue, off, update, remove }
-      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-    import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, deleteDoc, doc, getDocs, serverTimestamp, writeBatch }
-      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getDatabase,ref,set,get,onValue,off,update,remove}
+  from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import{getFirestore,collection,addDoc,query,orderBy,limit,onSnapshot,deleteDoc,doc,getDocs,serverTimestamp,writeBatch}
+  from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    import { APP_VERSION, FIREBASE_CONFIG, ADMIN_PASSWORD } from './config.js';
-    const fbApp = initializeApp(FIREBASE_CONFIG);
-    const db = getDatabase(fbApp);
-    const fs = getFirestore(fbApp);
+import { APP_VERSION } from './config.js';
+const fbApp=initializeApp({
+  apiKey:"AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
+  authDomain:"tetris-online-9c827.firebaseapp.com",
+  databaseURL:"https://tetris-online-9c827-default-rtdb.firebaseio.com",
+  projectId:"tetris-online-9c827",
+  storageBucket:"tetris-online-9c827.firebasestorage.app",
+  messagingSenderId:"1045054992314",
+  appId:"1:1045054992314:web:7fea20b9be543d7cab3783"
+});
+const db=getDatabase(fbApp);
+const fs=getFirestore(fbApp);
 
-    async function persistLog(msg, type = 'info', details = {}) {
-      try {
-        await addDoc(collection(fs, 'site_logs'), {
-          message: msg,
-          type: type,
-          details: details,
-          timestamp: serverTimestamp(),
-          source: 'admin'
-        });
-      } catch (e) { console.error('Log failed:', e); }
-    }
+async function persistLog(msg, type='info', details={}){
+  try {
+    await addDoc(collection(fs, 'site_logs'), {
+      message: msg,
+      type: type,
+      details: details,
+      timestamp: serverTimestamp(),
+      source: 'admin'
+    });
+  } catch(e) { console.error('Log failed:', e); }
+}
 
-    // ══ AUTH ══
-    const ADMIN_PW = ADMIN_PASSWORD;
-    window.doLogin = () => {
-      const pw = document.getElementById('pwIn').value;
-      if (pw === ADMIN_PW) {
-        document.getElementById('loginWrap').classList.add('hidden');
-        document.getElementById('shell').classList.add('active');
-        initAdmin();
-      } else {
-        const err = document.getElementById('pwErr');
-        err.textContent = '✗ パスワードが違います';
-        document.getElementById('pwIn').value = '';
-        document.getElementById('pwIn').focus();
-        setTimeout(() => err.textContent = '', 3000);
-      }
-    };
-    document.getElementById('pwIn').addEventListener('keydown', e => { if (e.key === 'Enter') window.doLogin(); });
-    window.doLogout = () => {
-      stopSpec();
-      document.getElementById('shell').classList.remove('active');
-      document.getElementById('loginWrap').classList.remove('hidden');
-      document.getElementById('pwIn').value = '';
-    };
+// ══ AUTH ══
+const ADMIN_PW='Runa1124';
+window.doLogin=()=>{
+  const pw=document.getElementById('pwIn').value;
+  if(pw===ADMIN_PW){
+    document.getElementById('loginWrap').classList.add('hidden');
+    document.getElementById('shell').classList.add('active');
+    initAdmin();
+  }else{
+    const err=document.getElementById('pwErr');
+    err.textContent='✗ パスワードが違います';
+    document.getElementById('pwIn').value='';
+    document.getElementById('pwIn').focus();
+    setTimeout(()=>err.textContent='',3000);
+  }
+};
+document.getElementById('pwIn').addEventListener('keydown',e=>{if(e.key==='Enter')window.doLogin();});
+window.doLogout=()=>{
+  stopSpec();
+  document.getElementById('shell').classList.remove('active');
+  document.getElementById('loginWrap').classList.remove('hidden');
+  document.getElementById('pwIn').value='';
+};
 
-    // ══ TETRIS BOARD RENDERER ══
-    const COLS = 10, ROWS = 20, CELL = 20;
-    const COLORS = { I: '#00f5ff', O: '#f5d800', T: '#cc00ff', S: '#aaff00', Z: '#ff2244', J: '#1166ff', L: '#ff8800', G: '#2a3a55' };
-    const PIECES = {
-      I: [[[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]], [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]],
-      O: [[[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]]],
-      T: [[[0, 1, 0], [1, 1, 1], [0, 0, 0]], [[0, 1, 0], [0, 1, 1], [0, 1, 0]], [[0, 0, 0], [1, 1, 1], [0, 1, 0]], [[0, 1, 0], [1, 1, 0], [0, 1, 0]]],
-      S: [[[0, 1, 1], [1, 1, 0], [0, 0, 0]], [[0, 1, 0], [0, 1, 1], [0, 0, 1]], [[0, 0, 0], [0, 1, 1], [1, 1, 0]], [[1, 0, 0], [1, 1, 0], [0, 1, 0]]],
-      Z: [[[1, 1, 0], [0, 1, 1], [0, 0, 0]], [[0, 0, 1], [0, 1, 1], [0, 1, 0]], [[0, 0, 0], [1, 1, 0], [0, 1, 1]], [[0, 1, 0], [1, 1, 0], [1, 0, 0]]],
-      J: [[[1, 0, 0], [1, 1, 1], [0, 0, 0]], [[0, 1, 1], [0, 1, 0], [0, 1, 0]], [[0, 0, 0], [1, 1, 1], [0, 0, 1]], [[0, 1, 0], [0, 1, 0], [1, 1, 0]]],
-      L: [[[0, 0, 1], [1, 1, 1], [0, 0, 0]], [[0, 1, 0], [0, 1, 0], [0, 1, 1]], [[0, 0, 0], [1, 1, 1], [1, 0, 0]], [[1, 1, 0], [0, 1, 0], [0, 1, 0]]]
-    };
-    function drawBoard(cv, d) {
-      if (!d || !d.board) return;
-      const cx = cv.getContext('2d'); cx.clearRect(0, 0, cv.width, cv.height);
-      cx.strokeStyle = 'rgba(255,255,255,.035)'; cx.lineWidth = .5;
-      for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++)cx.strokeRect(c * CELL, r * CELL, CELL, CELL);
-      const cl = d.clRows || [];
-      d.board.forEach((row, r) => {
-        const isCl = cl.includes(r);
-        row.forEach((cell, c) => {
-          if (!cell) return; const col = COLORS[cell] || '#888';
-          cx.globalAlpha = isCl ? .35 : 1; cx.fillStyle = col + 'cc'; cx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
-          if (isCl) { cx.fillStyle = 'rgba(255,255,255,.5)'; cx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2); }
-          cx.fillStyle = 'rgba(255,255,255,.15)'; cx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, 3); cx.globalAlpha = 1;
-        });
-      });
-      if (d.cur && PIECES[d.cur.name]) { const m = PIECES[d.cur.name][d.cur.rot || 0]; m.forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = d.cur.y + r; if (py >= 0) { cx.fillStyle = (COLORS[d.cur.name] || '#888') + '99'; cx.fillRect((d.cur.x + c) * CELL + 1, py * CELL + 1, CELL - 2, CELL - 2); } } })); }
-      if (d.over) { cx.fillStyle = 'rgba(0,0,0,.8)'; cx.fillRect(0, 0, cv.width, cv.height); cx.fillStyle = '#ff2244'; cx.font = 'bold 11px "Press Start 2P"'; cx.textAlign = 'center'; cx.fillText('GAME OVER', cv.width / 2, cv.height / 2); }
-    }
+// ══ TETRIS BOARD RENDERER ══
+const COLS=10,ROWS=20,CELL=20;
+const COLORS={I:'#00f5ff',O:'#f5d800',T:'#cc00ff',S:'#aaff00',Z:'#ff2244',J:'#1166ff',L:'#ff8800',G:'#2a3a55'};
+const PIECES={
+  I:[[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],[[0,0,1,0],[0,0,1,0],[0,0,1,0],[0,0,1,0]],[[0,0,0,0],[0,0,0,0],[1,1,1,1],[0,0,0,0]],[[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]]],
+  O:[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],
+  T:[[[0,1,0],[1,1,1],[0,0,0]],[[0,1,0],[0,1,1],[0,1,0]],[[0,0,0],[1,1,1],[0,1,0]],[[0,1,0],[1,1,0],[0,1,0]]],
+  S:[[[0,1,1],[1,1,0],[0,0,0]],[[0,1,0],[0,1,1],[0,0,1]],[[0,0,0],[0,1,1],[1,1,0]],[[1,0,0],[1,1,0],[0,1,0]]],
+  Z:[[[1,1,0],[0,1,1],[0,0,0]],[[0,0,1],[0,1,1],[0,1,0]],[[0,0,0],[1,1,0],[0,1,1]],[[0,1,0],[1,1,0],[1,0,0]]],
+  J:[[[1,0,0],[1,1,1],[0,0,0]],[[0,1,1],[0,1,0],[0,1,0]],[[0,0,0],[1,1,1],[0,0,1]],[[0,1,0],[0,1,0],[1,1,0]]],
+  L:[[[0,0,1],[1,1,1],[0,0,0]],[[0,1,0],[0,1,0],[0,1,1]],[[0,0,0],[1,1,1],[1,0,0]],[[1,1,0],[0,1,0],[0,1,0]]]
+};
+function drawBoard(cv,d){
+  if(!d||!d.board)return;
+  const cx=cv.getContext('2d');cx.clearRect(0,0,cv.width,cv.height);
+  cx.strokeStyle='rgba(255,255,255,.035)';cx.lineWidth=.5;
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)cx.strokeRect(c*CELL,r*CELL,CELL,CELL);
+  const cl=d.clRows||[];
+  d.board.forEach((row,r)=>{
+    const isCl=cl.includes(r);
+    row.forEach((cell,c)=>{
+      if(!cell)return;const col=COLORS[cell]||'#888';
+      cx.globalAlpha=isCl?.35:1;cx.fillStyle=col+'cc';cx.fillRect(c*CELL+1,r*CELL+1,CELL-2,CELL-2);
+      if(isCl){cx.fillStyle='rgba(255,255,255,.5)';cx.fillRect(c*CELL+1,r*CELL+1,CELL-2,CELL-2);}
+      cx.fillStyle='rgba(255,255,255,.15)';cx.fillRect(c*CELL+1,r*CELL+1,CELL-2,3);cx.globalAlpha=1;
+    });
+  });
+  if(d.cur&&PIECES[d.cur.name]){const m=PIECES[d.cur.name][d.cur.rot||0];m.forEach((row,r)=>row.forEach((cell,c)=>{if(cell){const py=d.cur.y+r;if(py>=0){cx.fillStyle=(COLORS[d.cur.name]||'#888')+'99';cx.fillRect((d.cur.x+c)*CELL+1,py*CELL+1,CELL-2,CELL-2);}}}));}
+  if(d.over){cx.fillStyle='rgba(0,0,0,.8)';cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle='#ff2244';cx.font='bold 11px "Press Start 2P"';cx.textAlign='center';cx.fillText('GAME OVER',cv.width/2,cv.height/2);}
+}
 
-    // ══ ADMIN STATE ══
-    let roomsData = {}; let specRoom = null, specUnsub = { p1: null, p2: null }, specStartTs = null, specTimerIv = null;
-    let roomsListener = null; let logsUnsub = null; let defaultForceMsg = '管理者によってこのルームは強制終了されました';
-    let totalRooms = 0;
+// ══ ADMIN STATE ══
+let roomsData={};let specRoom=null,specUnsub={p1:null,p2:null},specStartTs=null,specTimerIv=null;
+let roomsListener=null;let logsUnsub=null;let defaultForceMsg='管理者によってこのルームは強制終了されました';
+let totalRooms=0;
 
-    function initAdmin() {
-      document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
-      addLog('管理者セッション開始', 'info');
-      startRoomsListener();
-      startLogsListener();
-      startBotConfigListener();
-      startClock();
-    }
+function initAdmin(){
+  document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
+  addLog('管理者セッション開始','info');
+  startRoomsListener();
+  startLogsListener();
+  startBotConfigListener();
+  startClock();
+}
 
-    function startClock() {
-      const tick = () => { const now = new Date(); document.getElementById('clockDisp').textContent = now.toLocaleTimeString('ja-JP'); };
-      tick(); setInterval(tick, 1000);
-    }
+function startClock(){
+  const tick=()=>{const now=new Date();document.getElementById('clockDisp').textContent=now.toLocaleTimeString('ja-JP');};
+  tick();setInterval(tick,1000);
+}
 
-    function startRoomsListener() {
-      if (roomsListener) try { off(ref(db, 'rooms')); } catch (e) { }
-      onValue(ref(db, 'rooms'), snap => {
-        const prev = Object.keys(roomsData).length;
-        roomsData = snap.val() || {};
-        const curr = Object.keys(roomsData).length;
-        if (curr > prev && prev > 0) { totalRooms++; addLog(`新ルーム作成 (合計${curr}件)`, 'success'); }
-        totalRooms = Math.max(totalRooms, curr);
-        updateStats(); renderTables();
-      });
-      roomsListener = true;
-      addLog('Firebaseリスナー開始', 'info');
-    }
+function startRoomsListener(){
+  if(roomsListener)try{off(ref(db,'rooms'));}catch(e){}
+  onValue(ref(db,'rooms'),snap=>{
+    const prev=Object.keys(roomsData).length;
+    roomsData=snap.val()||{};
+    const curr=Object.keys(roomsData).length;
+    if(curr>prev&&prev>0){totalRooms++;addLog(`新ルーム作成 (合計${curr}件)`,'success');}
+    totalRooms=Math.max(totalRooms,curr);
+    updateStats();renderTables();
+  });
+  roomsListener=true;
+  addLog('Firebaseリスナー開始','info');
+}
 
-    window.refreshAll = () => {
-      get(ref(db, 'rooms')).then(snap => { roomsData = snap.val() || {}; updateStats(); renderTables(); addLog('手動更新', 'info'); });
-    };
+window.refreshAll=()=>{
+  get(ref(db,'rooms')).then(snap=>{roomsData=snap.val()||{};updateStats();renderTables();addLog('手動更新','info');});
+};
 
-    function updateStats() {
-      const r = Object.values(roomsData);
-      const active = r.filter(x => x.status === 'ready').length;
-      const waiting = r.filter(x => x.status === 'waiting').length;
-      const players = r.reduce((n, x) => n + (x.p1 ? 1 : 0) + (x.p2 ? 1 : 0), 0);
-      document.getElementById('st-active').textContent = active;
-      document.getElementById('st-wait').textContent = waiting;
-      document.getElementById('st-players').textContent = players;
-      document.getElementById('st-total').textContent = r.length;
-      document.getElementById('navBadge').textContent = active + waiting;
-    }
+function updateStats(){
+  const r=Object.values(roomsData);
+  const active=r.filter(x=>x.status==='ready').length;
+  const waiting=r.filter(x=>x.status==='waiting').length;
+  const players=r.reduce((n,x)=>n+(x.p1?1:0)+(x.p2?1:0),0);
+  document.getElementById('st-active').textContent=active;
+  document.getElementById('st-wait').textContent=waiting;
+  document.getElementById('st-players').textContent=players;
+  document.getElementById('st-total').textContent=r.length;
+  document.getElementById('navBadge').textContent=active+waiting;
+}
 
-    function fmtTime(ts) { if (!ts) return '—'; return new Date(ts).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
-    function statusBadge(s) {
-      if (s === 'waiting') return '<span class="badge badge-wait">⏳ WAITING</span>';
-      if (s === 'ready') return '<span class="badge badge-live"><div class="live-dot"></div>LIVE</span>';
-      if (s === 'force_ended') return '<span class="badge badge-end">🛑 FORCED</span>';
-      return '<span class="badge badge-end">— ENDED</span>';
-    }
+function fmtTime(ts){if(!ts)return'—';return new Date(ts).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function statusBadge(s){
+  if(s==='waiting')return'<span class="badge badge-wait">⏳ WAITING</span>';
+  if(s==='ready')return'<span class="badge badge-live"><div class="live-dot"></div>LIVE</span>';
+  if(s==='force_ended')return'<span class="badge badge-end">🛑 FORCED</span>';
+  return'<span class="badge badge-end">— ENDED</span>';
+}
 
-    function renderTables() {
-      const entries = Object.entries(roomsData);
+function renderTables(){
+  const entries=Object.entries(roomsData);
 
-      // Dashboard
-      const db_tbody = document.getElementById('dashTbody');
-      if (!entries.length) { db_tbody.innerHTML = '<tr><td class="empty-td" colspan="6">ルームなし</td></tr>'; }
-      else {
-        db_tbody.innerHTML = entries.map(([code, r]) => `
+  // Dashboard
+  const db_tbody=document.getElementById('dashTbody');
+  if(!entries.length){db_tbody.innerHTML='<tr><td class="empty-td" colspan="6">ルームなし</td></tr>';}
+  else{db_tbody.innerHTML=entries.map(([code,r])=>`
     <tr>
       <td style="font-family:'Press Start 2P',monospace;color:var(--acc);letter-spacing:5px;font-size:11px">${code}</td>
       <td>${statusBadge(r.status)}</td>
-      <td>${r.p1?.name || '—'}</td>
-      <td>${r.p2?.name || '—'}</td>
+      <td>${r.p1?.name||'—'}</td>
+      <td>${r.p2?.name||'—'}</td>
       <td style="color:var(--dim)">${fmtTime(r.ts)}</td>
-      <td>${r.status === 'ready' ? `<button class="abtn abtn-watch" onclick="startSpec('${code}')">👁 観戦</button>` : ''}
+      <td>${r.status==='ready'?`<button class="abtn abtn-watch" onclick="startSpec('${code}')">👁 観戦</button>`:''}
           <button class="abtn abtn-stop" onclick="openFsModal('${code}')">🛑 停止</button>
           <button class="abtn abtn-msg" onclick="openMsgModal('${code}')">💬 MSG</button>
           <button class="abtn abtn-del" onclick="deleteRoom('${code}')">🗑</button></td>
-    </tr>`).join('');
-      }
+    </tr>`).join('');}
 
-      // Rooms detail
-      const r_tbody = document.getElementById('roomsTbody');
-      if (!entries.length) { r_tbody.innerHTML = '<tr><td class="empty-td" colspan="9">ルームなし</td></tr>'; }
-      else {
-        r_tbody.innerHTML = entries.map(([code, r]) => `
+  // Rooms detail
+  const r_tbody=document.getElementById('roomsTbody');
+  if(!entries.length){r_tbody.innerHTML='<tr><td class="empty-td" colspan="9">ルームなし</td></tr>';}
+  else{r_tbody.innerHTML=entries.map(([code,r])=>`
     <tr>
       <td style="font-family:'Press Start 2P',monospace;color:var(--acc);letter-spacing:5px;font-size:11px">${code}</td>
       <td>${statusBadge(r.status)}</td>
-      <td>${r.p1?.name || '—'}</td>
-      <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p1?.score ?? '—'}</td>
-      <td>${r.p2?.name || '—'}</td>
-      <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p2?.score ?? '—'}</td>
-      <td style="color:var(--dim)">${r.game?.p1?.level ?? '—'}</td>
+      <td>${r.p1?.name||'—'}</td>
+      <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p1?.score??'—'}</td>
+      <td>${r.p2?.name||'—'}</td>
+      <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p2?.score??'—'}</td>
+      <td style="color:var(--dim)">${r.game?.p1?.level??'—'}</td>
       <td style="color:var(--dim)">${fmtTime(r.ts)}</td>
-      <td>${r.status === 'ready' ? `<button class="abtn abtn-watch" onclick="startSpec('${code}')">👁</button>` : ''}
+      <td>${r.status==='ready'?`<button class="abtn abtn-watch" onclick="startSpec('${code}')">👁</button>`:''}
           <button class="abtn abtn-stop" onclick="openFsModal('${code}')">🛑</button>
           <button class="abtn abtn-msg" onclick="openMsgModal('${code}')">💬</button>
           <button class="abtn abtn-del" onclick="deleteRoom('${code}')">🗑</button></td>
-    </tr>`).join('');
-      }
+    </tr>`).join('');}
 
-      // Spectate list
-      const active = entries.filter(([, r]) => r.status === 'ready');
-      const sp_tbody = document.getElementById('specTbody');
-      if (!active.length) { sp_tbody.innerHTML = '<tr><td class="empty-td" colspan="6">対戦中のルームなし</td></tr>'; }
-      else {
-        sp_tbody.innerHTML = active.map(([code, r]) => `
+  // Spectate list
+  const active=entries.filter(([,r])=>r.status==='ready');
+  const sp_tbody=document.getElementById('specTbody');
+  if(!active.length){sp_tbody.innerHTML='<tr><td class="empty-td" colspan="6">対戦中のルームなし</td></tr>';}
+  else{sp_tbody.innerHTML=active.map(([code,r])=>`
     <tr>
       <td style="font-family:'Press Start 2P',monospace;color:var(--acc);letter-spacing:5px;font-size:11px">${code}</td>
-      <td>${r.p1?.name || '—'}</td>
-      <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p1?.score ?? 0}</td>
-      <td>${r.p2?.name || '—'}</td>
-      <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p2?.score ?? 0}</td>
+      <td>${r.p1?.name||'—'}</td>
+      <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p1?.score??0}</td>
+      <td>${r.p2?.name||'—'}</td>
+      <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p2?.score??0}</td>
       <td><button class="abtn abtn-watch" onclick="startSpec('${code}')">👁 観戦開始</button></td>
-    </tr>`).join('');
-      }
-    }
+    </tr>`).join('');}
+}
 
-    // ══ FORCE STOP MODAL ══
-    let _fsCode = null;
-    window.openFsModal = code => {
-      _fsCode = code;
-      document.getElementById('fsModalCode').textContent = code;
-      document.getElementById('fsModalMsg').value = defaultForceMsg;
-      document.getElementById('fsModal').classList.add('show');
-      setTimeout(() => document.getElementById('fsModalMsg').focus(), 50);
-    };
-    window.closeFsModal = () => {
-      document.getElementById('fsModal').classList.remove('show');
-      _fsCode = null;
-    };
-    window.execFsModal = async () => {
-      if (!_fsCode) return;
-      const msg = document.getElementById('fsModalMsg').value.trim() || defaultForceMsg;
-      const code = _fsCode;
-      closeFsModal();
-      await window.forceStop(code, msg);
-    };
-    document.getElementById('fsModal').addEventListener('click', e => {
-      if (e.target === document.getElementById('fsModal')) closeFsModal();
+// ══ FORCE STOP MODAL ══
+let _fsCode = null;
+window.openFsModal = code => {
+  _fsCode = code;
+  document.getElementById('fsModalCode').textContent = code;
+  document.getElementById('fsModalMsg').value = defaultForceMsg;
+  document.getElementById('fsModal').classList.add('show');
+  setTimeout(() => document.getElementById('fsModalMsg').focus(), 50);
+};
+window.closeFsModal = () => {
+  document.getElementById('fsModal').classList.remove('show');
+  _fsCode = null;
+};
+window.execFsModal = async () => {
+  if (!_fsCode) return;
+  const msg = document.getElementById('fsModalMsg').value.trim() || defaultForceMsg;
+  const code = _fsCode;
+  closeFsModal();
+  await window.forceStop(code, msg);
+};
+document.getElementById('fsModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('fsModal')) closeFsModal();
+});
+document.getElementById('fsModalMsg').addEventListener('keydown', e => {
+  if (e.key === 'Enter')  window.execFsModal();
+  if (e.key === 'Escape') window.closeFsModal();
+});
+
+// ══ FORCE STOP (core) ══
+// Steps:
+//   1. Write status:'force_ended' + forceMsg → players detect this and show their screen
+//   2. Wait 10s so players can read the message
+//   3. Delete the room (cleanup)
+window.forceStop = async (code, customMsg) => {
+  const msg = (customMsg || defaultForceMsg).trim();
+  if (!code) return;
+
+  // Prevent double-stop
+  const current = roomsData[code];
+  if (current?.status === 'force_ended') {
+    showToast(`ROOM ${code} はすでに停止済みです`, 'warn');
+    return;
+  }
+
+  try {
+    // Step 1: atomically write force_ended so both players see it simultaneously
+    await update(ref(db, `rooms/${code}`), {
+      status:   'force_ended',
+      forceMsg: msg,
+      forceTs:  Date.now()
     });
-    document.getElementById('fsModalMsg').addEventListener('keydown', e => {
-      if (e.key === 'Enter') window.execFsModal();
-      if (e.key === 'Escape') window.closeFsModal();
-    });
+    addLog(`ROOM ${code} 強制停止: "${msg}"`, 'admin');
+    persistLog(`Forced stop room ${code}`, 'admin', {code, msg});
+    showToast(`ROOM ${code} を強制停止しました`, 'warn');
 
-    // ══ FORCE STOP (core) ══
-    // Steps:
-    //   1. Write status:'force_ended' + forceMsg → players detect this and show their screen
-    //   2. Wait 10s so players can read the message
-    //   3. Delete the room (cleanup)
-    window.forceStop = async (code, customMsg) => {
-      const msg = (customMsg || defaultForceMsg).trim();
-      if (!code) return;
-
-      // Prevent double-stop
-      const current = roomsData[code];
-      if (current?.status === 'force_ended') {
-        showToast(`ROOM ${code} はすでに停止済みです`, 'warn');
-        return;
-      }
-
-      try {
-        // Step 1: atomically write force_ended so both players see it simultaneously
-        await update(ref(db, `rooms/${code}`), {
-          status: 'force_ended',
-          forceMsg: msg,
-          forceTs: Date.now()
-        });
-        addLog(`ROOM ${code} 強制停止: "${msg}"`, 'admin');
-        persistLog(`Forced stop room ${code}`, 'admin', { code, msg });
-        showToast(`ROOM ${code} を強制停止しました`, 'warn');
-
-        // Step 2+3: after players have had time to read, delete the room
-        setTimeout(async () => {
-          try {
-            await remove(ref(db, `rooms/${code}`));
-            addLog(`ROOM ${code} 自動削除 (強制停止から10秒後)`, 'info');
-          } catch (e) {
-            addLog(`ROOM ${code} 自動削除失敗: ${e.message}`, 'error');
-          }
-        }, 10000);
-
-      } catch (e) {
-        addLog(`強制停止失敗 ROOM ${code}: ${e.message}`, 'error');
-        showToast(`停止失敗: ${e.message}`, 'err');
-      }
-    };
-    window.currentSpecRoom = null;
-
-    window.deleteRoom = async (code) => {
-      if (!code) return;
-      // Show confirm for safety
-      if (!confirm(`ROOM ${code} を削除しますか？\nこの操作は即座に実行され取り消せません。`)) return;
+    // Step 2+3: after players have had time to read, delete the room
+    setTimeout(async () => {
       try {
         await remove(ref(db, `rooms/${code}`));
-        addLog(`ROOM ${code} 削除`, 'warn');
-        persistLog(`Deleted room ${code}`, 'warn', { code });
-        showToast(`ROOM ${code} を削除しました`, 'ok');
-      } catch (e) {
-        addLog(`削除失敗: ${e.message}`, 'error');
-        showToast(`削除失敗: ${e.message}`, 'err');
+        addLog(`ROOM ${code} 自動削除 (強制停止から10秒後)`, 'info');
+      } catch(e) {
+        addLog(`ROOM ${code} 自動削除失敗: ${e.message}`, 'error');
       }
-    };
+    }, 10000);
 
-    // ══ SPECTATE ══
-    window.startSpec = code => {
-      stopSpec();
-      specRoom = code; window.currentSpecRoom = code;
-      gotoPanel('spectate', document.querySelector('.nav-item:nth-child(3)'));
-      document.getElementById('spectateList').style.display = 'none';
-      document.getElementById('spectateView').style.display = 'block';
-      document.getElementById('specCode').textContent = code;
-      specStartTs = Date.now();
+  } catch(e) {
+    addLog(`強制停止失敗 ROOM ${code}: ${e.message}`, 'error');
+    showToast(`停止失敗: ${e.message}`, 'err');
+  }
+};
+window.currentSpecRoom = null;
 
-      const r = roomsData[code];
-      document.getElementById('specP1N').textContent = r?.p1?.name || 'PLAYER 1';
-      document.getElementById('specP2N').textContent = r?.p2?.name || 'PLAYER 2';
-      addLog(`観戦開始: ROOM ${code}`, 'info');
+window.deleteRoom = async (code) => {
+  if (!code) return;
+  // Show confirm for safety
+  if (!confirm(`ROOM ${code} を削除しますか？\nこの操作は即座に実行され取り消せません。`)) return;
+  try {
+    await remove(ref(db, `rooms/${code}`));
+    addLog(`ROOM ${code} 削除`, 'warn');
+    persistLog(`Deleted room ${code}`, 'warn', {code});
+    showToast(`ROOM ${code} を削除しました`, 'ok');
+  } catch(e) {
+    addLog(`削除失敗: ${e.message}`, 'error');
+    showToast(`削除失敗: ${e.message}`, 'err');
+  }
+};
 
-      const cv1 = document.getElementById('specCv1'), cv2 = document.getElementById('specCv2');
-      const rp1 = ref(db, `rooms/${code}/game/p1`);
-      const rp2 = ref(db, `rooms/${code}/game/p2`);
-      onValue(rp1, s => { const d = s.val(); drawBoard(cv1, d); if (d) { document.getElementById('ssP1Score').textContent = d.score || 0; document.getElementById('ssP1Level').textContent = d.level || 1; document.getElementById('ssP1Lines').textContent = d.lines || 0; } });
-      onValue(rp2, s => { const d = s.val(); drawBoard(cv2, d); if (d) { document.getElementById('ssP2Score').textContent = d.score || 0; document.getElementById('ssP2Level').textContent = d.level || 1; document.getElementById('ssP2Lines').textContent = d.lines || 0; } });
-      specUnsub.p1 = rp1; specUnsub.p2 = rp2;
+// ══ SPECTATE ══
+window.startSpec=code=>{
+  stopSpec();
+  specRoom=code;window.currentSpecRoom=code;
+  gotoPanel('spectate',document.querySelector('.nav-item:nth-child(3)'));
+  document.getElementById('spectateList').style.display='none';
+  document.getElementById('spectateView').style.display='block';
+  document.getElementById('specCode').textContent=code;
+  specStartTs=Date.now();
 
-      // Update timer (store reference so we can clear it in stopSpec)
-      if (specTimerIv) clearInterval(specTimerIv);
-      specTimerIv = setInterval(() => {
-        if (!specRoom) { clearInterval(specTimerIv); specTimerIv = null; return; }
-        const el = Math.floor((Date.now() - specStartTs) / 1000);
-        const m = Math.floor(el / 60), s = el % 60;
-        document.getElementById('specTimer').textContent = `経過時間: ${m}:${s.toString().padStart(2, '0')}`;
-      }, 1000);
-    };
-    window.stopSpec = () => {
-      if (specUnsub.p1) try { off(specUnsub.p1); } catch (e) { }
-      if (specUnsub.p2) try { off(specUnsub.p2); } catch (e) { }
-      specUnsub = { p1: null, p2: null };
-      if (specTimerIv) { clearInterval(specTimerIv); specTimerIv = null; }
-      if (specRoom) addLog(`観戦終了: ROOM ${specRoom}`, 'info');
-      specRoom = null; window.currentSpecRoom = null;
-      document.getElementById('spectateList').style.display = '';
-      document.getElementById('spectateView').style.display = 'none';
-    };
+  const r=roomsData[code];
+  document.getElementById('specP1N').textContent=r?.p1?.name||'PLAYER 1';
+  document.getElementById('specP2N').textContent=r?.p2?.name||'PLAYER 2';
+  addLog(`観戦開始: ROOM ${code}`,'info');
 
-    // ══ BROADCAST ══
-    window.sendBroadcast = async () => {
-      const msg = document.getElementById('bcMsg').value.trim();
-      if (!msg) { showToast('メッセージを入力してください', 'err'); return; }
-      const codes = Object.keys(roomsData);
-      const ts = Date.now();
-      await Promise.all(codes.map(code => update(ref(db, `rooms/${code}`), { sysMsg: msg, sysMsgTs: ts }).catch(() => { })));
-      const n = codes.length;
-      addLog(`ブロードキャスト (${n}ルーム): "${msg}"`, "warn");
-      persistLog(`Broadcast to ${n} rooms: "${msg}"`, 'admin', { n, msg });
-      showToast(`${n}件のルームに送信`, 'ok');
-      document.getElementById('bcStatus').textContent = `✓ ${n}件に送信 — ${new Date().toLocaleTimeString('ja-JP')}`;
-    };
-    window.clearBcMsg = () => { document.getElementById('bcMsg').value = ''; document.getElementById('bcStatus').textContent = ''; };
-    window.saveDefMsg = () => { defaultForceMsg = document.getElementById('defMsg').value || defaultForceMsg; showToast('デフォルトメッセージ保存', 'ok'); };
+  const cv1=document.getElementById('specCv1'),cv2=document.getElementById('specCv2');
+  const rp1=ref(db,`rooms/${code}/game/p1`);
+  const rp2=ref(db,`rooms/${code}/game/p2`);
+  onValue(rp1,s=>{const d=s.val();drawBoard(cv1,d);if(d){document.getElementById('ssP1Score').textContent=d.score||0;document.getElementById('ssP1Level').textContent=d.level||1;document.getElementById('ssP1Lines').textContent=d.lines||0;}});
+  onValue(rp2,s=>{const d=s.val();drawBoard(cv2,d);if(d){document.getElementById('ssP2Score').textContent=d.score||0;document.getElementById('ssP2Level').textContent=d.level||1;document.getElementById('ssP2Lines').textContent=d.lines||0;}});
+  specUnsub.p1=rp1;specUnsub.p2=rp2;
 
-    // ══ ROOM MESSAGE MODAL ══
-    let _msgRoom = null;
-    window.openMsgModal = code => { _msgRoom = code; document.getElementById('msgRoomCode').textContent = code; document.getElementById('msgModal').classList.add('show'); document.getElementById('msgInput').focus(); };
-    window.closeMsgModal = () => { document.getElementById('msgModal').classList.remove('show'); _msgRoom = null; };
-    window.sendRoomMsg = async () => {
-      const msg = document.getElementById('msgInput').value.trim();
-      if (!msg || !_msgRoom) return;
-      await update(ref(db, `rooms/${_msgRoom}`), { sysMsg: msg, sysMsgTs: Date.now() }).catch(() => { });
-      addLog(`MSG to ROOM ${_msgRoom}: "${msg}"`, "info");
-      showToast('メッセージ送信', 'ok');
-      closeMsgModal(); document.getElementById('msgInput').value = '';
-    };
-    document.getElementById('msgInput').addEventListener('keydown', e => { if (e.key === 'Enter') window.sendRoomMsg(); if (e.key === 'Escape') window.closeMsgModal(); });
-    document.getElementById('msgModal').addEventListener('click', e => { if (e.target === document.getElementById('msgModal')) window.closeMsgModal(); });
+  // Update timer (store reference so we can clear it in stopSpec)
+  if(specTimerIv)clearInterval(specTimerIv);
+  specTimerIv=setInterval(()=>{
+    if(!specRoom){clearInterval(specTimerIv);specTimerIv=null;return;}
+    const el=Math.floor((Date.now()-specStartTs)/1000);
+    const m=Math.floor(el/60),s=el%60;
+    document.getElementById('specTimer').textContent=`経過時間: ${m}:${s.toString().padStart(2,'0')}`;
+  },1000);
+};
+window.stopSpec=()=>{
+  if(specUnsub.p1)try{off(specUnsub.p1);}catch(e){}
+  if(specUnsub.p2)try{off(specUnsub.p2);}catch(e){}
+  specUnsub={p1:null,p2:null};
+  if(specTimerIv){clearInterval(specTimerIv);specTimerIv=null;}
+  if(specRoom)addLog(`観戦終了: ROOM ${specRoom}`,'info');
+  specRoom=null;window.currentSpecRoom=null;
+  document.getElementById('spectateList').style.display='';
+  document.getElementById('spectateView').style.display='none';
+};
 
-    // ══ SETTINGS ACTIONS ══
-    window.toggleSiBody = id => { const el = document.getElementById(id); el.classList.toggle('open'); };
+// ══ BROADCAST ══
+window.sendBroadcast=async()=>{
+  const msg=document.getElementById('bcMsg').value.trim();
+  if(!msg){showToast('メッセージを入力してください','err');return;}
+  const codes=Object.keys(roomsData);
+  const ts=Date.now();
+  await Promise.all(codes.map(code=>update(ref(db,`rooms/${code}`),{sysMsg:msg,sysMsgTs:ts}).catch(()=>{})));
+  const n=codes.length;
+  addLog(`ブロードキャスト (${n}ルーム): "${msg}"`,"warn");
+  persistLog(`Broadcast to ${n} rooms: "${msg}"`, 'admin', {n, msg});
+  showToast(`${n}件のルームに送信`,'ok');
+  document.getElementById('bcStatus').textContent=`✓ ${n}件に送信 — ${new Date().toLocaleTimeString('ja-JP')}`;
+};
+window.clearBcMsg=()=>{document.getElementById('bcMsg').value='';document.getElementById('bcStatus').textContent='';};
+window.saveDefMsg=()=>{defaultForceMsg=document.getElementById('defMsg').value||defaultForceMsg;showToast('デフォルトメッセージ保存','ok');};
 
-    window.nukeAll = async () => {
-      const inp = document.getElementById('nukeConfIn').value;
-      if (inp !== 'NUKE') { showToast('「NUKE」と正確に入力してください', 'err'); return; }
-      try {
-        const codes = Object.keys(roomsData);
-        // Step 1: force_ended all active rooms so players see the screen
-        const activeOps = codes
-          .filter(c => roomsData[c]?.status !== 'force_ended')
-          .map(c => update(ref(db, `rooms/${c}`), {
-            status: 'force_ended',
-            forceMsg: 'システムメンテナンスのため強制終了されました',
-            forceTs: Date.now()
-          }).catch(() => { }));
-        await Promise.all(activeOps);
-        addLog(`全${codes.length}ルームに force_ended 送信`, 'admin');
+// ══ ROOM MESSAGE MODAL ══
+let _msgRoom=null;
+window.openMsgModal=code=>{_msgRoom=code;document.getElementById('msgRoomCode').textContent=code;document.getElementById('msgModal').classList.add('show');document.getElementById('msgInput').focus();};
+window.closeMsgModal=()=>{document.getElementById('msgModal').classList.remove('show');_msgRoom=null;};
+window.sendRoomMsg=async()=>{
+  const msg=document.getElementById('msgInput').value.trim();
+  if(!msg||!_msgRoom)return;
+  await update(ref(db,`rooms/${_msgRoom}`),{sysMsg:msg,sysMsgTs:Date.now()}).catch(()=>{});
+  addLog(`MSG to ROOM ${_msgRoom}: "${msg}"`,"info");
+  showToast('メッセージ送信','ok');
+  closeMsgModal();document.getElementById('msgInput').value='';
+};
+document.getElementById('msgInput').addEventListener('keydown',e=>{if(e.key==='Enter')window.sendRoomMsg();if(e.key==='Escape')window.closeMsgModal();});
+document.getElementById('msgModal').addEventListener('click',e=>{if(e.target===document.getElementById('msgModal'))window.closeMsgModal();});
 
-        // Step 2: wait so players can read
-        await new Promise(r => setTimeout(r, 2000));
+// ══ SETTINGS ACTIONS ══
+window.toggleSiBody=id=>{const el=document.getElementById(id);el.classList.toggle('open');};
 
-        // Step 3: delete everything
-        await remove(ref(db, 'rooms'));
-        addLog('⚠ 全ルームNUKE完了', 'error');
-        persistLog('Nuke all rooms executed', 'error');
-        showToast('全ルームを削除しました', 'warn');
-        document.getElementById('nukeConfIn').value = '';
-        toggleSiBody('nukeBody');
-        roomsData = {}; updateStats(); renderTables();
-      } catch (e) {
-        addLog('NUKE失敗: ' + e.message, 'error');
-        showToast('NUKE失敗: ' + e.message, 'err');
-      }
-    };
+window.nukeAll = async () => {
+  const inp = document.getElementById('nukeConfIn').value;
+  if (inp !== 'NUKE') { showToast('「NUKE」と正確に入力してください', 'err'); return; }
+  try {
+    const codes = Object.keys(roomsData);
+    // Step 1: force_ended all active rooms so players see the screen
+    const activeOps = codes
+      .filter(c => roomsData[c]?.status !== 'force_ended')
+      .map(c => update(ref(db, `rooms/${c}`), {
+          status:   'force_ended',
+          forceMsg: 'システムメンテナンスのため強制終了されました',
+          forceTs:  Date.now()
+        }).catch(() => {}));
+    await Promise.all(activeOps);
+    addLog(`全${codes.length}ルームに force_ended 送信`, 'admin');
 
-    window.cleanupRooms = async () => {
-      let n = 0;
-      const ops = [];
-      for (const [code, r] of Object.entries(roomsData)) {
-        if (r.status === 'ended' || r.status === 'force_ended' ||
-          r.status === 'p2_left' || r.status === 'p1_left') {
-          ops.push(remove(ref(db, `rooms/${code}`)).catch(() => { }));
-          n++;
-        }
-      }
-      await Promise.all(ops);
-      addLog(`クリーンアップ: ${n}件削除`, 'success');
-      persistLog(`Cleanup ended rooms: ${n} removed`, 'success', { count: n });
-      showToast(`${n}件のルームを削除`, n > 0 ? 'ok' : 'warn');
-    };
+    // Step 2: wait so players can read
+    await new Promise(r => setTimeout(r, 2000));
 
-    function startBotConfigListener() {
-      onValue(ref(db, 'config/bot'), snap => {
-        const d = snap.val();
-        if (d) {
-          if (d.delays) {
-            document.getElementById('botDelay0').value = d.delays[0];
-            document.getElementById('botDelay1').value = d.delays[1];
-            document.getElementById('botDelay2').value = d.delays[2];
-          }
-          if (d.noise) {
-            document.getElementById('botNoise0').value = d.noise[0];
-            document.getElementById('botNoise1').value = d.noise[1];
-            document.getElementById('botNoise2').value = d.noise[2];
-          }
-        }
-      });
+    // Step 3: delete everything
+    await remove(ref(db, 'rooms'));
+    addLog('⚠ 全ルームNUKE完了', 'error');
+    persistLog('Nuke all rooms executed', 'error');
+    showToast('全ルームを削除しました', 'warn');
+    document.getElementById('nukeConfIn').value = '';
+    toggleSiBody('nukeBody');
+    roomsData = {}; updateStats(); renderTables();
+  } catch(e) {
+    addLog('NUKE失敗: ' + e.message, 'error');
+    showToast('NUKE失敗: ' + e.message, 'err');
+  }
+};
+
+window.cleanupRooms = async () => {
+  let n = 0;
+  const ops = [];
+  for (const [code, r] of Object.entries(roomsData)) {
+    if (r.status === 'ended' || r.status === 'force_ended' ||
+        r.status === 'p2_left' || r.status === 'p1_left') {
+      ops.push(remove(ref(db, `rooms/${code}`)).catch(() => {}));
+      n++;
     }
+  }
+  await Promise.all(ops);
+  addLog(`クリーンアップ: ${n}件削除`, 'success');
+  persistLog(`Cleanup ended rooms: ${n} removed`, 'success', {count: n});
+  showToast(`${n}件のルームを削除`, n > 0 ? 'ok' : 'warn');
+};
 
-    window.saveBotConfig = async () => {
-      const delays = [
-        parseInt(document.getElementById('botDelay0').value),
-        parseInt(document.getElementById('botDelay1').value),
-        parseInt(document.getElementById('botDelay2').value)
-      ];
-      const noise = [
-        parseFloat(document.getElementById('botNoise0').value),
-        parseFloat(document.getElementById('botNoise1').value),
-        parseFloat(document.getElementById('botNoise2').value)
-      ];
-      try {
-        await set(ref(db, 'config/bot'), { delays, noise });
-        showToast('ボット設定を保存しました', 'ok');
-        persistLog('Bot configuration updated', 'admin', { delays, noise });
-      } catch (e) { showToast('保存失敗', 'err'); }
-    };
+function startBotConfigListener(){
+  onValue(ref(db, 'config/bot'), snap => {
+    const d = snap.val();
+    if(d){
+      if(d.delays){
+        document.getElementById('botDelay0').value = d.delays[0];
+        document.getElementById('botDelay1').value = d.delays[1];
+        document.getElementById('botDelay2').value = d.delays[2];
+      }
+      if(d.noise){
+        document.getElementById('botNoise0').value = d.noise[0];
+        document.getElementById('botNoise1').value = d.noise[1];
+        document.getElementById('botNoise2').value = d.noise[2];
+      }
+    }
+  });
+}
 
-    window.stopAllActive = async () => {
-      const active = Object.entries(roomsData)
-        .filter(([, r]) => r.status === 'ready' || r.status === 'waiting');
-      if (!active.length) { showToast('アクティブなルームなし', 'warn'); return; }
+window.saveBotConfig = async () => {
+  const delays = [
+    parseInt(document.getElementById('botDelay0').value),
+    parseInt(document.getElementById('botDelay1').value),
+    parseInt(document.getElementById('botDelay2').value)
+  ];
+  const noise = [
+    parseFloat(document.getElementById('botNoise0').value),
+    parseFloat(document.getElementById('botNoise1').value),
+    parseFloat(document.getElementById('botNoise2').value)
+  ];
+  try {
+    await set(ref(db, 'config/bot'), { delays, noise });
+    showToast('ボット設定を保存しました', 'ok');
+    persistLog('Bot configuration updated', 'admin', { delays, noise });
+  } catch(e) { showToast('保存失敗', 'err'); }
+};
 
-      const BATCH_MSG = '管理者によって全ルームが強制終了されました';
-      // Batch write simultaneously for instant notification
-      const ops = active.map(([code]) =>
-        update(ref(db, `rooms/${code}`), {
-          status: 'force_ended',
-          forceMsg: BATCH_MSG,
-          forceTs: Date.now()
-        }).catch(() => { })
-      );
-      await Promise.all(ops);
-      addLog(`全${active.length}ルームを同時強制停止`, 'admin');
-      persistLog(`Force stop all ${active.length} active rooms`, 'admin', { count: active.length });
-      showToast(`${active.length}ルームを強制停止しました`, 'warn');
+window.stopAllActive = async () => {
+  const active = Object.entries(roomsData)
+    .filter(([, r]) => r.status === 'ready' || r.status === 'waiting');
+  if (!active.length) { showToast('アクティブなルームなし', 'warn'); return; }
 
-      // Auto-delete after players have read
-      setTimeout(async () => {
-        const delOps = active.map(([code]) => remove(ref(db, `rooms/${code}`)).catch(() => { }));
-        await Promise.all(delOps);
-        addLog(`強制停止ルーム ${active.length}件 自動削除`, 'info');
-      }, 10000);
-    };
+  const BATCH_MSG = '管理者によって全ルームが強制終了されました';
+  // Batch write simultaneously for instant notification
+  const ops = active.map(([code]) =>
+    update(ref(db, `rooms/${code}`), {
+      status:   'force_ended',
+      forceMsg: BATCH_MSG,
+      forceTs:  Date.now()
+    }).catch(() => {})
+  );
+  await Promise.all(ops);
+  addLog(`全${active.length}ルームを同時強制停止`, 'admin');
+  persistLog(`Force stop all ${active.length} active rooms`, 'admin', {count: active.length});
+  showToast(`${active.length}ルームを強制停止しました`, 'warn');
 
-    // ══ LOG ══
-    function startLogsListener() {
-      if (logsUnsub) logsUnsub();
-      const q = query(collection(fs, 'site_logs'), orderBy('timestamp', 'desc'), limit(100));
-      logsUnsub = onSnapshot(q, snap => {
-        const box = document.getElementById('logBox');
-        box.innerHTML = '';
-        snap.forEach(docSnap => {
-          const data = docSnap.data();
-          const id = docSnap.id;
-          const ts = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString('ja-JP') : '...';
-          const el = document.createElement('div');
-          el.className = 'log-entry';
-          el.innerHTML = `
+  // Auto-delete after players have read
+  setTimeout(async () => {
+    const delOps = active.map(([code]) => remove(ref(db, `rooms/${code}`)).catch(() => {}));
+    await Promise.all(delOps);
+    addLog(`強制停止ルーム ${active.length}件 自動削除`, 'info');
+  }, 10000);
+};
+
+// ══ LOG ══
+function startLogsListener(){
+  if(logsUnsub) logsUnsub();
+  const q = query(collection(fs, 'site_logs'), orderBy('timestamp', 'desc'), limit(100));
+  logsUnsub = onSnapshot(q, snap => {
+    const box = document.getElementById('logBox');
+    box.innerHTML = '';
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+      const id = docSnap.id;
+      const ts = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString('ja-JP') : '...';
+      const el = document.createElement('div');
+      el.className = 'log-entry';
+      el.innerHTML = `
         <span class="log-ts">${ts}</span>
         <span class="log-src">${data.source || '???'}</span>
         <span class="log-msg ${data.type || 'info'}">${data.message}</span>
         <button class="abtn abtn-log-del" onclick="deleteLog('${id}')">DEL</button>
       `;
-          box.appendChild(el);
-        });
-      });
+      box.appendChild(el);
+    });
+  });
+}
+
+function addLog(msg,type='info'){
+  // Local only preview for instant feedback if needed, but Firestore listener handles it
+  console.log(`[${type}] ${msg}`);
+}
+
+window.deleteLog = async (id) => {
+  try {
+    await deleteDoc(doc(fs, 'site_logs', id));
+  } catch(e) { showToast('削除失敗', 'err'); }
+};
+
+window.clearAllLogs = async () => {
+  if(!confirm('全てのログを削除しますか？')) return;
+  try {
+    const q = query(collection(fs, 'site_logs'), limit(500));
+    const snap = await getDocs(q);
+    const batch = writeBatch(fs);
+    snap.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    showToast('ログをクリアしました', 'ok');
+  } catch(e) { showToast('クリア失敗', 'err'); }
+};
+
+// ══ PANEL NAV ══
+window.gotoPanel=(name,el)=>{
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(`panel-${name}`)?.classList.add('active');
+  if(el)el.classList.add('active');
+};
+
+// ══ TOAST ══
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// Expose for inline use
+
+// ═══ TETRIS FALLING BG ═══
+(function(){
+  const canvas=document.getElementById('bgCanvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const _C={I:'#00f5ff',O:'#ffff00',T:'#cc00ff',S:'#aaff00',Z:'#ff0040',J:'#0066ff',L:'#ff8800'};
+  const _N=Object.keys(_C);
+  const CELL=26;
+  const PM={I:[[[1,1,1,1]]],O:[[[1,1],[1,1]]],T:[[[0,1,0],[1,1,1]]],
+    S:[[[0,1,1],[1,1,0]]],Z:[[[1,1,0],[0,1,1]]],J:[[[1,0,0],[1,1,1]]],L:[[[0,0,1],[1,1,1]]]};
+  let W,H;const pieces=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  function spawn(){
+    const name=_N[Math.random()*_N.length|0];const mat=PM[name][0];
+    return{mat,color:_C[name],x:Math.random()*W,y:-CELL*3,
+      vy:.3+Math.random()*.9,rot:Math.random()*360,vr:(Math.random()-.5)*.5,
+      sc:.45+Math.random()*.7,alpha:.08+Math.random()*.28};
+  }
+  for(let i=0;i<16;i++){const p=spawn();p.y=Math.random()*H;pieces.push(p);}
+  function drawBlock(bx,by,color){
+    ctx.fillStyle=color+'99';ctx.fillRect(bx+1,by+1,CELL-2,CELL-2);
+    ctx.fillStyle='rgba(255,255,255,.18)';ctx.fillRect(bx+1,by+1,CELL-2,4);
+    ctx.strokeStyle=color;ctx.lineWidth=.6;ctx.strokeRect(bx+.5,by+.5,CELL-1,CELL-1);
+  }
+  function frame(){
+    ctx.clearRect(0,0,W,H);
+    pieces.forEach((p,i)=>{
+      p.y+=p.vy;p.rot+=p.vr;
+      if(p.y>H+CELL*4)pieces[i]=spawn();
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.scale(p.sc,p.sc);ctx.globalAlpha=p.alpha;
+      const mw=p.mat[0].length,mh=p.mat.length,ox=-mw*CELL/2,oy=-mh*CELL/2;
+      p.mat.forEach((row,r)=>row.forEach((cell,c)=>{if(cell)drawBlock(ox+c*CELL,oy+r*CELL,p.color);}));
+      ctx.restore();
+    });
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+// ═══ ADMIN LOADER ═══
+(function(){
+  const loader=document.getElementById('adminLoader');
+  const bar=document.getElementById('alBar');
+  const txt=document.getElementById('alTxt');
+  if(!loader||!bar)return;
+  const bC=['#ff0080','#cc00ff','#0066ff','#00f5ff','#aaff00','#ff8800','#ff0040','#ff0080'];
+  const N=8;
+  for(let i=0;i<N;i++){const b=document.createElement('div');b.className='al-b';bar.appendChild(b);}
+  let f=0;
+  const next=()=>{
+    if(f>=N){
+      Array.from(bar.children).forEach(b=>{b.style.background='rgba(255,255,255,.85)';b.style.boxShadow='0 0 16px #fff';});
+      setTimeout(()=>{loader.classList.add('hide');setTimeout(()=>{try{loader.remove();}catch(e){}},450);},130);
+      return;
     }
-
-    function addLog(msg, type = 'info') {
-      // Local only preview for instant feedback if needed, but Firestore listener handles it
-      console.log(`[${type}] ${msg}`);
-    }
-
-    window.deleteLog = async (id) => {
-      try {
-        await deleteDoc(doc(fs, 'site_logs', id));
-      } catch (e) { showToast('削除失敗', 'err'); }
-    };
-
-    window.clearAllLogs = async () => {
-      if (!confirm('全てのログを削除しますか？')) return;
-      try {
-        const q = query(collection(fs, 'site_logs'), limit(500));
-        const snap = await getDocs(q);
-        const batch = writeBatch(fs);
-        snap.forEach(d => batch.delete(d.ref));
-        await batch.commit();
-        showToast('ログをクリアしました', 'ok');
-      } catch (e) { showToast('クリア失敗', 'err'); }
-    };
-
-    // ══ PANEL NAV ══
-    window.gotoPanel = (name, el) => {
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      document.getElementById(`panel-${name}`)?.classList.add('active');
-      if (el) el.classList.add('active');
-    };
-
-    // ══ TOAST ══
-    function showToast(msg, type = '') {
-      const t = document.getElementById('toast'); t.textContent = msg; t.className = `toast ${type} show`;
-      setTimeout(() => t.classList.remove('show'), 3000);
-    }
-
-    // Expose for inline use
-
-    // ═══ TETRIS FALLING BG ═══
-    (function () {
-      const canvas = document.getElementById('bgCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const _C = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800' };
-      const _N = Object.keys(_C);
-      const CELL = 26;
-      const PM = {
-        I: [[[1, 1, 1, 1]]], O: [[[1, 1], [1, 1]]], T: [[[0, 1, 0], [1, 1, 1]]],
-        S: [[[0, 1, 1], [1, 1, 0]]], Z: [[[1, 1, 0], [0, 1, 1]]], J: [[[1, 0, 0], [1, 1, 1]]], L: [[[0, 0, 1], [1, 1, 1]]]
-      };
-      let W, H; const pieces = [];
-      function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-      resize(); window.addEventListener('resize', resize);
-      function spawn() {
-        const name = _N[Math.random() * _N.length | 0]; const mat = PM[name][0];
-        return {
-          mat, color: _C[name], x: Math.random() * W, y: -CELL * 3,
-          vy: .3 + Math.random() * .9, rot: Math.random() * 360, vr: (Math.random() - .5) * .5,
-          sc: .45 + Math.random() * .7, alpha: .08 + Math.random() * .28
-        };
-      }
-      for (let i = 0; i < 16; i++) { const p = spawn(); p.y = Math.random() * H; pieces.push(p); }
-      function drawBlock(bx, by, color) {
-        ctx.fillStyle = color + '99'; ctx.fillRect(bx + 1, by + 1, CELL - 2, CELL - 2);
-        ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(bx + 1, by + 1, CELL - 2, 4);
-        ctx.strokeStyle = color; ctx.lineWidth = .6; ctx.strokeRect(bx + .5, by + .5, CELL - 1, CELL - 1);
-      }
-      function frame() {
-        ctx.clearRect(0, 0, W, H);
-        pieces.forEach((p, i) => {
-          p.y += p.vy; p.rot += p.vr;
-          if (p.y > H + CELL * 4) pieces[i] = spawn();
-          ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI / 180); ctx.scale(p.sc, p.sc); ctx.globalAlpha = p.alpha;
-          const mw = p.mat[0].length, mh = p.mat.length, ox = -mw * CELL / 2, oy = -mh * CELL / 2;
-          p.mat.forEach((row, r) => row.forEach((cell, c) => { if (cell) drawBlock(ox + c * CELL, oy + r * CELL, p.color); }));
-          ctx.restore();
-        });
-        requestAnimationFrame(frame);
-      }
-      frame();
-    })();
-
-    // ═══ ADMIN LOADER ═══
-    (function () {
-      const loader = document.getElementById('adminLoader');
-      const bar = document.getElementById('alBar');
-      const txt = document.getElementById('alTxt');
-      if (!loader || !bar) return;
-      const bC = ['#ff0080', '#cc00ff', '#0066ff', '#00f5ff', '#aaff00', '#ff8800', '#ff0040', '#ff0080'];
-      const N = 8;
-      for (let i = 0; i < N; i++) { const b = document.createElement('div'); b.className = 'al-b'; bar.appendChild(b); }
-      let f = 0;
-      const next = () => {
-        if (f >= N) {
-          Array.from(bar.children).forEach(b => { b.style.background = 'rgba(255,255,255,.85)'; b.style.boxShadow = '0 0 16px #fff'; });
-          setTimeout(() => { loader.classList.add('hide'); setTimeout(() => { try { loader.remove(); } catch (e) { } }, 450); }, 130);
-          return;
-        }
-        const b = bar.children[f]; b.classList.add('lit'); b.style.background = bC[f];
-        b.style.boxShadow = `0 0 12px ${bC[f]}`; b.style.borderColor = bC[f];
-        f++; if (f === 4) txt.textContent = 'CONNECTING...'; if (f === 8) txt.textContent = 'READY!';
-        setTimeout(next, 50 + Math.random() * 70);
-      };
-      setTimeout(next, 250);
-    })();
-  </script>
+    const b=bar.children[f];b.classList.add('lit');b.style.background=bC[f];
+    b.style.boxShadow=`0 0 12px ${bC[f]}`;b.style.borderColor=bC[f];
+    f++;if(f===4)txt.textContent='CONNECTING...';if(f===8)txt.textContent='READY!';
+    setTimeout(next,50+Math.random()*70);
+  };
+  setTimeout(next,250);
+})();
+</script>
 </body>
-
 </html>
