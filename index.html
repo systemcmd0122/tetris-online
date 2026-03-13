@@ -305,7 +305,6 @@
     </div>
     <!-- SOUND TOGGLE -->
     <div style="margin-top:18px;display:flex;align-items:center;justify-content:center;gap:10px;">
-      <button id="bgmToggle" onclick="toggleBGM()" style="background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.3);color:var(--acc);font-family:'Press Start 2P',monospace;font-size:8px;padding:7px 14px;border-radius:2px;cursor:pointer;letter-spacing:1px;transition:all .2s;">♪ BGM ON</button>
       <button id="seToggle" onclick="toggleSE()" style="background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.3);color:var(--acc);font-family:'Press Start 2P',monospace;font-size:8px;padding:7px 14px;border-radius:2px;cursor:pointer;letter-spacing:1px;transition:all .2s;">SE ON</button>
     </div>
   </div>
@@ -336,258 +335,55 @@
 </div>
 
 <script>
-// ═══ SOUND ENGINE ═══
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let actx = null;
-let bgmState = { on: true, nodes: null };
-let seState  = { on: true };
+// ═══ SE ENGINE ═══
+let _actx = null;
+let _seOn = true;
+function _getCtx(){ if(!_actx) _actx=new(window.AudioContext||window.webkitAudioContext)(); return _actx; }
 
-function getCtx() {
-  if (!actx) actx = new AudioCtx();
-  return actx;
-}
-
-// ── SE (Sound Effects) ──
 const SE = {
-  select: () => {
-    const c = getCtx(), t = c.currentTime;
-    const o = c.createOscillator(), g = c.createGain();
-    o.connect(g); g.connect(c.destination);
-    o.type = 'square';
-    o.frequency.setValueAtTime(440, t);
-    o.frequency.exponentialRampToValueAtTime(880, t + 0.08);
-    g.gain.setValueAtTime(0.18, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-    o.start(t); o.stop(t + 0.18);
+  select(){
+    const c=_getCtx(),t=c.currentTime,o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(c.destination);o.type='square';
+    o.frequency.setValueAtTime(440,t);o.frequency.exponentialRampToValueAtTime(880,t+.08);
+    g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+.18);
+    o.start(t);o.stop(t+.18);
   },
-  click: () => {
-    const c = getCtx(), t = c.currentTime;
-    const o = c.createOscillator(), g = c.createGain();
-    o.connect(g); g.connect(c.destination);
-    o.type = 'triangle';
-    o.frequency.setValueAtTime(660, t);
-    o.frequency.exponentialRampToValueAtTime(330, t + 0.07);
-    g.gain.setValueAtTime(0.12, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-    o.start(t); o.stop(t + 0.1);
+  click(){
+    const c=_getCtx(),t=c.currentTime,o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(c.destination);o.type='triangle';
+    o.frequency.setValueAtTime(660,t);o.frequency.exponentialRampToValueAtTime(330,t+.07);
+    g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.1);
+    o.start(t);o.stop(t+.1);
   },
-  modalOpen: () => {
-    const c = getCtx(), t = c.currentTime;
-    [523, 659, 784].forEach((f, i) => {
-      const o = c.createOscillator(), g = c.createGain();
-      o.connect(g); g.connect(c.destination);
-      o.type = 'square'; o.frequency.value = f;
-      g.gain.setValueAtTime(0, t + i*0.08);
-      g.gain.linearRampToValueAtTime(0.12, t + i*0.08 + 0.03);
-      g.gain.exponentialRampToValueAtTime(0.001, t + i*0.08 + 0.2);
-      o.start(t + i*0.08); o.stop(t + i*0.08 + 0.2);
+  modalOpen(){
+    const c=_getCtx(),t=c.currentTime;
+    [523,659,784].forEach((f,i)=>{
+      const o=c.createOscillator(),g=c.createGain();
+      o.connect(g);g.connect(c.destination);o.type='square';o.frequency.value=f;
+      g.gain.setValueAtTime(0,t+i*.08);g.gain.linearRampToValueAtTime(.12,t+i*.08+.03);
+      g.gain.exponentialRampToValueAtTime(.001,t+i*.08+.2);o.start(t+i*.08);o.stop(t+i*.08+.2);
     });
   },
-  modalClose: () => {
-    const c = getCtx(), t = c.currentTime;
-    [784, 523].forEach((f, i) => {
-      const o = c.createOscillator(), g = c.createGain();
-      o.connect(g); g.connect(c.destination);
-      o.type = 'square'; o.frequency.value = f;
-      g.gain.setValueAtTime(0.1, t + i*0.07);
-      g.gain.exponentialRampToValueAtTime(0.001, t + i*0.07 + 0.15);
-      o.start(t + i*0.07); o.stop(t + i*0.07 + 0.15);
+  modalClose(){
+    const c=_getCtx(),t=c.currentTime;
+    [784,523].forEach((f,i)=>{
+      const o=c.createOscillator(),g=c.createGain();
+      o.connect(g);g.connect(c.destination);o.type='square';o.frequency.value=f;
+      g.gain.setValueAtTime(.1,t+i*.07);g.gain.exponentialRampToValueAtTime(.001,t+i*.07+.15);
+      o.start(t+i*.07);o.stop(t+i*.07+.15);
     });
   }
 };
 
-window.playSE = (name) => {
-  if (!seState.on) return;
-  try { SE[name] && SE[name](); } catch(e) {}
-};
-
-// ── BGM (chiptune loop) ──
-// A simple arpeggiated melody using Web Audio API
-function buildBGM() {
-  const c = getCtx();
-  const masterGain = c.createGain();
-  masterGain.gain.value = 0.14;
-  masterGain.connect(c.destination);
-
-  // Compressor for cleaner sound
-  const comp = c.createDynamicsCompressor();
-  comp.connect(c.destination);
-  masterGain.connect(comp);
-
-  // Note sequence: pentatonic + tetris-like melody
-  const BPM = 140;
-  const beat = 60 / BPM;
-  const notes = [
-    // Main melody (frequencies in Hz)
-    [523,1],[659,0.5],[784,0.5],[1047,1],[988,0.5],[784,0.5],
-    [698,1],[659,0.5],[523,0.5],[440,1],[494,0.5],[523,0.5],
-    [659,1],[784,0.5],[880,0.5],[1047,1],[988,0.5],[880,0.5],
-    [784,1],[698,0.5],[659,0.5],[523,1],[440,1],
-  ];
-
-  // Bass line
-  const bass = [
-    [130,2],[165,2],[196,2],[220,2],
-    [130,2],[165,2],[174,2],[196,2],
-  ];
-
-  const LOOP = notes.reduce((s,[,d]) => s + d * beat, 0);
-
-  let scheduledUntil = 0;
-  let loopStart = null;
-  let running = true;
-  const oscs = [];
-
-  function scheduleLoop(startTime) {
-    let t = startTime;
-
-    // Melody
-    notes.forEach(([freq, dur]) => {
-      const o = c.createOscillator();
-      const g = c.createGain();
-      o.type = 'square';
-      o.frequency.value = freq;
-      // Slight pulse width / pitch envelope
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.7, t + 0.01);
-      g.gain.setValueAtTime(0.7, t + dur * beat - 0.05);
-      g.gain.linearRampToValueAtTime(0, t + dur * beat);
-      o.connect(g); g.connect(masterGain);
-      o.start(t); o.stop(t + dur * beat);
-      oscs.push(o);
-      t += dur * beat;
-    });
-
-    // Bass
-    let bt = startTime;
-    bass.forEach(([freq, dur]) => {
-      const o = c.createOscillator();
-      const g = c.createGain();
-      o.type = 'sawtooth';
-      o.frequency.value = freq;
-      g.gain.setValueAtTime(0.5, bt);
-      g.gain.exponentialRampToValueAtTime(0.001, bt + dur * beat);
-      o.connect(g); g.connect(masterGain);
-      o.start(bt); o.stop(bt + dur * beat);
-      oscs.push(o);
-      bt += dur * beat;
-    });
-
-    // Hi-hat style noise
-    for (let i = 0; i < Math.floor(LOOP / (beat * 0.5)); i++) {
-      const buf = c.createBuffer(1, c.sampleRate * 0.05, c.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let j = 0; j < data.length; j++) data[j] = Math.random() * 2 - 1;
-      const src = c.createBufferSource();
-      const filt = c.createBiquadFilter();
-      const g = c.createGain();
-      filt.type = 'highpass'; filt.frequency.value = 8000;
-      src.buffer = buf;
-      src.connect(filt); filt.connect(g); g.connect(masterGain);
-      g.gain.setValueAtTime(0.08, startTime + i * beat * 0.5);
-      g.gain.exponentialRampToValueAtTime(0.001, startTime + i * beat * 0.5 + 0.04);
-      src.start(startTime + i * beat * 0.5);
-      oscs.push(src);
-    }
-
-    // Kick drum
-    for (let i = 0; i < Math.floor(LOOP / (beat * 2)); i++) {
-      const o = c.createOscillator();
-      const g = c.createGain();
-      o.type = 'sine';
-      const kt = startTime + i * beat * 2;
-      o.frequency.setValueAtTime(180, kt);
-      o.frequency.exponentialRampToValueAtTime(40, kt + 0.12);
-      g.gain.setValueAtTime(0.6, kt);
-      g.gain.exponentialRampToValueAtTime(0.001, kt + 0.15);
-      o.connect(g); g.connect(masterGain);
-      o.start(kt); o.stop(kt + 0.15);
-      oscs.push(o);
-    }
-  }
-
-  function tick() {
-    if (!running) return;
-    const now = c.currentTime;
-    if (loopStart === null) loopStart = now;
-    // Schedule 2 loops ahead
-    while (scheduledUntil < now + 4) {
-      const nextStart = loopStart + Math.round((scheduledUntil - loopStart) / LOOP) * LOOP;
-      if (nextStart >= scheduledUntil) {
-        scheduleLoop(nextStart < now ? now : nextStart);
-        scheduledUntil = nextStart + LOOP;
-      } else {
-        scheduledUntil += LOOP;
-      }
-    }
-    setTimeout(tick, 500);
-  }
-
-  tick();
-
-  return {
-    masterGain,
-    stop() {
-      running = false;
-      masterGain.gain.linearRampToValueAtTime(0, c.currentTime + 0.5);
-    },
-    setVolume(v) { masterGain.gain.value = v; }
-  };
-}
-
-let bgmNodes = null;
-let bgmStarted = false;
-
-function startBGM() {
-  if (bgmNodes) return;
-  try {
-    bgmNodes = buildBGM();
-    bgmStarted = true;
-  } catch(e) {}
-}
-
-function stopBGM() {
-  if (!bgmNodes) return;
-  try { bgmNodes.stop(); } catch(e) {}
-  bgmNodes = null;
-  bgmStarted = false;
-}
-
-window.toggleBGM = () => {
-  bgmState.on = !bgmState.on;
-  const btn = document.getElementById('bgmToggle');
-  if (bgmState.on) {
-    startBGM();
-    btn.textContent = '♪ BGM ON';
-    btn.style.color = 'var(--acc)';
-    btn.style.borderColor = 'rgba(0,245,255,0.3)';
-  } else {
-    stopBGM();
-    btn.textContent = '♪ BGM OFF';
-    btn.style.color = 'var(--dim)';
-    btn.style.borderColor = 'rgba(74,96,128,0.3)';
-  }
-};
+window.playSE = (name) => { if(!_seOn) return; try{ SE[name]&&SE[name](); }catch(e){} };
 
 window.toggleSE = () => {
-  seState.on = !seState.on;
+  _seOn = !_seOn;
   const btn = document.getElementById('seToggle');
-  btn.textContent = seState.on ? 'SE ON' : 'SE OFF';
-  btn.style.color = seState.on ? 'var(--acc)' : 'var(--dim)';
-  btn.style.borderColor = seState.on ? 'rgba(0,245,255,0.3)' : 'rgba(74,96,128,0.3)';
+  btn.textContent = _seOn ? 'SE ON' : 'SE OFF';
+  btn.style.color = _seOn ? 'var(--acc)' : 'var(--dim)';
+  btn.style.borderColor = _seOn ? 'rgba(0,245,255,0.3)' : 'rgba(74,96,128,0.3)';
 };
-
-// Auto-start BGM on first user interaction
-let bgmAutoStarted = false;
-function tryAutoStartBGM() {
-  if (bgmAutoStarted || !bgmState.on) return;
-  bgmAutoStarted = true;
-  startBGM();
-  document.removeEventListener('click', tryAutoStartBGM);
-  document.removeEventListener('keydown', tryAutoStartBGM);
-}
-document.addEventListener('click', tryAutoStartBGM);
-document.addEventListener('keydown', tryAutoStartBGM);
 </script>
 
 <script type="module">
