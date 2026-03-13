@@ -91,4 +91,4 @@ export const UPDATE_LOG = [
     ]
   }
 ];
-];
+
