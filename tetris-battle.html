@@ -2712,7 +2712,7 @@
       // Game loop
       const loop = ts => {
         if (!GameState.gameRunning) return;
-        game.update(ts);
+        GameState.game.update(ts);
         GameState.game.draw();
 
         // Process my results
@@ -2820,7 +2820,7 @@
         num.style.animation = 'none';
 
         // Show match flash if it's not a bot game
-        if (!botMode && mf) {
+        if (!GameState.botMode && mf) {
           mf.classList.add('show');
           setTimeout(() => mf.classList.remove('show'), 2000);
         }
@@ -2835,7 +2835,7 @@
         }
 
         // Poll for force stop
-        const abortIv = setInterval(() => { if (forceStopped) { clearInterval(abortIv); done(true); } }, 100);
+        const abortIv = setInterval(() => { if (GameState.forceStopped) { clearInterval(abortIv); done(true); } }, 100);
 
         // Schedule each number at the correct absolute time
         // 3 shows at (startAt - 3000), 2 at (startAt - 2000), 1 at (startAt - 1000), GO! at startAt
@@ -2867,26 +2867,26 @@
 
     function dasStart(dir) {
       if (dasDir === dir) return; dasStop(); dasDir = dir;
-      game?.move(dir);
-      dasTimer = setTimeout(() => { arrTimer = setInterval(() => { game?.move(dir); }, ARR); }, DAS);
+      GameState.game?.move(dir);
+      dasTimer = setTimeout(() => { arrTimer = setInterval(() => { GameState.game?.move(dir); }, ARR); }, DAS);
     }
     function dasStop() { clearTimeout(dasTimer); clearInterval(arrTimer); dasTimer = null; arrTimer = null; dasDir = 0; }
 
     document.addEventListener('keydown', e => {
       if (keys.has(e.code)) return; keys.add(e.code);
-      if (!game || !gameRunning) return;
+      if (!GameState.game || !GameState.gameRunning) return;
       switch (e.code) {
         case 'ArrowLeft': e.preventDefault(); dasStart(-1); break;
         case 'ArrowRight': e.preventDefault(); dasStart(1); break;
-        case 'ArrowUp': e.preventDefault(); game.rotate(1); break;
-        case 'KeyX': e.preventDefault(); game.rotate(1); break;
-        case 'KeyZ': e.preventDefault(); game.rotate(-1); break;
+        case 'ArrowUp': e.preventDefault(); GameState.game.rotate(1); break;
+        case 'KeyX': e.preventDefault(); GameState.game.rotate(1); break;
+        case 'KeyZ': e.preventDefault(); GameState.game.rotate(-1); break;
         case 'ArrowDown': e.preventDefault(); break; // handled by softdrop interval below
-        case 'Space': e.preventDefault(); game.hardDrop(); break;
-        case 'KeyC': e.preventDefault(); game.hold(); break;
-        case 'ShiftLeft': e.preventDefault(); game.hold(); break;
-        case 'ShiftRight': e.preventDefault(); game.hold(); break;
-        case 'Shift': e.preventDefault(); game.hold(); break;
+        case 'Space': e.preventDefault(); GameState.game.hardDrop(); break;
+        case 'KeyC': e.preventDefault(); GameState.game.hold(); break;
+        case 'ShiftLeft': e.preventDefault(); GameState.game.hold(); break;
+        case 'ShiftRight': e.preventDefault(); GameState.game.hold(); break;
+        case 'Shift': e.preventDefault(); GameState.game.hold(); break;
       }
     });
     document.addEventListener('keyup', e => {
@@ -2898,10 +2898,10 @@
     // Soft drop with continuous interval
     let softDropInterval = null;
     document.addEventListener('keydown', e => {
-      if (e.code === 'ArrowDown' && !softDropInterval && game && gameRunning) {
+      if (e.code === 'ArrowDown' && !softDropInterval && GameState.game && GameState.gameRunning) {
         e.preventDefault();
-        game?.softDrop();
-        softDropInterval = setInterval(() => { if (game && gameRunning) game.softDrop(); }, 50);
+        GameState.game?.softDrop();
+        softDropInterval = setInterval(() => { if (GameState.game && GameState.gameRunning) GameState.game.softDrop(); }, 50);
       }
     });
     document.addEventListener('keyup', e => {
@@ -2912,7 +2912,7 @@
     function setupMobile(id, fn, repeat = false) {
       const btn = document.getElementById(id); if (!btn) return;
       let iv = null;
-      const start = e => { e.preventDefault(); if (!game || !gameRunning) return; fn(); if (repeat) iv = setInterval(() => { if (game && gameRunning) fn(); }, repeat); };
+      const start = e => { e.preventDefault(); if (!GameState.game || !GameState.gameRunning) return; fn(); if (repeat) iv = setInterval(() => { if (GameState.game && GameState.gameRunning) fn(); }, repeat); };
       const stop = () => { clearInterval(iv); iv = null; };
       btn.addEventListener('touchstart', start, { passive: false });
       btn.addEventListener('touchend', stop);
@@ -2920,13 +2920,13 @@
       btn.addEventListener('mouseup', stop);
       btn.addEventListener('mouseleave', stop);
     }
-    setupMobile('btnLeft', () => game?.move(-1), ARR);
-    setupMobile('btnRight', () => game?.move(1), ARR);
-    setupMobile('btnDown', () => game?.softDrop(), 50);
-    setupMobile('btnRotate', () => game?.rotate(1), false);
-    setupMobile('btnRotateL', () => game?.rotate(-1), false);
-    setupMobile('btnHardDrop', () => game?.hardDrop(), false);
-    setupMobile('btnHold', () => game?.hold(), false);
+    setupMobile('btnLeft', () => GameState.game?.move(-1), ARR);
+    setupMobile('btnRight', () => GameState.game?.move(1), ARR);
+    setupMobile('btnDown', () => GameState.game?.softDrop(), 50);
+    setupMobile('btnRotate', () => GameState.game?.rotate(1), false);
+    setupMobile('btnRotateL', () => GameState.game?.rotate(-1), false);
+    setupMobile('btnHardDrop', () => GameState.game?.hardDrop(), false);
+    setupMobile('btnHold', () => GameState.game?.hold(), false);
 
     // Swipe down = hard drop
     (function () {
@@ -2934,9 +2934,9 @@
       const cvs = document.getElementById('myCanvas');
       cvs.addEventListener('touchstart', e => { tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY; }, { passive: true });
       cvs.addEventListener('touchend', e => {
-        if (!game || !gameRunning) return;
+        if (!GameState.game || !GameState.gameRunning) return;
         const dx = e.changedTouches[0].clientX - tx0, dy = e.changedTouches[0].clientY - ty0;
-        if (Math.abs(dy) > 50 && dy > 0 && Math.abs(dy) > Math.abs(dx) * 1.5) game.hardDrop();
+        if (Math.abs(dy) > 50 && dy > 0 && Math.abs(dy) > Math.abs(dx) * 1.5) GameState.game.hardDrop();
       }, { passive: true });
     })();
 
@@ -2951,30 +2951,30 @@
     let _prevScore = 0, _prevCombo = -1;
     const uiCache = { score: -1, level: -1, lines: -1, combo: -1, b2b: null, sent: -1, recv: -1, pg: -1 };
     function updateGameUI() {
-      if (!game) return;
+      if (!GameState.game) return;
       // Score
-      if (game.score !== uiCache.score) {
+      if (GameState.game.score !== uiCache.score) {
         const sd = document.getElementById('scoreDisplay');
         sd.classList.remove('score-pop'); void sd.offsetWidth; sd.classList.add('score-pop');
-        sd.textContent = game.score; uiCache.score = game.score;
+        sd.textContent = GameState.game.score; uiCache.score = GameState.game.score;
       }
-      if (game.level !== uiCache.level) { document.getElementById('levelDisplay').textContent = game.level; uiCache.level = game.level; }
-      if (game.lines !== uiCache.lines) { document.getElementById('linesDisplay').textContent = game.lines; uiCache.lines = game.lines; }
+      if (GameState.game.level !== uiCache.level) { document.getElementById('levelDisplay').textContent = GameState.game.level; uiCache.level = GameState.game.level; }
+      if (GameState.game.lines !== uiCache.lines) { document.getElementById('linesDisplay').textContent = GameState.game.lines; uiCache.lines = GameState.game.lines; }
       // Combo
-      if (game.combo !== uiCache.combo) {
+      if (GameState.game.combo !== uiCache.combo) {
         const cd = document.getElementById('comboDisplay');
-        if (game.combo > 1) { cd.classList.remove('pop'); void cd.offsetWidth; cd.classList.add('pop'); }
-        cd.textContent = game.combo > 1 ? game.combo : 0;
-        uiCache.combo = game.combo;
-        if (game.combo > statMaxCombo) statMaxCombo = game.combo;
+        if (GameState.game.combo > 1) { cd.classList.remove('pop'); void cd.offsetWidth; cd.classList.add('pop'); }
+        cd.textContent = GameState.game.combo > 1 ? GameState.game.combo : 0;
+        uiCache.combo = GameState.game.combo;
+        if (GameState.game.combo > GameState.statMaxCombo) GameState.statMaxCombo = GameState.game.combo;
       }
       // B2B
-      if (game.b2b !== uiCache.b2b) { document.getElementById('b2bBadge').className = 'b2b-badge ' + (game.b2b ? 'on' : 'off'); uiCache.b2b = game.b2b; }
+      if (GameState.game.b2b !== uiCache.b2b) { document.getElementById('b2bBadge').className = 'b2b-badge ' + (GameState.game.b2b ? 'on' : 'off'); uiCache.b2b = GameState.game.b2b; }
       // Attack stats
-      if (statAtkSent !== uiCache.sent) { document.getElementById('atkSentDisplay').textContent = statAtkSent; uiCache.sent = statAtkSent; }
-      if (statAtkRecv !== uiCache.recv) { document.getElementById('atkRecvDisplay').textContent = statAtkRecv; uiCache.recv = statAtkRecv; }
+      if (GameState.statAtkSent !== uiCache.sent) { document.getElementById('atkSentDisplay').textContent = GameState.statAtkSent; uiCache.sent = GameState.statAtkSent; }
+      if (GameState.statAtkRecv !== uiCache.recv) { document.getElementById('atkRecvDisplay').textContent = GameState.statAtkRecv; uiCache.recv = GameState.statAtkRecv; }
       // Pending garbage display
-      const pg = game.pendingGarbage || 0;
+      const pg = GameState.game.pendingGarbage || 0;
       if (pg !== uiCache.pg) {
         document.getElementById('pendGarbDisplay').textContent = pg;
         // Mini cells
