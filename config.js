@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.3.0";
+export const APP_VERSION = "1.4.0";
 
 // ═══════════════════════════════════════════════════════════════
 // FIREBASE CONFIGURATION
@@ -51,6 +51,17 @@ export const ROOM_CONFIG = {
 export const ADMIN_PASSWORD = "TETRIS_ADMIN_2026";
 
 export const UPDATE_LOG = [
+  {
+    version: "1.4.0",
+    title: "4人対戦と新モードの追加",
+    changes: [
+      "最大4人でのオンライン同時対戦が可能になりました。",
+      "ホスト（P1）による対戦開始タイミングのコントロールを実装しました。",
+      "1人プレイ専用の「Solo Mode」（マラソン・スプリント）を追加しました。",
+      "対戦時のお邪魔ブロック送信先がランダムに選ばれるようになり、多人数戦がより白熱するようになりました。",
+      "ゲームエンジンをモジュール化し、サイト全体の動作安定性と読み込み速度を向上させました。"
+    ]
+  },
   {
     version: "1.3.0",
     title: "セキュリティ強化とバグ修正",

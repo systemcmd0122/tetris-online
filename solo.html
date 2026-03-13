@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TETRIS BATTLE — SOLO MODE</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+    :root {
+      --bg: #020408; --surface: #0a0f1a; --border: #1a2540;
+      --accent: #00f5ff; --accent2: #ff0080; --accent3: #aaff00;
+      --text: #e0f0ff; --dim: #4a6080;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Orbitron', monospace; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    #bgCanvas { position: fixed; inset: 0; z-index: 0; opacity: 0.15; pointer-events: none; }
+    .scanlines { position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px); }
+
+    .game-container { position: relative; z-index: 10; display: flex; gap: 20px; align-items: flex-start; }
+    .side-panel { display: flex; flex-direction: column; gap: 10px; width: 100px; }
+    .panel-box { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 4px; text-align: center; }
+    .panel-title { font-size: 8px; color: var(--dim); margin-bottom: 5px; letter-spacing: 1px; }
+    .panel-value { font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--accent); }
+
+    .board-wrap { position: relative; border: 2px solid var(--accent); box-shadow: 0 0 20px rgba(0,245,255,0.3); }
+    canvas#gameCanvas { display: block; background: rgba(0,0,0,0.5); }
+
+    .controls-hint { margin-top: 20px; color: var(--dim); font-size: 10px; text-align: center; letter-spacing: 1px; }
+
+    .action-popup {
+      position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+      font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--accent3);
+      text-shadow: 0 0 10px var(--accent3); pointer-events: none; opacity: 0;
+      white-space: nowrap; z-index: 50;
+    }
+    .action-popup.show { animation: popUp 1s ease-out forwards; }
+    @keyframes popUp {
+      0% { opacity: 1; transform: translate(-50%, 0); }
+      100% { opacity: 0; transform: translate(-50%, -40px); }
+    }
+
+    .overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.85);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .overlay.show { opacity: 1; pointer-events: auto; }
+    .overlay-title { font-family: 'Press Start 2P', monospace; font-size: 18px; color: var(--accent2); margin-bottom: 20px; }
+    .menu-btn {
+      padding: 12px 24px; background: var(--accent); color: #000; border: none;
+      font-family: 'Press Start 2P', monospace; font-size: 10px; cursor: pointer;
+      margin: 5px; border-radius: 2px; transition: transform 0.1s;
+    }
+    .menu-btn:active { transform: scale(0.95); }
+    .menu-btn.secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+
+    .top-bar { position: absolute; top: 20px; left: 0; right: 0; display: flex; justify-content: center; gap: 20px; z-index: 20; }
+    .mode-badge { font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--accent3); letter-spacing: 2px; }
+
+    /* Mobile Controls */
+    .mobile-controls { display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+    .m-btn {
+      width: 60px; height: 60px; background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; font-size: 20px; user-select: none;
+    }
+    @media (max-height: 700px), (max-width: 500px) {
+      .mobile-controls { display: grid; }
+      .controls-hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+<div class="scanlines"></div>
+
+<div class="top-bar">
+  <div class="mode-badge" id="modeDisplay">MARATHON</div>
+  <div class="mode-badge" id="timerDisplay" style="color:var(--accent)">00:00.00</div>
+</div>
+
+<div class="game-container">
+  <div class="side-panel">
+    <div class="panel-box">
+      <div class="panel-title">NEXT</div>
+      <canvas id="nextCanvas" width="80" height="80"></canvas>
+    </div>
+    <div class="panel-box">
+      <div class="panel-title">HOLD</div>
+      <canvas id="holdCanvas" width="80" height="80"></canvas>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <canvas id="gameCanvas" width="200" height="400"></canvas>
+    <div class="action-popup" id="actionPopup"></div>
+    <div class="overlay" id="menuOverlay">
+      <div class="overlay-title">PAUSED</div>
+      <button class="menu-btn" onclick="resumeGame()">RESUME</button>
+      <button class="menu-btn secondary" onclick="restartGame()">RESTART</button>
+      <button class="menu-btn secondary" onclick="location.href='index.html'">EXIT</button>
+    </div>
+    <div class="overlay" id="resultOverlay">
+      <div class="overlay-title" id="resultTitle">GAME OVER</div>
+      <div id="resultStats" style="margin-bottom:20px; text-align:center; font-size:12px; line-height:1.6;"></div>
+      <button class="menu-btn" onclick="restartGame()">PLAY AGAIN</button>
+      <button class="menu-btn secondary" onclick="location.href='index.html'">BACK TO MENU</button>
+    </div>
+  </div>
+
+  <div class="side-panel">
+    <div class="panel-box">
+      <div class="panel-title">SCORE</div>
+      <div class="panel-value" id="scoreVal">0</div>
+    </div>
+    <div class="panel-box">
+      <div class="panel-title">LEVEL</div>
+      <div class="panel-value" id="levelVal">1</div>
+    </div>
+    <div class="panel-box">
+      <div class="panel-title">LINES</div>
+      <div class="panel-value" id="linesVal">0</div>
+    </div>
+    <div class="panel-box" id="highScoreBox">
+      <div class="panel-title">BEST</div>
+      <div class="panel-value" id="bestVal">0</div>
+    </div>
+  </div>
+</div>
+
+<div class="controls-hint">
+  [←→]: MOVE [↑/X]: ROTATE [SPACE]: HARD DROP [C/SHIFT]: HOLD [ESC]: PAUSE
+</div>
+
+<div class="mobile-controls">
+  <div class="m-btn" id="mHold">H</div>
+  <div class="m-btn" id="mRot">↻</div>
+  <div class="m-btn" id="mRotL">↺</div>
+  <div class="m-btn" id="mLeft">←</div>
+  <div class="m-btn" id="mDown">↓</div>
+  <div class="m-btn" id="mRight">→</div>
+  <div style="grid-column: span 3;" class="m-btn" id="mDrop">HARD DROP</div>
+</div>
+
+<script type="module">
+  import { TetrisGame, COLORS, PIECES } from './tetris-engine.js';
+  import { GAME_CONFIG } from './config.js';
+
+  let game, animId, mode = 'marathon'; // 'marathon' or 'sprint'
+  let startTime, pausedTime = 0, lastPauseTs = 0;
+  let isPaused = false;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('mode') === 'sprint') mode = 'sprint';
+  document.getElementById('modeDisplay').textContent = mode.toUpperCase();
+
+  function initGame() {
+    game = new TetrisGame('gameCanvas', 'holdCanvas', 'nextCanvas', GAME_CONFIG, {
+      onSound: (type) => playSound(type),
+      onUIUpdate: () => updateUI(),
+      onLevelUp: (lvl) => {
+        playSound('levelup');
+        showActionPopup(`LEVEL UP: ${lvl}`);
+      }
+    });
+    updateUI();
+    showBest();
+    startTime = performance.now();
+    isPaused = false;
+    document.getElementById('menuOverlay').classList.remove('show');
+    document.getElementById('resultOverlay').classList.remove('show');
+    requestAnimationFrame(gameLoop);
+  }
+
+  function gameLoop(ts) {
+    if (isPaused || game.gameOver) return;
+
+    game.update(ts);
+    game.draw();
+    updateUI();
+
+    if (mode === 'sprint' && game.lines >= 40) {
+      game.gameOver = true;
+      finishSprint();
+    } else if (game.gameOver) {
+      finishMarathon();
+    } else {
+      animId = requestAnimationFrame(gameLoop);
+    }
+  }
+
+  function updateUI() {
+    document.getElementById('scoreVal').textContent = game.score;
+    document.getElementById('levelVal').textContent = game.level;
+    document.getElementById('linesVal').textContent = game.lines;
+
+    if (!isPaused && !game.gameOver) {
+      const elapsed = performance.now() - startTime - pausedTime;
+      document.getElementById('timerDisplay').textContent = formatTime(elapsed);
+    }
+  }
+
+  function formatTime(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const ms2 = Math.floor((ms % 1000) / 10);
+    return `${m.toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}.${ms2.toString().padStart(2, '0')}`;
+  }
+
+  function finishMarathon() {
+    const best = localStorage.getItem('best_marathon') || 0;
+    if (game.score > best) localStorage.setItem('best_marathon', game.score);
+
+    document.getElementById('resultTitle').textContent = 'GAME OVER';
+    document.getElementById('resultStats').innerHTML = `SCORE: ${game.score}<br>LINES: ${game.lines}<br>LEVEL: ${game.level}`;
+    document.getElementById('resultOverlay').classList.add('show');
+  }
+
+  function finishSprint() {
+    const elapsed = performance.now() - startTime - pausedTime;
+    const best = localStorage.getItem('best_sprint') || Infinity;
+    if (elapsed < best) localStorage.setItem('best_sprint', elapsed);
+
+    document.getElementById('resultTitle').textContent = 'SPRINT COMPLETE!';
+    document.getElementById('resultStats').innerHTML = `TIME: ${formatTime(elapsed)}<br>SCORE: ${game.score}`;
+    document.getElementById('resultOverlay').classList.add('show');
+  }
+
+  function showBest() {
+    if (mode === 'marathon') {
+      document.getElementById('bestVal').textContent = localStorage.getItem('best_marathon') || 0;
+    } else {
+      const best = localStorage.getItem('best_sprint');
+      document.getElementById('bestVal').textContent = best ? formatTime(parseFloat(best)) : '--:--.--';
+    }
+  }
+
+  window.resumeGame = () => {
+    isPaused = false;
+    pausedTime += performance.now() - lastPauseTs;
+    document.getElementById('menuOverlay').classList.remove('show');
+    requestAnimationFrame(gameLoop);
+  };
+
+  window.restartGame = () => {
+    pausedTime = 0;
+    initGame();
+  };
+
+  function showActionPopup(txt) {
+    const el = document.getElementById('actionPopup');
+    el.textContent = txt;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+  }
+
+  function pauseGame() {
+    if (isPaused || game.gameOver) return;
+    isPaused = true;
+    lastPauseTs = performance.now();
+    document.getElementById('menuOverlay').classList.add('show');
+  }
+
+  // Audio
+  let audioCtx = null;
+  function getAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+  function playSound(type) {
+    try {
+      const ctx = getAudioCtx();
+      const g = ctx.createGain(); g.connect(ctx.destination);
+      const o = ctx.createOscillator(); o.connect(g);
+      const now = ctx.currentTime;
+      switch (type) {
+        case 'move': o.frequency.setValueAtTime(220, now); g.gain.setValueAtTime(.02, now); g.gain.exponentialRampToValueAtTime(.001, now + .05); o.start(now); o.stop(now + .05); break;
+        case 'rotate': o.frequency.setValueAtTime(330, now); o.frequency.exponentialRampToValueAtTime(440, now + .06); g.gain.setValueAtTime(.03, now); g.gain.exponentialRampToValueAtTime(.001, now + .06); o.start(now); o.stop(now + .06); break;
+        case 'lock': o.type = 'square'; o.frequency.setValueAtTime(180, now); g.gain.setValueAtTime(.04, now); g.gain.exponentialRampToValueAtTime(.001, now + .08); o.start(now); o.stop(now + .08); break;
+        case 'clear1': o.type = 'sawtooth'; o.frequency.setValueAtTime(440, now); o.frequency.exponentialRampToValueAtTime(880, now + .15); g.gain.setValueAtTime(.05, now); g.gain.exponentialRampToValueAtTime(.001, now + .15); o.start(now); o.stop(now + .15); break;
+        case 'tetris': [440, 554, 659, 880].forEach((f, i) => { const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.frequency.setValueAtTime(f, now + i * .07); g2.gain.setValueAtTime(.07, now + i * .07); g2.gain.exponentialRampToValueAtTime(.001, now + i * .07 + .15); o2.start(now + i * .07); o2.stop(now + i * .07 + .15); }); break;
+        case 'harddrop': o.type = 'square'; o.frequency.setValueAtTime(160, now); o.frequency.exponentialRampToValueAtTime(80, now + .1); g.gain.setValueAtTime(.08, now); g.gain.exponentialRampToValueAtTime(.001, now + .1); o.start(now); o.stop(now + .1); break;
+        case 'levelup': [523, 659, 784, 1047].forEach((f, i) => { const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.type = 'triangle'; o2.frequency.setValueAtTime(f, now + i * .1); g2.gain.setValueAtTime(.05, now + i * .1); g2.gain.exponentialRampToValueAtTime(.001, now + i * .1 + .2); o2.start(now + i * .1); o2.stop(now + i * .1 + .2); }); break;
+      }
+    } catch (e) { }
+  }
+
+  // Input
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Escape') pauseGame();
+    if (isPaused || game.gameOver) return;
+    switch(e.code) {
+      case 'ArrowLeft': game.move(-1); break;
+      case 'ArrowRight': game.move(1); break;
+      case 'ArrowUp': case 'KeyX': game.rotate(1); break;
+      case 'KeyZ': game.rotate(-1); break;
+      case 'ArrowDown': game.softDrop(); break;
+      case 'Space': game.hardDrop(); break;
+      case 'KeyC': case 'ShiftLeft': case 'ShiftRight': game.hold(); break;
+    }
+  });
+
+  // Mobile
+  const setupM = (id, fn) => {
+    const el = document.getElementById(id);
+    el.addEventListener('touchstart', e => { e.preventDefault(); fn(); });
+  };
+  setupM('mLeft', () => game.move(-1));
+  setupM('mRight', () => game.move(1));
+  setupM('mRot', () => game.rotate(1));
+  setupM('mRotL', () => game.rotate(-1));
+  setupM('mDown', () => game.softDrop());
+  setupM('mDrop', () => game.hardDrop());
+  setupM('mHold', () => game.hold());
+
+  initGame();
+
+  // Background animation
+  (function(){
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    const CELL = 30;
+    const CNAMES = ['I','O','T','S','Z','J','L'];
+    const PIECE_MATS={
+      I:[[[1,1,1,1]]], O:[[[1,1],[1,1]]], T:[[[0,1,0],[1,1,1]]],
+      S:[[[0,1,1],[1,1,0]]], Z:[[[1,1,0],[0,1,1]]], J:[[[1,0,0],[1,1,1]]], L:[[[0,0,1],[1,1,1]]]
+    };
+    let W, H; const pieces = [];
+    function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+    resize(); window.addEventListener('resize', resize);
+
+    function spawn() {
+      const name = CNAMES[Math.random()*CNAMES.length|0];
+      return {
+        mat: PIECE_MATS[name][0], color: COLORS[name],
+        x: Math.random()*W, y: -CELL*4, vy: 0.5+Math.random()*1.5,
+        rot: Math.random()*360, vr: (Math.random()-.5)*0.8,
+        sc: 0.5+Math.random()*0.9, alpha: 0.1+Math.random()*0.3
+      };
+    }
+    for(let i=0; i<15; i++) { const p = spawn(); p.y = Math.random()*H; pieces.push(p); }
+
+    function frame() {
+      ctx.clearRect(0, 0, W, H);
+      pieces.forEach((p, i) => {
+        p.y += p.vy; p.rot += p.vr;
+        if (p.y > H + CELL*4) pieces[i] = spawn();
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot*Math.PI/180);
+        ctx.scale(p.sc, p.sc);
+        ctx.globalAlpha = p.alpha;
+        p.mat.forEach((row, r) => row.forEach((cell, c) => {
+          if (cell) {
+            ctx.fillStyle = p.color;
+            ctx.fillRect(c*CELL, r*CELL, CELL-2, CELL-2);
+          }
+        }));
+        ctx.restore();
+      });
+      requestAnimationFrame(frame);
+    }
+    frame();
+  })();
+</script>
+</body>
+</html>
