@@ -309,7 +309,7 @@
     </div>
   </div>
   <!-- MUSIC BANNER -->
-  <a href="shell.html" style="
+  <a id="musicBanner" href="shell.html" style="
     display:flex; align-items:center; gap:10px;
     margin-top:14px; padding:11px 16px;
     background:linear-gradient(135deg,rgba(170,255,0,0.08),rgba(0,245,255,0.05));
@@ -569,6 +569,14 @@ const CNAMES = Object.keys(COLORS);
     requestAnimationFrame(frame);
   }
   frame();
+})();
+
+// ═══ IFRAME DETECTION — hide music banner when inside shell.html ═══
+(function(){
+  if (window.self !== window.top) {
+    const banner = document.getElementById('musicBanner');
+    if (banner) banner.style.display = 'none';
+  }
 })();
 
 // ═══ VERSION & UPDATE NOTIFICATION ═══
