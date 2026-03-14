@@ -24,7 +24,7 @@ body{background:var(--bg);color:var(--text);font-family:'Orbitron',monospace;min
 .px-corner{position:absolute;width:9px;height:9px;background:var(--accent);box-shadow:0 0 7px var(--accent)}
 .px-corner.tl{top:0;left:0}.px-corner.tr{top:0;right:0}.px-corner.bl{bottom:0;left:0}.px-corner.br{bottom:0;right:0}
 .screen{display:none;position:relative;z-index:10}
-.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;padding:20px;padding-bottom:40px}
 .logo{font-family:'Press Start 2P',monospace;font-size:clamp(18px,4vw,38px);color:var(--accent);text-shadow:0 0 20px rgba(0,245,255,.5),0 0 60px rgba(0,245,255,.3);letter-spacing:6px;margin-bottom:6px;animation:logoPulse 2s ease-in-out infinite}
 @keyframes logoPulse{0%,100%{text-shadow:0 0 20px rgba(0,245,255,.5),0 0 60px rgba(0,245,255,.3)}50%{text-shadow:0 0 40px rgba(0,245,255,.9),0 0 80px rgba(0,245,255,.5)}}
 .subtitle{font-size:10px;color:var(--accent2);letter-spacing:4px;margin-bottom:36px;text-shadow:0 0 20px rgba(255,0,128,.5)}
@@ -71,10 +71,11 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
 @keyframes dotBlink{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
 .waiting-indicator{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--accent3);font-size:10px;letter-spacing:2px;margin:10px 0}
 #gameScreen{padding:6px}
-.game-header{width:100%;display:flex;align-items:center;gap:8px;margin-bottom:8px;max-width:1100px}
+.game-header{width:100%;display:flex;align-items:center;gap:8px;margin-bottom:8px;max-width:1400px}
 .game-title{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--accent)}
 .game-header-right{display:flex;gap:8px;align-items:center}
-.multi-layout{display:flex;gap:8px;align-items:flex-start;max-width:1100px;width:100%}
+.game-scale-wrap{display:flex;justify-content:center;width:100%;overflow-x:auto;}
+.multi-layout{display:flex;gap:10px;align-items:flex-start;flex-shrink:0;transform-origin:top center;}
 .my-outer{display:flex;gap:6px;align-items:flex-start;flex-shrink:0}
 .side-col{display:flex;flex-direction:column;gap:6px;width:80px}
 .panel-box{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:7px}
@@ -111,7 +112,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
 .player-label.lp4{background:rgba(255,136,0,.1);border:1px solid var(--p4c);color:var(--p4c)}
 .player-label.dead{opacity:.4;filter:grayscale(1)}
 .player-name-tag{font-size:10px;color:var(--dim);letter-spacing:1px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#myCanvas{display:block;image-rendering:pixelated}
+#myCanvas{display:block;image-rendering:pixelated;border:1px solid var(--p1c);box-shadow:0 0 12px rgba(0,245,255,.3);}
 .board-with-garb{display:flex;gap:3px;align-items:flex-end}
 .garbage-bar{width:8px;height:400px;display:flex;flex-direction:column-reverse;gap:1px;padding:1px 0}
 .garb-cell{width:8px;height:18px;border-radius:1px;background:rgba(255,51,85,.85);box-shadow:0 0 4px rgba(255,51,85,.6);flex-shrink:0}
@@ -128,8 +129,8 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
 .action-popup{position:absolute;top:20px;left:50%;transform:translateX(-50%);font-family:'Press Start 2P',monospace;font-size:7px;color:var(--accent3);text-shadow:0 0 10px rgba(170,255,0,.8);pointer-events:none;opacity:0;white-space:nowrap;z-index:5}
 .action-popup.show{opacity:1;animation:popUp .8s ease-out forwards}
 @keyframes popUp{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-30px)}}
-.opponents-area{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;flex:1}
-.opp-section{display:flex;flex-direction:column;align-items:center;gap:3px}
+.opponents-area{display:flex;flex-wrap:nowrap;gap:10px;align-items:flex-start;flex-shrink:0}
+.opp-section{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0}
 .opp-canvas-wrap{position:relative}
 .opp-dead-overlay{position:absolute;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;font-family:'Press Start 2P',monospace;font-size:8px;color:var(--red)}
 .opp-dead-overlay.show{display:flex}
@@ -264,6 +265,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
       <button class="btn btn-secondary" style="width:auto;padding:5px 10px;font-size:8px;" onclick="leaveRoom()">QUIT</button>
     </div>
   </div>
+  <div class="game-scale-wrap" id="gameScaleWrap">
   <div class="multi-layout" id="multiLayout">
     <div class="my-outer">
       <div class="side-col">
@@ -309,6 +311,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
     </div>
     <div class="opponents-area" id="opponentsArea"></div>
   </div>
+  </div><!-- /gameScaleWrap -->
   <div class="controls-hint">
     <div class="key-hint"><span class="key">← →</span> 移動</div>
     <div class="key-hint"><span class="key">↑/X</span> 回転(右)</div>
@@ -576,25 +579,68 @@ function clearBoards(){
   const mb=document.getElementById('myMusicBanner');if(mb)mb.style.display='none';
 }
 function buildOppArea(activeSlots){
-  const area=document.getElementById('opponentsArea');area.innerHTML='';Object.keys(oppInfo).forEach(k=>delete oppInfo[k]);
-  const ops=activeSlots.filter(s=>s!==mySlot);const n=ops.length;
-  const W=n<=1?150:n===2?120:100,H=n<=1?300:n===2?240:200;
+  const area=document.getElementById('opponentsArea');
+  area.innerHTML='';
+  Object.keys(oppInfo).forEach(k=>delete oppInfo[k]);
+  const ops=activeSlots.filter(s=>s!==mySlot);
+  const W=200,H=400; // Full size — same as player board
   ops.forEach(sk=>{
     const idx=parseInt(sk.replace('p',''));
-    const sec=document.createElement('div');sec.className='opp-section';sec.id='oppSec_'+sk;
+    const sec=document.createElement('div');
+    sec.className='opp-section';sec.id='oppSec_'+sk;
+    // Label + name
     const lb=document.createElement('div');lb.className=`player-label ${SLCLS[idx]||'lp2'}`;lb.textContent='P'+idx;lb.id='oppLabel_'+sk;
     const nt=document.createElement('div');nt.className='player-name-tag';nt.id='oppName_'+sk;nt.textContent='...';
-    const wrap=document.createElement('div');wrap.className='opp-canvas-wrap';
-    const cvs=document.createElement('canvas');cvs.id='oppCvs_'+sk;cvs.width=W;cvs.height=H;cvs.style.cssText=`border:1px solid ${SBORDER[idx]||'#ff0080'};box-shadow:0 0 10px ${SGLOW[idx]||'rgba(255,0,128,.3)'};display:block;image-rendering:pixelated`;
+    // Canvas wrap
+    const wrap=document.createElement('div');wrap.className='opp-canvas-wrap';wrap.style.position='relative';
+    const cvs=document.createElement('canvas');
+    cvs.id='oppCvs_'+sk;cvs.width=W;cvs.height=H;
+    cvs.style.cssText=`border:1px solid ${SBORDER[idx]||'#ff0080'};box-shadow:0 0 12px ${SGLOW[idx]||'rgba(255,0,128,.3)'};display:block;image-rendering:pixelated`;
     const dead=document.createElement('div');dead.className='opp-dead-overlay';dead.id='oppDead_'+sk;dead.textContent='OUT';
+    // Score tag
     const stag=document.createElement('div');stag.className='opp-score-tag';stag.id='oppScore_'+sk;stag.textContent='0';
-    const musicTag=document.createElement('div');musicTag.id='oppMusic_'+sk;
-    musicTag.style.cssText='max-width:'+W+'px;overflow:hidden;display:none;margin-top:3px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.25);border-radius:2px;padding:2px 5px;';
-    musicTag.innerHTML='<div id="oppMusicNote_'+sk+'" style="font-size:7px;color:#aaff00;letter-spacing:1px;"></div><div id="oppMusicTitle_'+sk+'" style="font-size:8px;color:#e0f0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0px;font-weight:700;"></div>';
-    wrap.appendChild(cvs);wrap.appendChild(dead);sec.appendChild(lb);sec.appendChild(nt);sec.appendChild(wrap);sec.appendChild(stag);sec.appendChild(musicTag);area.appendChild(sec);
+    // Music tag — full width, 2-line display
+    const musicTag=document.createElement('div');
+    musicTag.id='oppMusic_'+sk;
+    musicTag.style.cssText=`max-width:${W}px;width:${W}px;overflow:hidden;display:none;margin-top:3px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.25);border-radius:2px;padding:3px 7px;`;
+    musicTag.innerHTML=`<div id="oppMusicNote_${sk}" style="font-size:7px;color:#aaff00;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div><div id="oppMusicTitle_${sk}" style="font-size:9px;color:#e0f0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;margin-top:1px;"></div>`;
+    wrap.appendChild(cvs);wrap.appendChild(dead);
+    sec.appendChild(lb);sec.appendChild(nt);sec.appendChild(wrap);sec.appendChild(stag);sec.appendChild(musicTag);
+    area.appendChild(sec);
     oppInfo[sk]={canvas:cvs,W,H,alive:true};
   });
+  // Scale after DOM has been painted
+  requestAnimationFrame(()=> requestAnimationFrame(scaleGameLayout));
 }
+
+// ── Auto-scale game layout to fit viewport width ──
+function scaleGameLayout(){
+  const layout = document.getElementById('multiLayout');
+  if(!layout) return;
+
+  // Reset first so we can measure natural size
+  layout.style.transform = '';
+  layout.style.marginBottom = '';
+
+  // Use offsetWidth (not scrollWidth) for natural rendered width
+  const naturalW = layout.offsetWidth;
+  if(!naturalW) return; // not visible yet
+
+  const padding = 32; // 16px each side
+  const availW = window.innerWidth - padding;
+
+  if(naturalW > availW){
+    const scale = availW / naturalW;
+    layout.style.transform = `scale(${scale})`;
+    layout.style.transformOrigin = 'top center';
+    // Pull content up to fill the gap left by scaling
+    const naturalH = layout.offsetHeight;
+    const collapsedH = naturalH * scale;
+    const gap = naturalH - collapsedH;
+    layout.style.marginBottom = `-${gap}px`;
+  }
+}
+window.addEventListener('resize', scaleGameLayout);
 
 window.setMaxPlayers=(n)=>{_maxPlayers=n;[2,3,4].forEach(x=>{const b=document.getElementById('maxBtn'+x);if(b)b.className='max-btn'+(x===n?' sel':'');});};
 window.copyRoomCode=()=>{if(!roomCode)return;navigator.clipboard?.writeText(roomCode).then(()=>showToast('コードをコピーしました！','ok')).catch(()=>showToast('コード: '+roomCode));};
