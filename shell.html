@@ -762,21 +762,32 @@ function getPl(id){ return playlists.find(p=>p.id===id); }
 
 function newPlaylist(){
   showModal('新しいプレイリスト名', '', name=>{
-    if(!name.trim()) return;
+    if(!name||!name.trim()) return;
     if(!fbDb){ showToast('クラウド未接続。再読み込みしてください'); return; }
-    const pl={id:Date.now()+'_'+Math.random().toString(36).slice(2), name:name.trim(), songs:[], createdAt:Date.now(), updatedAt:Date.now()};
-    fbSavePl(pl);
+    const pl={
+      id: Date.now()+'_'+Math.random().toString(36).slice(2),
+      name: name.trim(), songs: [],
+      createdAt: Date.now(), updatedAt: Date.now()
+    };
+    // Optimistic update: add locally right away so UI responds instantly
+    playlists.push(pl);
     selPl=pl.id;
-    swTab('playlists'); openDrawer();
+    renderPlSidebar();
+    renderPlDetail();
+    swTab('playlists');
+    openDrawer();
     showToast(`「${pl.name}」を作成しました`);
+    // Then persist to Firebase (listener will sync back but local state is already correct)
+    fbSavePl(pl);
   });
 }
 
 function renamePl(id){
   const pl=getPl(id); if(!pl) return;
   showModal('プレイリスト名を変更', pl.name, name=>{
-    if(!name.trim()) return;
+    if(!name||!name.trim()) return;
     pl.name=name.trim();
+    renderPlSidebar(); renderPlDetail();
     fbSavePl(pl);
     showToast('名前を変更しました');
   });
@@ -950,9 +961,10 @@ function showModal(title, defaultVal, cb){
   inp.onkeydown=e=>{ if(e.key==='Enter') modalConfirm(); if(e.key==='Escape') closeModal(); };
 }
 function modalConfirm(){
-  const v=document.getElementById('modalInput').value;
+  const v=document.getElementById('modalInput').value.trim();
+  const cb=modalCb;   // ← closeModalの前に保存
   closeModal();
-  if(modalCb) modalCb(v);
+  if(cb) cb(v);
 }
 function closeModal(){
   document.getElementById('modal').classList.remove('show');
