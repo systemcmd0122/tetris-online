@@ -335,10 +335,12 @@
 <div class="screen" id="gameScreen">
   <div class="game-header">
     <span class="game-title">TETRIS BATTLE</span>
-    <div id="oppMusicBanner" style="display:none;align-items:center;gap:6px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.3);border-radius:3px;padding:4px 10px;flex:1;margin:0 10px;min-width:0;overflow:hidden;">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="#aaff00" style="flex-shrink:0"><path d="M2 8V3l7-1.5v5"/><circle cx="1.5" cy="8" r="1.5"/><circle cx="7.5" cy="6.5" r="1.5"/></svg>
-      <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(170,255,0,0.7);flex-shrink:0;letter-spacing:1px;">OPP:</span>
-      <span id="oppMusicTitle" style="font-size:9px;color:#aaff00;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:1px;min-width:0;"></span>
+    <div id="oppMusicBanner" style="display:none;align-items:center;gap:6px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.3);border-radius:3px;padding:4px 10px;flex:1;margin:0 10px;min-width:0;overflow:hidden;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:5px;width:100%;min-width:0;">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="#aaff00" style="flex-shrink:0"><path d="M2 8V3l7-1.5v5"/><circle cx="1.5" cy="8" r="1.5"/><circle cx="7.5" cy="6.5" r="1.5"/></svg>
+        <span id="oppMusicPlaylistLabel" style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(170,255,0,0.6);flex-shrink:0;letter-spacing:1px;white-space:nowrap;"></span>
+        <span id="oppMusicTitle" style="font-size:9px;color:#aaff00;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0px;font-weight:700;min-width:0;"></span>
+      </div>
     </div>
     <div class="game-header-right">
       <button class="sound-btn on" id="soundBtn" onclick="toggleSound()">
@@ -1239,8 +1241,10 @@ async function startGame(preloadedData){
     // Show opponent's music
     const banner=document.getElementById('oppMusicBanner');
     const titleEl=document.getElementById('oppMusicTitle');
+    const plLabel=document.getElementById('oppMusicPlaylistLabel');
     if(d.music){
       titleEl.textContent=d.music;
+      if(plLabel) plLabel.textContent = d.musicPlaylist ? '['+d.musicPlaylist+']' : '♪ OPP';
       banner.style.display='flex';
     } else {
       banner.style.display='none';
@@ -1294,9 +1298,9 @@ async function startGame(preloadedData){
       // Attach currently playing music info for opponent to see
       try{
         const np=localStorage.getItem('yt_nowplaying');
-        if(np){ const m=JSON.parse(np); gameData.music=m.title||''; }
-        else{ gameData.music=''; }
-      }catch(e){ gameData.music=''; }
+        if(np){ const m=JSON.parse(np); gameData.music=m.title||''; gameData.musicPlaylist=m.playlist||''; }
+        else{ gameData.music=''; gameData.musicPlaylist=''; }
+      }catch(e){ gameData.music=''; gameData.musicPlaylist=''; }
       set(ref(db,`rooms/${roomCode}/game/${myRole}`),gameData).catch(()=>{});
       if(pendingGarbageOut>0){
         const gn=pendingGarbageOut;pendingGarbageOut=0;

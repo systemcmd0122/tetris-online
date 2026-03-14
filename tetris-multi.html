@@ -588,7 +588,9 @@ function buildOppArea(activeSlots){
     const cvs=document.createElement('canvas');cvs.id='oppCvs_'+sk;cvs.width=W;cvs.height=H;cvs.style.cssText=`border:1px solid ${SBORDER[idx]||'#ff0080'};box-shadow:0 0 10px ${SGLOW[idx]||'rgba(255,0,128,.3)'};display:block;image-rendering:pixelated`;
     const dead=document.createElement('div');dead.className='opp-dead-overlay';dead.id='oppDead_'+sk;dead.textContent='OUT';
     const stag=document.createElement('div');stag.className='opp-score-tag';stag.id='oppScore_'+sk;stag.textContent='0';
-    const musicTag=document.createElement('div');musicTag.id='oppMusic_'+sk;musicTag.style.cssText='font-size:8px;color:#aaff00;letter-spacing:1px;max-width:'+W+'px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:none;margin-top:2px;';
+    const musicTag=document.createElement('div');musicTag.id='oppMusic_'+sk;
+    musicTag.style.cssText='max-width:'+W+'px;overflow:hidden;display:none;margin-top:3px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.25);border-radius:2px;padding:2px 5px;';
+    musicTag.innerHTML='<div id="oppMusicNote_'+sk+'" style="font-size:7px;color:#aaff00;letter-spacing:1px;"></div><div id="oppMusicTitle_'+sk+'" style="font-size:8px;color:#e0f0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0px;font-weight:700;"></div>';
     wrap.appendChild(cvs);wrap.appendChild(dead);sec.appendChild(lb);sec.appendChild(nt);sec.appendChild(wrap);sec.appendChild(stag);sec.appendChild(musicTag);area.appendChild(sec);
     oppInfo[sk]={canvas:cvs,W,H,alive:true};
   });
@@ -723,7 +725,17 @@ async function startGame(roomData){
       const sc=document.getElementById('oppScore_'+sk);if(sc)sc.textContent=od.score+' pts';
       // Show opponent music
       const mn=document.getElementById('oppMusic_'+sk);
-      if(mn){mn.textContent=od.music?od.music:'';mn.style.display=od.music?'block':'none';}
+      if(mn){
+        if(od.music||od.musicPlaylist){
+          mn.style.display='block';
+          const noteEl=document.getElementById('oppMusicNote_'+sk);
+          const titleEl=document.getElementById('oppMusicTitle_'+sk);
+          if(noteEl) noteEl.textContent = od.musicPlaylist ? '♪ ['+od.musicPlaylist+']' : '♪ NOW PLAYING';
+          if(titleEl) titleEl.textContent = od.music||'';
+        } else {
+          mn.style.display='none';
+        }
+      }
       if(od.gameOver&&oc&&oc.alive){
         oc.alive=false;
         const dd=document.getElementById('oppDead_'+sk);if(dd)dd.classList.add('show');
@@ -769,14 +781,22 @@ async function startGame(roomData){
         const np=localStorage.getItem('yt_nowplaying');
         const banner=document.getElementById('myMusicBanner');
         const titleEl=document.getElementById('myMusicTitle');
-        if(np&&banner&&titleEl){const m=JSON.parse(np);titleEl.textContent=m.title||'';banner.style.display=m.title?'flex':'none';}
-        else if(banner){banner.style.display='none';}
+        if(np&&banner&&titleEl){
+          const m=JSON.parse(np);
+          const label = m.playlist ? `[${m.playlist}] ${m.title||''}` : (m.title||'');
+          titleEl.textContent=label;
+          banner.style.display=m.title?'flex':'none';
+        } else if(banner){banner.style.display='none';}
       }catch(e){}
     }
     if(ts-lastPush>PUSH){
       lastPush=ts;
       const gd=game.serialize();
-      try{const np=localStorage.getItem('yt_nowplaying');gd.music=np?JSON.parse(np).title||'':'';}catch(e){gd.music='';}
+      try{
+        const np=localStorage.getItem('yt_nowplaying');
+        if(np){ const m=JSON.parse(np); gd.music=m.title||''; gd.musicPlaylist=m.playlist||''; }
+        else{ gd.music=''; gd.musicPlaylist=''; }
+      }catch(e){gd.music='';gd.musicPlaylist='';}
       set(ref(db,'multi/'+roomCode+'/game/'+mySlot),gd).catch(()=>{});
       if(pendOut>0){
         const gn=pendOut;pendOut=0;

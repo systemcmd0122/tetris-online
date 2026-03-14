@@ -347,6 +347,7 @@
         <span>MY LISTS</span>
         <button class="pl-new-btn" onclick="newPlaylist()">＋ NEW</button>
       </div>
+      <div id="plSyncStatus" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--acc3);padding:3px 8px;letter-spacing:1px;opacity:0.7;">CONNECTING...</div>
       <div id="plList"></div>
     </div>
     <!-- detail -->
@@ -402,12 +403,23 @@
 <!-- Hidden YT player -->
 <div id="ytHidden"><div id="ytPlayer"></div></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 // ════════════════════════════════════════
 //  CONFIG
 // ════════════════════════════════════════
 const YT_KEY = 'AIzaSyCZbk49tTvV6sgnbMOMCwDbQWG28NfEroY';
+const FB_CONFIG = {
+  apiKey:"AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
+  authDomain:"tetris-online-9c827.firebaseapp.com",
+  databaseURL:"https://tetris-online-9c827-default-rtdb.firebaseio.com",
+  projectId:"tetris-online-9c827",
+  storageBucket:"tetris-online-9c827.firebasestorage.app",
+  messagingSenderId:"1045054992314",
+  appId:"1:1045054992314:web:7fea20b9be543d7cab3783"
+};
 const GENRES = [
   {l:'TETRIS', q:'tetris music remix'},
   {l:'TECHNO',   q:'techno electronic music'},
@@ -428,16 +440,43 @@ let queue = [], qi = -1;         // playback queue
 let shuffle = false, repeatAll = false, repeatOne = false;
 let results = [];                 // search results
 let drawerOpen = false;
-let playlists = [];               // [{id,name,songs:[{id,title,channel,thumb}]}]
+let playlists = [];               // [{id,name,songs:[{id,title,channel,thumb}]}] — synced from Firebase
 let selPl = null;                 // selected playlist id
 let modalCb = null;               // modal confirm callback
 let dropTarget = null;            // song waiting to be added to playlist
+let fbDb = null;                  // Firebase Realtime Database
+
+// ════════════════════════════════════════
+//  FIREBASE INIT
+// ════════════════════════════════════════
+function initFirebase(){
+  try{
+    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB_CONFIG);
+    fbDb = firebase.database(app);
+    // Real-time sync of shared playlists
+    fbDb.ref('shared_playlists').on('value', snap => {
+      const data = snap.val() || {};
+      playlists = Object.values(data)
+        .filter(p => p && p.id && p.name)
+        .sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
+      renderPlSidebar();
+      if(selPl && !getPl(selPl)) selPl = null;
+      renderPlDetail();
+      document.getElementById('plBadge').textContent = playlists.length ? `(${playlists.length})` : '';
+    });
+    // Show connection status
+    fbDb.ref('.info/connected').on('value', snap => {
+      const el = document.getElementById('plSyncStatus');
+      if(el) el.textContent = snap.val() ? 'CLOUD SYNC ON' : 'CONNECTING...';
+    });
+  }catch(e){ console.error('Firebase init error:', e); showToast('クラウド接続エラー'); }
+}
 
 // ════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════
 (function init(){
-  loadPlaylists();
+  initFirebase();
   initGenres();
   const sv = ls('yt_vol');
   if(sv !== null){
@@ -450,7 +489,7 @@ let dropTarget = null;            // song waiting to be added to playlist
       closeDrop();
     }
   });
-  // parse share URL
+  // Import shared playlist from URL
   const params = new URLSearchParams(location.search);
   const shared = params.get('pl');
   if(shared){
@@ -458,10 +497,10 @@ let dropTarget = null;            // song waiting to be added to playlist
       const pl = JSON.parse(atob(shared));
       if(pl && pl.name && Array.isArray(pl.songs)){
         pl.id = Date.now()+'_'+Math.random().toString(36).slice(2);
-        playlists.push(pl);
-        savePlaylists();
+        pl.createdAt = Date.now();
+        if(fbDb){ fbDb.ref('shared_playlists/'+pl.id).set(pl); }
         showToast(`「${pl.name}」をインポートしました`);
-        swTab('playlists'); selPl = pl.id; renderPlSidebar(); renderPlDetail();
+        selPl = pl.id; swTab('playlists'); openDrawer();
       }
     }catch(e){}
     history.replaceState(null,'',location.pathname);
@@ -659,19 +698,30 @@ function updateQBadge(){
 // ════════════════════════════════════════
 //  BAR UPDATE
 // ════════════════════════════════════════
+// Track which playlist is currently being played from
+let currentPlaylistId = null;
+
 function updateBar(){
   if(qi>=0&&queue[qi]){
     const it=queue[qi];
+    // Find if this song belongs to a playlist
+    let plName = '';
+    if(currentPlaylistId){
+      const pl = getPl(currentPlaylistId);
+      if(pl && pl.songs.some(s=>s.id===it.id)) plName = pl.name;
+      else currentPlaylistId = null;
+    }
     document.getElementById('npTop').textContent='NOW PLAYING';
     document.getElementById('npTitle').textContent=it.title;
-    document.getElementById('npSub').textContent=it.channel;
-    // Broadcast for in-game music display
-    try{ localStorage.setItem('yt_nowplaying', JSON.stringify({title:it.title, channel:it.channel, id:it.id})); }catch(e){}
+    document.getElementById('npSub').textContent=plName ? `[${plName}] ${it.channel}` : it.channel;
+    // Broadcast for in-game music display (includes playlist name)
+    try{ localStorage.setItem('yt_nowplaying', JSON.stringify({title:it.title, channel:it.channel, id:it.id, playlist:plName})); }catch(e){}
   } else {
     document.getElementById('npTop').textContent='MUSIC';
     document.getElementById('npTitle').textContent='曲を選んでください';
     document.getElementById('npSub').textContent='SEARCH または PLAYLIST から';
     try{ localStorage.removeItem('yt_nowplaying'); }catch(e){}
+    currentPlaylistId = null;
   }
 }
 
@@ -685,24 +735,38 @@ function updateResultHighlight(id){
 }
 
 // ════════════════════════════════════════
-//  PLAYLISTS — DATA
+//  PLAYLISTS — DATA (Firebase Cloud)
 // ════════════════════════════════════════
 function loadPlaylists(){
-  try{ playlists=JSON.parse(localStorage.getItem('tb_playlists')||'[]'); }catch(e){ playlists=[]; }
+  // Handled by Firebase real-time listener in initFirebase()
+  // Fallback: render empty state
   renderPlSidebar();
 }
-function savePlaylists(){
-  localStorage.setItem('tb_playlists', JSON.stringify(playlists));
-  document.getElementById('plBadge').textContent=playlists.length?`(${playlists.length})`:'';
+function fbSavePl(pl){
+  // Write single playlist to Firebase
+  if(!fbDb){ showToast('クラウド未接続'); return; }
+  const clean = {
+    id: pl.id,
+    name: pl.name,
+    songs: pl.songs.map(s=>({id:s.id, title:s.title, channel:s.channel, thumb:s.thumb||''})),
+    createdAt: pl.createdAt || Date.now(),
+    updatedAt: Date.now()
+  };
+  fbDb.ref('shared_playlists/'+pl.id).set(clean).catch(e=>{ showToast('保存エラー: '+e.message); });
+}
+function fbDeletePl(id){
+  if(!fbDb){ showToast('クラウド未接続'); return; }
+  fbDb.ref('shared_playlists/'+id).remove().catch(e=>{ showToast('削除エラー: '+e.message); });
 }
 function getPl(id){ return playlists.find(p=>p.id===id); }
 
 function newPlaylist(){
   showModal('新しいプレイリスト名', '', name=>{
     if(!name.trim()) return;
-    const pl={id:Date.now()+'_'+Math.random().toString(36).slice(2), name:name.trim(), songs:[]};
-    playlists.push(pl); savePlaylists();
-    selPl=pl.id; renderPlSidebar(); renderPlDetail();
+    if(!fbDb){ showToast('クラウド未接続。再読み込みしてください'); return; }
+    const pl={id:Date.now()+'_'+Math.random().toString(36).slice(2), name:name.trim(), songs:[], createdAt:Date.now(), updatedAt:Date.now()};
+    fbSavePl(pl);
+    selPl=pl.id;
     swTab('playlists'); openDrawer();
     showToast(`「${pl.name}」を作成しました`);
   });
@@ -712,33 +776,32 @@ function renamePl(id){
   const pl=getPl(id); if(!pl) return;
   showModal('プレイリスト名を変更', pl.name, name=>{
     if(!name.trim()) return;
-    pl.name=name.trim(); savePlaylists();
-    renderPlSidebar(); renderPlDetail();
+    pl.name=name.trim();
+    fbSavePl(pl);
     showToast('名前を変更しました');
   });
 }
 
 function deletePl(id){
   const pl=getPl(id); if(!pl) return;
-  if(!confirm(`「${pl.name}」を削除しますか？`)) return;
-  playlists=playlists.filter(p=>p.id!==id);
+  if(!confirm(`「${pl.name}」を削除しますか？\n（全員の画面から削除されます）`)) return;
   if(selPl===id) selPl=null;
-  savePlaylists(); renderPlSidebar(); renderPlDetail();
+  fbDeletePl(id);
   showToast('削除しました');
 }
 
 function addSongToPl(plId, song){
   const pl=getPl(plId); if(!pl) return;
   if(pl.songs.some(s=>s.id===song.id)){ showToast('既に追加されています'); return; }
-  pl.songs.push(song); savePlaylists();
-  if(selPl===plId) renderPlDetail();
+  pl.songs.push({id:song.id, title:song.title, channel:song.channel, thumb:song.thumb||''});
+  fbSavePl(pl);
   showToast(`「${pl.name}」に追加しました`);
 }
 
 function removeSongFromPl(plId, songId){
   const pl=getPl(plId); if(!pl) return;
   pl.songs=pl.songs.filter(s=>s.id!==songId);
-  savePlaylists(); renderPlDetail();
+  fbSavePl(pl); renderPlDetail();
 }
 
 function moveSong(plId, idx, dir){
@@ -746,7 +809,7 @@ function moveSong(plId, idx, dir){
   const ni=idx+dir;
   if(ni<0||ni>=pl.songs.length) return;
   [pl.songs[idx],pl.songs[ni]]=[pl.songs[ni],pl.songs[idx]];
-  savePlaylists(); renderPlDetail();
+  fbSavePl(pl); renderPlDetail();
 }
 
 // ════════════════════════════════════════
@@ -804,6 +867,7 @@ function renderPlDetail(){
 
 function playPlaylist(plId){
   const pl=getPl(plId); if(!pl||!pl.songs.length) return;
+  currentPlaylistId=plId;
   queue=[...pl.songs]; qi=0;
   renderQueue(); playIdx(0);
   showToast(`「${pl.name}」を再生中`);
@@ -811,6 +875,7 @@ function playPlaylist(plId){
 
 function playFromPlaylist(plId, idx){
   const pl=getPl(plId); if(!pl) return;
+  currentPlaylistId=plId;
   queue=[...pl.songs]; qi=idx;
   renderQueue(); playIdx(idx);
 }
@@ -860,8 +925,11 @@ function closeDrop(){ document.getElementById('plDropdown').classList.remove('sh
 // ════════════════════════════════════════
 function sharePlaylist(plId){
   const pl=getPl(plId); if(!pl) return;
-  const data=btoa(JSON.stringify({name:pl.name, songs:pl.songs}));
+  // Since playlists are cloud-shared, just copy the playlist name + song count info
+  // Also provide a URL with base64 data as fallback for cross-server sharing
+  const data=btoa(unescape(encodeURIComponent(JSON.stringify({name:pl.name, songs:pl.songs}))));
   const url=location.origin+location.pathname+'?pl='+data;
+  const msg = `[${pl.name}] ${pl.songs.length}曲\n${url}`;
   navigator.clipboard.writeText(url).then(()=>{
     showToast('共有URLをコピーしました！');
   }).catch(()=>{
