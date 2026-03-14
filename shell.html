@@ -363,9 +363,9 @@
 <div id="bar">
   <button id="openBtn" onclick="toggleDrawer()"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 13V5.5l9-2v7.5"/><circle cx="2" cy="13" r="2"/><circle cx="11" cy="11" r="2"/></svg></button>
   <div class="bar-inner">
-    <button class="tr" onclick="playPrev()">⏮</button>
-    <button class="tr" id="btnPP" onclick="togglePP()">▶</button>
-    <button class="tr" onclick="playNext()">⏭</button>
+    <button class="tr" onclick="playPrev()" title="前の曲"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><rect x="1" y="2" width="2" height="9"/><polygon points="11,2 4,6.5 11,11"/></svg></button>
+    <button class="tr" id="btnPP" onclick="togglePP()"><svg id="barIconPlay" width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><polygon points="3,2 11,6.5 3,11"/></svg><svg id="barIconPause" width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="display:none"><rect x="2" y="2" width="3" height="9"/><rect x="8" y="2" width="3" height="9"/></svg></button>
+    <button class="tr" onclick="playNext()" title="次の曲"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><rect x="10" y="2" width="2" height="9"/><polygon points="2,2 9,6.5 2,11"/></svg></button>
     <div id="npWrap">
       <div id="npTop">MUSIC</div>
       <div id="npTitle">曲を選んでください</div>
@@ -484,8 +484,8 @@ function onYouTubeIframeAPIReady(){
 }
 function onSC(e){
   if(e.data===YT.PlayerState.ENDED){ repeatOne?(yt.seekTo(0),yt.playVideo()):playNext(); }
-  if(e.data===YT.PlayerState.PLAYING){ document.getElementById('btnPP').textContent='⏸'; }
-  if(e.data===YT.PlayerState.PAUSED||e.data===YT.PlayerState.CUED){ document.getElementById('btnPP').textContent='▶'; }
+  if(e.data===YT.PlayerState.PLAYING){ document.getElementById('barIconPlay').style.display='none';document.getElementById('barIconPause').style.display=''; }
+  if(e.data===YT.PlayerState.PAUSED||e.data===YT.PlayerState.CUED){ document.getElementById('barIconPlay').style.display='';document.getElementById('barIconPause').style.display='none'; }
 }
 
 // ════════════════════════════════════════
@@ -559,8 +559,8 @@ function renderResults(){
       <img class="ri-thumb" src="${item.thumb}" alt="" loading="lazy">
       <div class="ri-info"><div class="ri-ttl">${esc(item.title)}</div><div class="ri-ch">${esc(item.channel)}</div></div>
       <div class="ri-act">
-        <span class="ri-pl" title="プレイリストに追加"><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="2" width="10" height="1.5" rx=".5"/><rect x="1" y="5" width="10" height="1.5" rx=".5"/><rect x="1" y="8" width="6" height="1.5" rx=".5"/><path d="M8 7v4l1.5-1 1.5 1V7h-3z"/></svg></span>
-        <span class="ri-add" title="キューに追加して再生">${inQ?'[ON]':'+'}</span>
+        <span class="ri-pl" title="プレイリストに追加"><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style="pointer-events:none"><rect x="1" y="2" width="10" height="1.5" rx=".5"/><rect x="1" y="5" width="10" height="1.5" rx=".5"/><rect x="1" y="8" width="6" height="1.5" rx=".5"/><path d="M8 7v4l1.5-1 1.5 1V7h-3z"/></svg></span>
+        <span class="ri-add" title="キューに追加して再生">${inQ?'ON':'+'}</span>
       </div>`;
     div.querySelector('.ri-add').onclick=(e)=>{ e.stopPropagation(); addAndPlay(i); };
     div.querySelector('.ri-pl').onclick=(e)=>{ e.stopPropagation(); showDrop(item,e.currentTarget); };
@@ -602,7 +602,7 @@ function playNext(){
   if(repeatOne){ n=qi; }
   else if(shuffle){ n=Math.floor(Math.random()*queue.length); }
   else{ n=qi+1; if(n>=queue.length) n=repeatAll?0:-1; }
-  n>=0 ? playIdx(n) : (qi=-1, updateBar(), document.getElementById('btnPP').textContent='▶');
+  n>=0 ? playIdx(n) : (qi=-1, updateBar(), document.getElementById('barIconPlay').style.display='',document.getElementById('barIconPause').style.display='none');
 }
 function playPrev(){
   if(!queue.length) return;
@@ -631,7 +631,7 @@ function toggleMode(m){
 function clearQueue(){
   if(yt&&ytOk) yt.stopVideo();
   queue=[]; qi=-1; renderQueue(); updateBar();
-  document.getElementById('btnPP').textContent='▶';
+  document.getElementById('barIconPlay').style.display='';document.getElementById('barIconPause').style.display='none';
 }
 function renderQueue(){
   const list=document.getElementById('qlist');
@@ -681,7 +681,7 @@ function updateResultHighlight(id){
     el.querySelector('.ri-add').textContent='＋';
   });
   const el=document.getElementById('ri-'+id);
-  if(el){ el.classList.add('np'); el.querySelector('.ri-add').textContent='[ON]'; }
+  if(el){ el.classList.add('np'); el.querySelector('.ri-add').textContent='ON'; }
 }
 
 // ════════════════════════════════════════

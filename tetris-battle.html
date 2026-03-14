@@ -86,7 +86,7 @@
 
   /* Game */
   #gameScreen{padding:8px}
-  .game-header{width:100%;max-width:720px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .game-header{width:100%;max-width:720px;display:flex;align-items:center;gap:8px;margin-bottom:10px}
   .game-title{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--accent);text-shadow:0 0 20px rgba(0,245,255,.5)}
   .game-header-right{display:flex;gap:8px;align-items:center}
   .game-layout{display:flex;gap:10px;align-items:flex-start}
@@ -182,7 +182,7 @@
   .lock-flash.show{opacity:1}
   .board-wrap{position:relative}
 
-  .sound-btn{background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;padding:5px 10px;border-radius:2px;cursor:pointer;transition:all .2s}
+  .sound-btn{display:flex;align-items:center;gap:4px;background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;padding:5px 10px;border-radius:2px;cursor:pointer;transition:all .2s}
   .sound-btn.on{border-color:var(--accent3);color:var(--accent3)}
   .sound-btn:hover{border-color:var(--accent);color:var(--accent)}
 
@@ -929,6 +929,13 @@ function clearBoards(){
   document.getElementById('garbBar').innerHTML='';
   document.getElementById('attackBadge').classList.remove('show');
   statMaxCombo=0;statAtkSent=0;statAtkRecv=0;statTetris=0;
+  Object.keys(uiCache).forEach(k=>{uiCache[k]=-1});uiCache.b2b=null;
+  // Reset result overlay stats
+  ['rs-score','rs-level','rs-lines','rs-combo','rs-atk','rs-tetris'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.textContent='0';
+  });
+  // Hide music banner
+  const mb=document.getElementById('oppMusicBanner');if(mb)mb.style.display='none';
 }
 
 function offAll(){for(const[k,r]of Object.entries(_listeners)){if(r){try{off(r);}catch(e){}_listeners[k]=null;}}}
@@ -1016,6 +1023,7 @@ window.startBotGame=async(difficulty)=>{
   document.getElementById('oppLabel').className='player-label bot';
   document.getElementById('opponentCanvas').className='bot-canvas';
   document.getElementById('statusRoom').textContent='BOT MODE';
+  document.getElementById('oppMusicBanner').style.display='none';
   _prevScore=0;_prevCombo=-1;
   persistLog(`Bot game started: ${name} vs ${oppName}`, 'info', {player:name, bot:oppName});
 
@@ -1067,19 +1075,7 @@ window.startBotGame=async(difficulty)=>{
     updateGameUI();
     document.getElementById('oppNameTag').textContent=`${oppName} (${botGame.score})`;
 
-    // Show own music on banner (bot mode)
-    if(ts-_lastMusicCheck>2000){
-      _lastMusicCheck=ts;
-      try{
-        const np=localStorage.getItem('yt_nowplaying');
-        const banner=document.getElementById('oppMusicBanner');
-        const titleEl=document.getElementById('oppMusicTitle');
-        if(banner&&titleEl){
-          if(np){const m=JSON.parse(np);titleEl.textContent='[YOU] '+(m.title||'');banner.style.display=m.title?'flex':'none';}
-          else{banner.style.display='none';}
-        }
-      }catch(e){}
-    }
+    // Bot has no music — hide banner
 
     if(game.gameOver&&!endedOnce){endGame('LOSE');return;}
     if(botGame.gameOver&&!game.gameOver&&!endedOnce){endGame('WIN');return;}
@@ -1150,6 +1146,7 @@ window.leaveRoom=async()=>{
   document.getElementById('forceStopOverlay').classList.remove('show');
   document.getElementById('sysMsgBanner').classList.remove('show');
   document.getElementById('countdownOverlay').classList.remove('show');
+  document.getElementById('oppMusicBanner').style.display='none';
   // Reset opponent label to default
   document.getElementById('oppLabel').textContent='FOE';
   document.getElementById('oppLabel').className='player-label opp';
@@ -1323,6 +1320,7 @@ async function startGame(preloadedData){
 function endGame(result){
   if(endedOnce)return;
   endedOnce=true;gameRunning=false;
+  const _mb=document.getElementById('oppMusicBanner');if(_mb)_mb.style.display='none';
   persistLog(`Game ended in room ${roomCode}: ${result}`, result==='WIN'?'success':'info', {code:roomCode, result, score:game?.score});
   if(animId){cancelAnimationFrame(animId);animId=null;}
   if(!botMode)offAll();
