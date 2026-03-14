@@ -9,294 +9,367 @@
     :root {
       --bg:#04060f; --s0:#080d18; --s1:#0d1525; --s2:#111e33;
       --acc:#00f5ff; --acc2:#ff0080; --acc3:#aaff00;
-      --tx:#e0f0ff; --dim:#4a6080;
-      --bar:54px;
+      --tx:#e0f0ff; --dim:#4a6080; --bar:60px;
     }
     *{box-sizing:border-box;margin:0;padding:0;}
     html,body{height:100%;overflow:hidden;background:var(--bg);}
     body{display:flex;flex-direction:column;font-family:'Orbitron',monospace;}
 
-    /* ═══ MAIN IFRAME ═══ */
-    #mainFrame{
-      flex:1; border:none; width:100%;
-      display:block; min-height:0;
-    }
+    /* ── MAIN IFRAME ── */
+    #mainFrame{flex:1;border:none;width:100%;display:block;min-height:0;}
 
-    /* ═══ MUSIC BAR ═══ */
+    /* ── MUSIC BAR ── */
     #bar{
-      height:var(--bar); flex-shrink:0;
-      background:var(--s0);
-      border-top:1px solid rgba(0,245,255,.12);
-      display:flex; align-items:center;
-      position:relative; z-index:200; overflow:hidden;
+      height:var(--bar);flex-shrink:0;
+      background:var(--s0);border-top:1px solid rgba(0,245,255,.12);
+      display:flex;align-items:center;
+      position:relative;z-index:200;
     }
     #bar::before{
-      content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      content:'';position:absolute;top:0;left:0;right:0;height:2px;
       background:linear-gradient(90deg,#cc00ff,#0066ff,#00f5ff,#aaff00,#ff8800,#ff0040,#cc00ff);
-      background-size:300% 100%; animation:rb 3s linear infinite;
+      background-size:300% 100%;animation:rb 3s linear infinite;
     }
     @keyframes rb{0%{background-position:0%}100%{background-position:300%}}
 
-    /* open drawer btn */
     #openBtn{
-      height:100%; width:48px; flex-shrink:0;
-      background:rgba(170,255,0,.07); border:none;
+      height:100%;width:56px;flex-shrink:0;
+      background:rgba(170,255,0,.07);border:none;
       border-right:1px solid rgba(0,245,255,.1);
-      color:var(--acc3); font-size:20px; cursor:pointer;
-      transition:background .2s; display:flex; align-items:center; justify-content:center;
+      color:var(--acc3);font-size:22px;cursor:pointer;
+      transition:background .2s;display:flex;align-items:center;justify-content:center;
     }
     #openBtn:hover{background:rgba(170,255,0,.18);}
-    #openBtn.active{color:var(--acc); background:rgba(0,245,255,.1);}
+    #openBtn.active{color:var(--acc);background:rgba(0,245,255,.12);}
 
-    .bar-inner{flex:1; display:flex; align-items:center; gap:8px; padding:0 10px; min-width:0; overflow:hidden;}
+    .bar-inner{flex:1;display:flex;align-items:center;gap:6px;padding:0 10px;min-width:0;overflow:hidden;}
 
-    /* transport */
-    .tr{background:none; border:none; color:var(--acc); font-size:15px; padding:5px 7px; border-radius:2px; cursor:pointer; transition:all .15s; flex-shrink:0;}
+    .tr{background:none;border:none;color:var(--acc);font-size:18px;width:36px;height:36px;
+      border-radius:4px;cursor:pointer;transition:all .15s;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;}
     .tr:hover{background:rgba(0,245,255,.1);}
     .tr:active{transform:scale(.88);}
-    #btnPP{font-size:19px;}
 
-    /* now playing */
-    #npWrap{flex:1; min-width:0; overflow:hidden;}
-    #npTop{font-family:'Press Start 2P',monospace; font-size:6px; color:var(--acc3); letter-spacing:2px; margin-bottom:2px;}
-    #npTitle{font-size:11px; font-weight:700; color:var(--acc); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    #npSub{font-size:9px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px;}
+    #npWrap{flex:1;min-width:0;overflow:hidden;}
+    #npLabel{font-family:'Press Start 2P',monospace;font-size:6px;color:var(--acc3);letter-spacing:2px;margin-bottom:3px;}
+    #npTitle{font-size:12px;font-weight:700;color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    #npSub{font-size:10px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
 
-    /* volume */
-    .vol{display:flex; align-items:center; gap:5px; flex-shrink:0; width:100px;}
-    .vi{font-size:12px; color:var(--dim);}
+    .vol{display:flex;align-items:center;gap:6px;flex-shrink:0;width:110px;}
+    .vi{color:var(--dim);flex-shrink:0;}
     input[type=range]{
-      -webkit-appearance:none; flex:1; height:3px;
+      -webkit-appearance:none;flex:1;height:3px;
       background:linear-gradient(90deg,var(--acc) var(--p,70%),rgba(74,96,128,.4) var(--p,70%));
-      border-radius:2px; cursor:pointer; outline:none;
+      border-radius:2px;cursor:pointer;outline:none;
     }
     input[type=range]::-webkit-slider-thumb{
-      -webkit-appearance:none; width:11px; height:11px;
-      background:var(--acc); border-radius:50%; box-shadow:0 0 4px var(--acc);
+      -webkit-appearance:none;width:13px;height:13px;
+      background:var(--acc);border-radius:50%;box-shadow:0 0 5px var(--acc);
     }
 
-    /* ═══ DRAWER ═══ */
+    /* ── DRAWER ── */
     #drawer{
-      position:fixed; bottom:var(--bar); left:0; right:0;
-      height:480px; max-height:calc(100vh - var(--bar) - 60px);
-      background:var(--s0); border-top:1px solid rgba(0,245,255,.2);
-      z-index:199; display:flex; flex-direction:column;
-      transform:translateY(100%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+      position:fixed;bottom:var(--bar);left:0;right:0;
+      height:520px;max-height:calc(100vh - var(--bar) - 50px);
+      background:var(--s0);border-top:2px solid rgba(0,245,255,.2);
+      z-index:199;display:flex;flex-direction:column;
+      transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
     }
     #drawer.open{transform:translateY(0);}
 
     /* drawer header */
     .dh{
-      display:flex; align-items:center; gap:8px;
-      padding:9px 12px; border-bottom:1px solid rgba(0,245,255,.1); flex-shrink:0;
+      display:flex;align-items:center;gap:8px;
+      padding:10px 14px;border-bottom:1px solid rgba(0,245,255,.1);flex-shrink:0;
     }
-    .dh-title{font-family:'Press Start 2P',monospace; font-size:8px; color:var(--acc); flex:1; letter-spacing:1px;}
-    .dh-btn{
-      background:none; border:1px solid rgba(0,245,255,.2); color:var(--dim);
-      font-size:11px; padding:3px 8px; border-radius:2px; cursor:pointer; transition:all .15s;
-      font-family:'Press Start 2P',monospace; font-size:7px; letter-spacing:1px;
+    .dh-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--acc);flex:1;letter-spacing:1px;}
+    .dh-close{
+      background:none;border:1px solid rgba(255,0,128,.3);color:var(--dim);
+      font-family:'Press Start 2P',monospace;font-size:7px;
+      padding:5px 10px;border-radius:3px;cursor:pointer;transition:all .15s;
     }
-    .dh-btn:hover{color:var(--acc2); border-color:var(--acc2);}
+    .dh-close:hover{color:var(--acc2);border-color:var(--acc2);}
 
     /* TABS */
-    .tabs{display:flex; border-bottom:1px solid rgba(0,245,255,.1); flex-shrink:0;}
+    .tabs{display:flex;border-bottom:1px solid rgba(0,245,255,.08);flex-shrink:0;background:var(--s1);}
     .tab{
-      flex:1; padding:8px 4px; text-align:center;
-      font-family:'Press Start 2P',monospace; font-size:7px;
-      color:var(--dim); cursor:pointer; transition:all .15s;
-      border-bottom:2px solid transparent; letter-spacing:1px;
+      flex:1;padding:11px 4px;text-align:center;
+      font-family:'Press Start 2P',monospace;font-size:7px;
+      color:var(--dim);cursor:pointer;transition:all .15s;
+      border-bottom:3px solid transparent;letter-spacing:.5px;
     }
-    .tab.on{color:var(--acc); border-bottom-color:var(--acc);}
+    .tab.on{color:var(--acc);border-bottom-color:var(--acc);background:rgba(0,245,255,.04);}
     .tab:hover:not(.on){color:var(--tx);}
 
     /* panels */
-    .panel{display:none; flex-direction:column; flex:1; overflow:hidden;}
+    .panel{display:none;flex-direction:column;flex:1;overflow:hidden;}
     .panel.on{display:flex;}
 
-    /* ─── SEARCH PANEL ─── */
-    #pSearch{padding:10px; gap:8px;}
+    /* ── SEARCH PANEL ── */
+    #pSearch{padding:10px;gap:8px;}
 
-    .genre-row{display:flex; gap:5px; overflow-x:auto; padding-bottom:4px; flex-shrink:0;}
+    .genre-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;flex-shrink:0;}
     .genre-row::-webkit-scrollbar{height:3px;}
-    .genre-row::-webkit-scrollbar-thumb{background:var(--acc3); border-radius:2px;}
+    .genre-row::-webkit-scrollbar-thumb{background:var(--acc3);border-radius:2px;}
     .gbtn{
-      background:rgba(170,255,0,.07); border:1px solid rgba(170,255,0,.25);
-      color:var(--acc3); font-family:'Press Start 2P',monospace; font-size:6px;
-      padding:5px 8px; border-radius:2px; cursor:pointer; white-space:nowrap;
-      flex-shrink:0; transition:background .12s;
+      background:rgba(170,255,0,.07);border:1px solid rgba(170,255,0,.25);
+      color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:6px;
+      padding:7px 10px;border-radius:3px;cursor:pointer;white-space:nowrap;
+      flex-shrink:0;transition:background .12s;
     }
-    .gbtn:hover{background:rgba(170,255,0,.2);}
+    .gbtn:hover,.gbtn:active{background:rgba(170,255,0,.2);}
 
-    .srow{display:flex; gap:6px; flex-shrink:0;}
+    .srow{display:flex;gap:6px;flex-shrink:0;}
     .sinput{
-      flex:1; background:rgba(0,0,0,.5); border:1px solid rgba(0,245,255,.2);
-      color:var(--tx); font-family:'Orbitron',monospace; font-size:12px;
-      padding:7px 10px; border-radius:2px; outline:none; transition:border-color .2s;
+      flex:1;background:rgba(0,0,0,.5);border:1px solid rgba(0,245,255,.2);
+      color:var(--tx);font-family:'Orbitron',monospace;font-size:13px;
+      padding:10px 12px;border-radius:3px;outline:none;transition:border-color .2s;
     }
     .sinput:focus{border-color:var(--acc);}
     .sinput::placeholder{color:var(--dim);}
     .sgo{
-      background:var(--acc); color:#000; border:none;
-      font-family:'Press Start 2P',monospace; font-size:7px;
-      padding:7px 11px; border-radius:2px; cursor:pointer; transition:opacity .15s; flex-shrink:0;
+      background:var(--acc);color:#000;border:none;
+      font-family:'Press Start 2P',monospace;font-size:8px;
+      padding:10px 14px;border-radius:3px;cursor:pointer;transition:opacity .15s;flex-shrink:0;
     }
     .sgo:hover{opacity:.85;}
-    .sgo:disabled{opacity:.35; cursor:not-allowed;}
+    .sgo:disabled{opacity:.35;cursor:not-allowed;}
 
-    .stat{font-family:'Press Start 2P',monospace; font-size:7px; color:var(--dim); flex-shrink:0; min-height:13px; letter-spacing:1px;}
-    .spin{display:inline-block; width:9px; height:9px; border:2px solid rgba(0,245,255,.2); border-top-color:var(--acc); border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; margin-right:4px;}
+    .stat{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--dim);flex-shrink:0;min-height:14px;letter-spacing:1px;}
+    .spin{display:inline-block;width:10px;height:10px;border:2px solid rgba(0,245,255,.2);border-top-color:var(--acc);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:5px;}
     @keyframes spin{to{transform:rotate(360deg)}}
 
-    .rlist{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:5px;}
-    .rlist::-webkit-scrollbar{width:3px;}
-    .rlist::-webkit-scrollbar-thumb{background:var(--acc); border-radius:2px;}
+    .rlist{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding-right:2px;}
+    .rlist::-webkit-scrollbar{width:4px;}
+    .rlist::-webkit-scrollbar-thumb{background:rgba(0,245,255,.3);border-radius:2px;}
 
-    .ri{display:flex; align-items:center; gap:8px; background:rgba(0,245,255,.04); border:1px solid rgba(0,245,255,.08); border-radius:2px; padding:6px 8px; cursor:pointer; transition:all .12s;}
-    .ri:hover{background:rgba(0,245,255,.1); border-color:rgba(0,245,255,.25); transform:translateX(2px);}
-    .ri.np{border-color:var(--acc3); background:rgba(170,255,0,.07);}
-    .ri-thumb{width:44px; height:33px; object-fit:cover; border-radius:1px; flex-shrink:0; background:var(--s1);}
-    .ri-info{flex:1; overflow:hidden;}
-    .ri-ttl{font-size:10px; font-weight:700; color:var(--tx); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .ri-ch{font-size:9px; color:var(--dim); margin-top:2px;}
-    .ri-act{display:flex; align-items:center; gap:4px; flex-shrink:0;}
-    .ri-add{color:var(--acc3); font-size:15px; opacity:0.45; transition:opacity .12s; cursor:pointer; padding:2px 4px;}
-    .ri-pl{color:var(--acc2); font-size:15px; opacity:0.45; transition:opacity .12s; cursor:pointer; padding:2px 4px;}
-    .ri:hover .ri-add,.ri:hover .ri-pl{opacity:1;}
-    .ri.np .ri-add{opacity:1; animation:pp 1s ease-in-out infinite;}
-    @keyframes pp{0%,100%{opacity:1}50%{opacity:.3}}
+    .ri{
+      display:flex;align-items:center;gap:10px;
+      background:rgba(0,245,255,.04);border:1px solid rgba(0,245,255,.08);
+      border-radius:4px;padding:8px 10px;cursor:pointer;transition:all .12s;
+    }
+    .ri:hover{background:rgba(0,245,255,.1);border-color:rgba(0,245,255,.25);}
+    .ri.np{border-color:var(--acc3);background:rgba(170,255,0,.07);}
+    .ri-thumb{width:48px;height:36px;object-fit:cover;border-radius:2px;flex-shrink:0;background:var(--s1);}
+    .ri-info{flex:1;overflow:hidden;}
+    .ri-ttl{font-size:11px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .ri-ch{font-size:10px;color:var(--dim);margin-top:3px;}
+    .ri-act{display:flex;align-items:center;gap:2px;flex-shrink:0;}
+    .ri-btn{
+      width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+      border-radius:4px;cursor:pointer;transition:all .12s;border:1px solid transparent;
+      font-size:16px;
+    }
+    .ri-btn.add{color:var(--acc3);}
+    .ri-btn.add:hover{background:rgba(170,255,0,.15);border-color:rgba(170,255,0,.3);}
+    .ri-btn.pl{color:var(--acc2);}
+    .ri-btn.pl:hover{background:rgba(255,0,128,.15);border-color:rgba(255,0,128,.3);}
+    .ri.np .ri-btn.add{animation:ppulse 1s ease-in-out infinite;}
+    @keyframes ppulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-    /* ─── QUEUE PANEL ─── */
-    #pQueue{padding:10px; gap:8px;}
-    .qa{display:flex; align-items:center; gap:8px; flex-shrink:0;}
-    .qbtn{font-family:'Press Start 2P',monospace; font-size:7px; padding:5px 9px; border-radius:2px; cursor:pointer; border:1px solid rgba(74,96,128,.35); color:var(--dim); background:transparent; transition:all .15s;}
-    .qbtn:hover{color:var(--acc2); border-color:var(--acc2);}
-    .mode-btn{font-family:'Press Start 2P',monospace; font-size:6px; padding:4px 8px; border-radius:2px; cursor:pointer; border:1px solid rgba(74,96,128,.3); color:var(--dim); background:transparent; transition:all .15s;}
-    .mode-btn.on{background:rgba(0,245,255,.1); border-color:var(--acc); color:var(--acc);}
-    .qlist{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px;}
-    .qlist::-webkit-scrollbar{width:3px;}
-    .qlist::-webkit-scrollbar-thumb{background:var(--acc3); border-radius:2px;}
-    .qi{display:flex; align-items:center; gap:6px; background:rgba(170,255,0,.04); border:1px solid rgba(170,255,0,.08); border-radius:2px; padding:6px 8px; cursor:pointer; transition:all .12s;}
+    /* ── QUEUE PANEL ── */
+    #pQueue{padding:10px;gap:8px;}
+    .qa{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;}
+    .qbtn{
+      font-family:'Press Start 2P',monospace;font-size:7px;
+      padding:7px 12px;border-radius:3px;cursor:pointer;
+      border:1px solid rgba(255,0,128,.3);color:var(--dim);background:transparent;transition:all .15s;
+    }
+    .qbtn:hover{color:var(--acc2);border-color:var(--acc2);}
+    .mode-btn{
+      font-family:'Press Start 2P',monospace;font-size:6px;
+      padding:6px 10px;border-radius:3px;cursor:pointer;
+      border:1px solid rgba(74,96,128,.3);color:var(--dim);background:transparent;transition:all .15s;
+    }
+    .mode-btn.on{background:rgba(0,245,255,.1);border-color:var(--acc);color:var(--acc);}
+    .qlist{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
+    .qlist::-webkit-scrollbar{width:4px;}
+    .qlist::-webkit-scrollbar-thumb{background:rgba(170,255,0,.3);border-radius:2px;}
+
+    .qi{
+      display:flex;align-items:center;gap:8px;
+      background:rgba(170,255,0,.04);border:1px solid rgba(170,255,0,.08);
+      border-radius:4px;padding:10px 12px;cursor:pointer;transition:all .12s;
+    }
     .qi:hover{background:rgba(170,255,0,.1);}
-    .qi.nq{border-color:var(--acc3);}
-    .qi-n{font-family:'Press Start 2P',monospace; font-size:6px; color:var(--dim); width:14px; flex-shrink:0;}
-    .qi-t{flex:1; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--tx);}
-    .qi-del{color:var(--acc2); font-size:12px; opacity:.55; transition:opacity .15s; padding:1px 4px; flex-shrink:0;}
+    .qi.nq{border-color:var(--acc3);background:rgba(170,255,0,.08);}
+    .qi-n{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--dim);width:18px;flex-shrink:0;}
+    .qi-t{flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx);}
+    .qi-del{
+      color:var(--acc2);font-size:18px;opacity:.4;transition:all .15s;
+      padding:0 4px;flex-shrink:0;line-height:1;
+    }
     .qi:hover .qi-del{opacity:1;}
 
-    /* ─── PLAYLISTS PANEL ─── */
-    #pPlaylists{display:flex; flex-direction:row; overflow:hidden; flex:1;}
+    /* ── PLAYLISTS PANEL (single-column nav style) ── */
+    #pPlaylists{position:relative;overflow:hidden;}
 
-    /* sidebar: playlist list */
-    #plSidebar{
-      width:160px; flex-shrink:0; border-right:1px solid rgba(0,245,255,.1);
-      display:flex; flex-direction:column; overflow:hidden;
+    /* View A: list of playlists */
+    #plViewList{
+      display:flex;flex-direction:column;height:100%;
+      position:absolute;inset:0;transition:transform .25s ease;
     }
-    #plSidebarHead{
-      padding:8px; border-bottom:1px solid rgba(0,245,255,.08); flex-shrink:0;
-      display:flex; align-items:center; gap:6px;
+    #plViewList.hidden{transform:translateX(-100%);}
+
+    .pl-list-head{
+      display:flex;align-items:center;gap:8px;
+      padding:10px 14px;border-bottom:1px solid rgba(0,245,255,.08);
+      flex-shrink:0;background:var(--s1);
     }
-    #plSidebarHead span{font-family:'Press Start 2P',monospace; font-size:7px; color:var(--acc2); flex:1;}
+    .pl-list-title{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--acc2);flex:1;}
+    #plSyncStatus{font-family:'Press Start 2P',monospace;font-size:5px;color:var(--acc3);opacity:.7;flex-shrink:0;}
     .pl-new-btn{
-      background:var(--acc3); color:#000; border:none;
-      font-family:'Press Start 2P',monospace; font-size:7px;
-      padding:4px 8px; border-radius:2px; cursor:pointer; transition:opacity .15s;
+      background:var(--acc3);color:#000;border:none;
+      font-family:'Press Start 2P',monospace;font-size:7px;
+      padding:7px 12px;border-radius:3px;cursor:pointer;transition:opacity .15s;flex-shrink:0;
     }
     .pl-new-btn:hover{opacity:.8;}
-    #plList{flex:1; overflow-y:auto; display:flex; flex-direction:column;}
-    #plList::-webkit-scrollbar{width:3px;}
-    #plList::-webkit-scrollbar-thumb{background:var(--acc2); border-radius:2px;}
+
+    #plList{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+    #plList::-webkit-scrollbar{width:4px;}
+    #plList::-webkit-scrollbar-thumb{background:rgba(255,0,128,.3);border-radius:2px;}
+
     .pl-item{
-      display:flex; align-items:center; gap:5px;
-      padding:9px 8px; cursor:pointer; border-bottom:1px solid rgba(0,245,255,.05);
-      transition:background .12s; position:relative;
+      display:flex;align-items:center;gap:10px;
+      padding:13px 14px;cursor:pointer;
+      border-bottom:1px solid rgba(0,245,255,.05);
+      transition:background .12s;
     }
     .pl-item:hover{background:rgba(255,0,128,.06);}
-    .pl-item.sel{background:rgba(255,0,128,.1);}
-    .pl-item.sel::before{content:''; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--acc2);}
-    .pl-name{font-size:10px; color:var(--tx); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;}
-    .pl-cnt{font-family:'Press Start 2P',monospace; font-size:6px; color:var(--dim);}
+    .pl-item-icon{font-size:18px;flex-shrink:0;opacity:.7;}
+    .pl-item-info{flex:1;min-width:0;}
+    .pl-item-name{font-size:13px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .pl-item-cnt{font-size:10px;color:var(--dim);margin-top:3px;}
+    .pl-item-arrow{color:var(--dim);font-size:16px;flex-shrink:0;opacity:.5;}
 
-    /* main: playlist detail */
-    #plMain{flex:1; display:flex; flex-direction:column; overflow:hidden; padding:10px; gap:8px; min-width:0;}
-    #plMainHead{display:flex; align-items:center; gap:8px; flex-shrink:0; flex-wrap:wrap;}
-    #plTitle{font-size:13px; font-weight:700; color:var(--acc2); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .pl-act-btn{
-      font-family:'Press Start 2P',monospace; font-size:6px;
-      padding:5px 8px; border-radius:2px; cursor:pointer; transition:all .15s;
-      border:1px solid rgba(74,96,128,.35); color:var(--dim); background:transparent;
-      white-space:nowrap;
+    /* View B: playlist detail */
+    #plViewDetail{
+      display:flex;flex-direction:column;height:100%;
+      position:absolute;inset:0;
+      transform:translateX(100%);transition:transform .25s ease;
     }
-    .pl-act-btn:hover{color:var(--acc); border-color:var(--acc);}
-    .pl-act-btn.danger:hover{color:var(--acc2); border-color:var(--acc2);}
-    .pl-act-btn.play{background:var(--acc3); color:#000; border-color:var(--acc3);}
-    .pl-act-btn.play:hover{opacity:.85;}
-    .pl-act-btn.share{color:var(--acc3); border-color:rgba(170,255,0,.4);}
-    .pl-act-btn.share:hover{background:rgba(170,255,0,.1);}
-    #plSongs{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px;}
-    #plSongs::-webkit-scrollbar{width:3px;}
-    #plSongs::-webkit-scrollbar-thumb{background:var(--acc2); border-radius:2px;}
-    .ps{display:flex; align-items:center; gap:7px; background:rgba(255,0,128,.04); border:1px solid rgba(255,0,128,.08); border-radius:2px; padding:6px 8px; cursor:pointer; transition:all .12s;}
-    .ps:hover{background:rgba(255,0,128,.1);}
-    .ps.np{border-color:var(--acc3);}
-    .ps-n{font-family:'Press Start 2P',monospace; font-size:6px; color:var(--dim); width:14px; flex-shrink:0;}
-    .ps-t{flex:1; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--tx);}
-    .ps-up{color:var(--dim); font-size:13px; opacity:.5; transition:opacity .15s; padding:1px 4px; flex-shrink:0;}
-    .ps-dn{color:var(--dim); font-size:13px; opacity:.5; transition:opacity .15s; padding:1px 4px; flex-shrink:0;}
-    .ps-del{color:var(--acc2); font-size:12px; opacity:.5; transition:opacity .15s; padding:1px 4px; flex-shrink:0;}
-    .ps:hover .ps-up,.ps:hover .ps-dn,.ps:hover .ps-del{opacity:1;}
+    #plViewDetail.visible{transform:translateX(0);}
 
-    /* ─── ADD TO PLAYLIST DROPDOWN ─── */
+    .pl-detail-head{
+      display:flex;align-items:center;gap:8px;
+      padding:10px 14px;border-bottom:1px solid rgba(0,245,255,.08);
+      flex-shrink:0;background:var(--s1);
+    }
+    .pl-back-btn{
+      background:none;border:1px solid rgba(0,245,255,.2);color:var(--acc);
+      font-family:'Press Start 2P',monospace;font-size:7px;
+      padding:6px 10px;border-radius:3px;cursor:pointer;transition:all .15s;flex-shrink:0;
+    }
+    .pl-back-btn:hover{background:rgba(0,245,255,.1);}
+    #plDetailName{font-size:13px;font-weight:700;color:var(--acc2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+
+    .pl-detail-actions{
+      display:flex;gap:6px;padding:8px 14px;
+      border-bottom:1px solid rgba(0,245,255,.06);flex-shrink:0;flex-wrap:wrap;
+    }
+    .pl-act-btn{
+      font-family:'Press Start 2P',monospace;font-size:6px;
+      padding:7px 11px;border-radius:3px;cursor:pointer;transition:all .15s;
+      border:1px solid rgba(74,96,128,.35);color:var(--dim);background:transparent;
+    }
+    .pl-act-btn:hover{color:var(--acc);border-color:var(--acc);}
+    .pl-act-btn.play{background:var(--acc3);color:#000;border-color:var(--acc3);}
+    .pl-act-btn.play:hover{opacity:.85;}
+    .pl-act-btn.danger:hover{color:var(--acc2);border-color:var(--acc2);}
+
+    #plDetailSongs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:8px 10px;}
+    #plDetailSongs::-webkit-scrollbar{width:4px;}
+    #plDetailSongs::-webkit-scrollbar-thumb{background:rgba(255,0,128,.3);border-radius:2px;}
+
+    .ps{
+      display:flex;align-items:center;gap:8px;
+      background:rgba(255,0,128,.04);border:1px solid rgba(255,0,128,.08);
+      border-radius:4px;padding:10px 12px;cursor:pointer;transition:all .12s;
+    }
+    .ps:hover{background:rgba(255,0,128,.1);}
+    .ps.np{border-color:var(--acc3);background:rgba(170,255,0,.07);}
+    .ps-n{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--dim);width:20px;flex-shrink:0;}
+    .ps-t{flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx);}
+    .ps-del{
+      color:var(--acc2);font-size:18px;opacity:.35;
+      transition:opacity .15s;padding:0 4px;flex-shrink:0;line-height:1;
+    }
+    .ps:hover .ps-del{opacity:1;}
+
+    /* ── ADD TO PLAYLIST DROPDOWN ── */
     #plDropdown{
-      position:fixed; background:var(--s1); border:1px solid rgba(0,245,255,.25);
-      border-radius:3px; z-index:999; min-width:160px; overflow:hidden;
-      box-shadow:0 4px 20px rgba(0,0,0,.7);
-      display:none;
+      position:fixed;background:var(--s1);border:1px solid rgba(0,245,255,.3);
+      border-radius:6px;z-index:1001;min-width:200px;overflow:hidden;
+      box-shadow:0 8px 32px rgba(0,0,0,.8);display:none;
     }
     #plDropdown.show{display:block;}
-    .pld-head{font-family:'Press Start 2P',monospace; font-size:7px; color:var(--acc); padding:8px 10px; border-bottom:1px solid rgba(0,245,255,.1);}
-    .pld-item{padding:8px 10px; font-size:11px; color:var(--tx); cursor:pointer; transition:background .12s;}
+    .pld-head{
+      font-family:'Press Start 2P',monospace;font-size:7px;color:var(--acc);
+      padding:10px 12px;border-bottom:1px solid rgba(0,245,255,.1);letter-spacing:1px;
+    }
+    .pld-item{
+      padding:12px 14px;font-size:12px;color:var(--tx);
+      cursor:pointer;transition:background .12s;display:flex;align-items:center;gap:8px;
+    }
     .pld-item:hover{background:rgba(0,245,255,.1);}
-    .pld-none{padding:8px 10px; font-size:10px; color:var(--dim);}
+    .pld-item.added{color:var(--acc3);}
+    .pld-sep{height:1px;background:rgba(0,245,255,.08);margin:2px 0;}
+    .pld-new{color:var(--acc3);font-weight:700;}
+    .pld-none{padding:10px 12px;font-size:11px;color:var(--dim);}
 
-    /* ─── MODAL ─── */
+    /* ── MODAL ── */
     #modal{
-      position:fixed; inset:0; background:rgba(0,0,0,.8);
-      z-index:1000; display:none; align-items:center; justify-content:center;
-      backdrop-filter:blur(4px);
+      position:fixed;inset:0;background:rgba(0,0,0,.85);
+      z-index:1002;display:none;align-items:center;justify-content:center;
+      backdrop-filter:blur(6px);
     }
     #modal.show{display:flex;}
     .modal-box{
-      background:var(--s1); border:1px solid var(--acc); border-radius:4px;
-      padding:24px; width:min(340px,88vw);
-      box-shadow:0 0 40px rgba(0,245,255,.2);
+      background:var(--s1);border:1px solid var(--acc);border-radius:8px;
+      padding:28px;width:min(360px,90vw);
+      box-shadow:0 0 50px rgba(0,245,255,.2);
     }
-    .modal-title{font-family:'Press Start 2P',monospace; font-size:10px; color:var(--acc); margin-bottom:16px; letter-spacing:1px;}
+    .modal-title{
+      font-family:'Press Start 2P',monospace;font-size:10px;color:var(--acc);
+      margin-bottom:18px;letter-spacing:1px;line-height:1.6;
+    }
     .modal-input{
-      width:100%; background:rgba(0,0,0,.5); border:1px solid rgba(0,245,255,.25);
-      color:var(--tx); font-family:'Orbitron',monospace; font-size:13px;
-      padding:9px 12px; border-radius:2px; outline:none; transition:border-color .2s; margin-bottom:14px;
+      width:100%;background:rgba(0,0,0,.5);border:1px solid rgba(0,245,255,.3);
+      color:var(--tx);font-family:'Orbitron',monospace;font-size:14px;
+      padding:11px 14px;border-radius:4px;outline:none;
+      transition:border-color .2s;margin-bottom:16px;
     }
-    .modal-input:focus{border-color:var(--acc);}
-    .modal-btns{display:flex; gap:8px;}
-    .mbtn{flex:1; padding:9px; border-radius:2px; cursor:pointer; font-family:'Orbitron',monospace; font-size:11px; font-weight:700; text-align:center; transition:all .2s; border:none;}
-    .mbtn.ok{background:var(--acc); color:#000;}
+    .modal-input:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(0,245,255,.1);}
+    .modal-btns{display:flex;gap:10px;}
+    .mbtn{
+      flex:1;padding:11px;border-radius:4px;cursor:pointer;
+      font-family:'Orbitron',monospace;font-size:12px;font-weight:700;
+      text-align:center;transition:all .2s;border:none;
+    }
+    .mbtn.ok{background:var(--acc);color:#000;}
     .mbtn.ok:hover{opacity:.85;}
-    .mbtn.cancel{background:transparent; border:1px solid var(--dim); color:var(--tx);}
-    .mbtn.cancel:hover{border-color:var(--acc2); color:var(--acc2);}
+    .mbtn.cancel{background:transparent;border:1px solid var(--dim);color:var(--tx);}
+    .mbtn.cancel:hover{border-color:var(--acc2);color:var(--acc2);}
 
-    /* ─── TOAST ─── */
+    /* ── TOAST ── */
     #toast{
-      position:fixed; bottom:calc(var(--bar) + 12px); left:50%; transform:translateX(-50%) translateY(20px);
-      background:var(--s1); border:1px solid var(--acc3); border-radius:3px;
-      padding:8px 16px; font-family:'Press Start 2P',monospace; font-size:7px; color:var(--acc3);
-      z-index:500; opacity:0; transition:opacity .2s, transform .2s; pointer-events:none;
-      letter-spacing:1px; white-space:nowrap;
+      position:fixed;bottom:calc(var(--bar) + 14px);left:50%;
+      transform:translateX(-50%) translateY(12px);
+      background:var(--s1);border:1px solid var(--acc3);border-radius:6px;
+      padding:10px 20px;font-family:'Press Start 2P',monospace;font-size:7px;color:var(--acc3);
+      z-index:600;opacity:0;transition:opacity .2s,transform .2s;
+      pointer-events:none;letter-spacing:1px;white-space:nowrap;
+      box-shadow:0 4px 20px rgba(0,0,0,.5);
     }
-    #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-    /* shared utils */
-    .empty{font-family:'Press Start 2P',monospace; font-size:7px; color:var(--dim); text-align:center; padding:20px 10px; line-height:2.2;}
-    #ytHidden{position:fixed; left:-9999px; top:-9999px; width:1px; height:1px;}
+    /* ── EMPTY STATE ── */
+    .empty{
+      font-family:'Press Start 2P',monospace;font-size:8px;color:var(--dim);
+      text-align:center;padding:30px 16px;line-height:2.4;
+    }
+
+    #ytHidden{position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;}
   </style>
 </head>
 <body>
@@ -304,76 +377,113 @@
 <!-- MAIN iframe -->
 <iframe id="mainFrame" src="index.html" allowfullscreen></iframe>
 
-<!-- ═══ SEARCH / QUEUE / PLAYLIST DRAWER ═══ -->
+<!-- ═══ MUSIC DRAWER ═══ -->
 <div id="drawer">
   <div class="dh">
     <span class="dh-title">MUSIC PLAYER</span>
-    <button class="dh-btn" onclick="closeDrawer()">X CLOSE</button>
+    <button class="dh-close" onclick="closeDrawer()">✕ CLOSE</button>
   </div>
   <div class="tabs">
-    <div class="tab on"  id="tab-search"    onclick="swTab('search')">SEARCH</div>
-    <div class="tab"     id="tab-queue"     onclick="swTab('queue')">QUEUE <span id="qBadge"></span></div>
-    <div class="tab"     id="tab-playlists" onclick="swTab('playlists')">PLAYLIST <span id="plBadge"></span></div>
+    <div class="tab on" id="tab-search"    onclick="swTab('search')">SEARCH</div>
+    <div class="tab"    id="tab-queue"     onclick="swTab('queue')">QUEUE <span id="qBadge"></span></div>
+    <div class="tab"    id="tab-playlists" onclick="swTab('playlists')">LIST <span id="plBadge"></span></div>
   </div>
 
   <!-- SEARCH -->
   <div class="panel on" id="pSearch">
-    <div class="genre-row" id="genreRow"></div>
-    <div class="srow">
-      <input type="text" id="sinput" class="sinput" placeholder="曲名・アーティスト・ジャンル..." onkeydown="if(event.key==='Enter')doSearch()">
-      <button class="sgo" id="sgo" onclick="doSearch()">GO</button>
+    <div style="padding:10px;display:flex;flex-direction:column;gap:8px;flex:1;overflow:hidden;">
+      <div class="genre-row" id="genreRow"></div>
+      <div class="srow">
+        <input type="text" id="sinput" class="sinput" placeholder="曲名・アーティスト・ジャンル..."
+               onkeydown="if(event.key==='Enter')doSearch()">
+        <button class="sgo" id="sgo" onclick="doSearch()">GO</button>
+      </div>
+      <div class="stat" id="stat"></div>
+      <div class="rlist" id="rlist"><div class="empty">ジャンルを選ぶか<br>検索してみよう</div></div>
     </div>
-    <div class="stat" id="stat"></div>
-    <div class="rlist" id="rlist"><div class="empty">ジャンルを選ぶか<br>検索してみよう</div></div>
   </div>
 
   <!-- QUEUE -->
   <div class="panel" id="pQueue">
-    <div class="qa">
-      <button class="qbtn" onclick="clearQueue()">CLEAR</button>
-      <div style="flex:1"></div>
-      <button class="mode-btn" id="mShuffle" onclick="toggleMode('shuffle')">SHUFFLE</button>
-      <button class="mode-btn" id="mRepeat"  onclick="toggleMode('repeat')">REPEAT</button>
-      <button class="mode-btn" id="mRepeat1" onclick="toggleMode('repeat1')">REPEAT x1</button>
+    <div style="padding:10px;display:flex;flex-direction:column;gap:8px;flex:1;overflow:hidden;">
+      <div class="qa">
+        <button class="qbtn" onclick="clearQueue()">🗑 CLEAR</button>
+        <div style="flex:1"></div>
+        <button class="mode-btn" id="mShuffle" onclick="toggleMode('shuffle')">SHUFFLE</button>
+        <button class="mode-btn" id="mRepeat"  onclick="toggleMode('repeat')">REPEAT</button>
+        <button class="mode-btn" id="mRepeat1" onclick="toggleMode('repeat1')">×1</button>
+      </div>
+      <div class="qlist" id="qlist"><div class="empty">キューが空です<br>SEARCH から追加しよう</div></div>
     </div>
-    <div class="qlist" id="qlist"><div class="empty">キューが空です<br>SEARCH から追加しよう</div></div>
   </div>
 
   <!-- PLAYLISTS -->
   <div class="panel" id="pPlaylists">
-    <!-- sidebar -->
-    <div id="plSidebar">
-      <div id="plSidebarHead">
-        <span>MY LISTS</span>
+
+    <!-- View A: プレイリスト一覧 -->
+    <div id="plViewList">
+      <div class="pl-list-head">
+        <span class="pl-list-title">MY PLAYLISTS</span>
+        <span id="plSyncStatus">●</span>
         <button class="pl-new-btn" onclick="newPlaylist()">＋ NEW</button>
       </div>
-      <div id="plSyncStatus" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--acc3);padding:3px 8px;letter-spacing:1px;opacity:0.7;">CONNECTING...</div>
-      <div id="plList"></div>
+      <div id="plList"><div class="empty">プレイリストがまだありません<br>NEW ボタンで作成しよう</div></div>
     </div>
-    <!-- detail -->
-    <div id="plMain">
-      <div id="plMainHead">
-        <span id="plTitle" style="color:var(--dim);">← リストを選択</span>
+
+    <!-- View B: プレイリスト詳細 -->
+    <div id="plViewDetail">
+      <div class="pl-detail-head">
+        <button class="pl-back-btn" onclick="showPlList()">◀ BACK</button>
+        <span id="plDetailName">—</span>
       </div>
-      <div id="plSongs"><div class="empty">プレイリストを選択してください</div></div>
+      <div class="pl-detail-actions">
+        <button class="pl-act-btn play" id="plBtnPlay"   onclick="playCurrentPl()">▶ 再生</button>
+        <button class="pl-act-btn"      id="plBtnRename" onclick="renameCurPl()">RENAME</button>
+        <button class="pl-act-btn danger" id="plBtnDel"  onclick="deleteCurPl()">DELETE</button>
+      </div>
+      <div id="plDetailSongs"><div class="empty">曲がありません<br>SEARCH の ＋ ボタンで追加</div></div>
     </div>
+
   </div>
 </div>
 
 <!-- ═══ MUSIC BAR ═══ -->
 <div id="bar">
-  <button id="openBtn" onclick="toggleDrawer()"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 13V5.5l9-2v7.5"/><circle cx="2" cy="13" r="2"/><circle cx="11" cy="11" r="2"/></svg></button>
+  <button id="openBtn" onclick="toggleDrawer()" title="ミュージックプレーヤー">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+      <path d="M3 15V6l11-2.5v9"/>
+      <circle cx="2.5" cy="15" r="2.5"/>
+      <circle cx="12.5" cy="12.5" r="2.5"/>
+    </svg>
+  </button>
   <div class="bar-inner">
-    <button class="tr" onclick="playPrev()" title="前の曲"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><rect x="1" y="2" width="2" height="9"/><polygon points="11,2 4,6.5 11,11"/></svg></button>
-    <button class="tr" id="btnPP" onclick="togglePP()"><svg id="barIconPlay" width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><polygon points="3,2 11,6.5 3,11"/></svg><svg id="barIconPause" width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="display:none"><rect x="2" y="2" width="3" height="9"/><rect x="8" y="2" width="3" height="9"/></svg></button>
-    <button class="tr" onclick="playNext()" title="次の曲"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><rect x="10" y="2" width="2" height="9"/><polygon points="2,2 9,6.5 2,11"/></svg></button>
+    <button class="tr" onclick="playPrev()" title="前の曲">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <rect x="2" y="3" width="2.5" height="10"/><polygon points="13,3 5,8 13,13"/>
+      </svg>
+    </button>
+    <button class="tr" id="btnPP" onclick="togglePP()">
+      <svg id="barIconPlay"  width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14"/></svg>
+      <svg id="barIconPause" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="display:none"><rect x="2.5" y="2" width="4" height="12"/><rect x="9.5" y="2" width="4" height="12"/></svg>
+    </button>
+    <button class="tr" onclick="playNext()" title="次の曲">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <rect x="11.5" y="3" width="2.5" height="10"/><polygon points="3,3 11,8 3,13"/>
+      </svg>
+    </button>
     <div id="npWrap">
-      <div id="npTop">MUSIC</div>
+      <div id="npLabel">MUSIC</div>
       <div id="npTitle">曲を選んでください</div>
       <div id="npSub">SEARCH または PLAYLIST から</div>
     </div>
     <div class="vol">
-      <span class="vi"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M1 5h2l3-3v10L3 9H1z"/><path d="M8 4A3 3 0 0 1 8 10" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M9.5 2.5A5 5 0 0 1 9.5 11.5" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></span>
+      <span class="vi">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor">
+          <path d="M1 5.5h2.5L7 2v11l-3.5-3.5H1z"/>
+          <path d="M9 4.5A3.5 3.5 0 0 1 9 10.5" stroke="currentColor" stroke-width="1.3" fill="none"/>
+          <path d="M11 2.5A6 6 0 0 1 11 12.5" stroke="currentColor" stroke-width="1.3" fill="none"/>
+        </svg>
+      </span>
       <input type="range" id="vol" min="0" max="100" value="70" oninput="setVol(this.value)">
     </div>
   </div>
@@ -385,13 +495,13 @@
   <div id="plDropdownItems"></div>
 </div>
 
-<!-- MODAL (rename/create) -->
+<!-- MODAL -->
 <div id="modal">
   <div class="modal-box">
     <div class="modal-title" id="modalTitle">プレイリスト名</div>
     <input type="text" id="modalInput" class="modal-input" maxlength="40" placeholder="名前を入力...">
     <div class="modal-btns">
-      <button class="mbtn ok" id="modalOk" onclick="modalConfirm()">OK</button>
+      <button class="mbtn ok" onclick="modalConfirm()">OK</button>
       <button class="mbtn cancel" onclick="closeModal()">キャンセル</button>
     </div>
   </div>
@@ -421,56 +531,80 @@ const FB_CONFIG = {
   appId:"1:1045054992314:web:7fea20b9be543d7cab3783"
 };
 const GENRES = [
-  {l:'TETRIS', q:'tetris music remix'},
-  {l:'TECHNO',   q:'techno electronic music'},
+  {l:'TETRIS',  q:'tetris music remix'},
+  {l:'TECHNO',  q:'techno electronic music'},
   {l:'GAME BGM',q:'video game music bgm'},
   {l:'EDM',     q:'EDM dance music'},
-  {l:'ROCK',  q:'rock music energetic'},
+  {l:'ROCK',    q:'rock music energetic'},
   {l:'LO-FI',   q:'lofi hip hop chill beats'},
-  {l:'RETRO',  q:'80s retro synthwave'},
-  {l:'JAZZ',  q:'jazz piano instrumental'},
-  {l:'CHILL',q:'chillout ambient music'},
+  {l:'RETRO',   q:'80s retro synthwave'},
+  {l:'JAZZ',    q:'jazz piano instrumental'},
+  {l:'CHILL',   q:'chillout ambient music'},
 ];
 
 // ════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════
 let yt = null, ytOk = false;
-let queue = [], qi = -1;         // playback queue
+let queue = [], qi = -1;
 let shuffle = false, repeatAll = false, repeatOne = false;
-let results = [];                 // search results
+let results = [];
 let drawerOpen = false;
-let playlists = [];               // [{id,name,songs:[{id,title,channel,thumb}]}] — synced from Firebase
-let selPl = null;                 // selected playlist id
-let modalCb = null;               // modal confirm callback
-let dropTarget = null;            // song waiting to be added to playlist
-let fbDb = null;                  // Firebase Realtime Database
+let playlists = [];       // synced from Firebase
+let selPl = null;         // currently viewed playlist id
+let currentPlayingPlId = null; // playlist currently being played from
+let modalCb = null;
+let dropTarget = null;
+let fbDb = null;
 
 // ════════════════════════════════════════
-//  FIREBASE INIT
+//  FIREBASE
 // ════════════════════════════════════════
 function initFirebase(){
   try{
     const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FB_CONFIG);
     fbDb = firebase.database(app);
-    // Real-time sync of shared playlists
+
+    // Real-time sync
     fbDb.ref('shared_playlists').on('value', snap => {
       const data = snap.val() || {};
       playlists = Object.values(data)
         .filter(p => p && p.id && p.name)
         .sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
-      renderPlSidebar();
-      if(selPl && !getPl(selPl)) selPl = null;
-      renderPlDetail();
+      renderPlList();
+      renderPlDetail(); // refresh detail if open
       document.getElementById('plBadge').textContent = playlists.length ? `(${playlists.length})` : '';
     });
-    // Show connection status
+
+    // Connection status dot
     fbDb.ref('.info/connected').on('value', snap => {
       const el = document.getElementById('plSyncStatus');
-      if(el) el.textContent = snap.val() ? 'CLOUD SYNC ON' : 'CONNECTING...';
+      if(el){ el.textContent = snap.val() ? '● LIVE' : '○ ...'; el.style.color = snap.val() ? 'var(--acc3)' : 'var(--dim)'; }
     });
-  }catch(e){ console.error('Firebase init error:', e); showToast('クラウド接続エラー'); }
+  }catch(e){
+    console.error('Firebase init error:', e);
+    showToast('クラウド接続エラー');
+  }
 }
+
+function fbSavePl(pl){
+  if(!fbDb){ showToast('クラウド未接続'); return; }
+  const clean = {
+    id: pl.id, name: pl.name,
+    songs: (pl.songs||[]).map(s=>({id:s.id, title:s.title, channel:s.channel||'', thumb:s.thumb||''})),
+    createdAt: pl.createdAt || Date.now(), updatedAt: Date.now()
+  };
+  fbDb.ref('shared_playlists/'+pl.id).set(clean)
+    .catch(e => showToast('保存エラー: '+e.message));
+}
+
+function fbDeletePl(id){
+  if(!fbDb){ showToast('クラウド未接続'); return; }
+  fbDb.ref('shared_playlists/'+id).remove()
+    .catch(e => showToast('削除エラー: '+e.message));
+}
+
+function getPl(id){ return playlists.find(p => p.id === id); }
 
 // ════════════════════════════════════════
 //  INIT
@@ -483,9 +617,8 @@ function initFirebase(){
     const el = document.getElementById('vol');
     el.value = sv; el.style.setProperty('--p', sv+'%');
   }
-  // Close dropdown on outside click
   document.addEventListener('click', e => {
-    if(!e.target.closest('#plDropdown') && !e.target.classList.contains('ri-pl')){
+    if(!e.target.closest('#plDropdown') && !e.target.closest('.ri-btn.pl')){
       closeDrop();
     }
   });
@@ -498,9 +631,13 @@ function initFirebase(){
       if(pl && pl.name && Array.isArray(pl.songs)){
         pl.id = Date.now()+'_'+Math.random().toString(36).slice(2);
         pl.createdAt = Date.now();
-        if(fbDb){ fbDb.ref('shared_playlists/'+pl.id).set(pl); }
+        playlists.push(pl);
+        fbSavePl(pl);
+        renderPlList();
+        selPl = pl.id;
+        showPlDetail(pl.id);
+        swTab('playlists'); openDrawer();
         showToast(`「${pl.name}」をインポートしました`);
-        selPl = pl.id; swTab('playlists'); openDrawer();
       }
     }catch(e){}
     history.replaceState(null,'',location.pathname);
@@ -516,48 +653,55 @@ function onYouTubeIframeAPIReady(){
     playerVars:{autoplay:0, controls:0},
     events:{
       onReady:()=>{ ytOk=true; const v=ls('yt_vol'); if(v!==null) yt.setVolume(+v); },
-      onStateChange:onSC,
-      onError:()=>{ setTimeout(playNext,1500); }
+      onStateChange: onSC,
+      onError: ()=>{ setTimeout(playNext,1500); }
     }
   });
 }
 function onSC(e){
-  if(e.data===YT.PlayerState.ENDED){ repeatOne?(yt.seekTo(0),yt.playVideo()):playNext(); }
-  if(e.data===YT.PlayerState.PLAYING){ document.getElementById('barIconPlay').style.display='none';document.getElementById('barIconPause').style.display=''; }
-  if(e.data===YT.PlayerState.PAUSED||e.data===YT.PlayerState.CUED){ document.getElementById('barIconPlay').style.display='';document.getElementById('barIconPause').style.display='none'; }
+  const P = YT.PlayerState;
+  if(e.data===P.ENDED){ repeatOne?(yt.seekTo(0),yt.playVideo()):playNext(); }
+  if(e.data===P.PLAYING){
+    document.getElementById('barIconPlay').style.display='none';
+    document.getElementById('barIconPause').style.display='';
+  }
+  if(e.data===P.PAUSED||e.data===P.CUED){
+    document.getElementById('barIconPlay').style.display='';
+    document.getElementById('barIconPause').style.display='none';
+  }
 }
 
 // ════════════════════════════════════════
 //  DRAWER
 // ════════════════════════════════════════
-function toggleDrawer(){ drawerOpen?closeDrawer():openDrawer(); }
+function toggleDrawer(){ drawerOpen ? closeDrawer() : openDrawer(); }
 function openDrawer(){
-  drawerOpen=true;
+  drawerOpen = true;
   document.getElementById('drawer').classList.add('open');
   document.getElementById('openBtn').classList.add('active');
 }
 function closeDrawer(){
-  drawerOpen=false;
+  drawerOpen = false;
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('openBtn').classList.remove('active');
 }
 function swTab(name){
   ['search','queue','playlists'].forEach(t=>{
-    document.getElementById('tab-'+t).classList.toggle('on',t===name);
-    document.getElementById('p'+cap(t)).classList.toggle('on',t===name);
+    document.getElementById('tab-'+t).classList.toggle('on', t===name);
+    const panelId = 'p'+t[0].toUpperCase()+t.slice(1);
+    document.getElementById(panelId).classList.toggle('on', t===name);
   });
 }
-function cap(s){ return s[0].toUpperCase()+s.slice(1); }
 
 // ════════════════════════════════════════
 //  GENRES
 // ════════════════════════════════════════
 function initGenres(){
-  const row=document.getElementById('genreRow');
+  const row = document.getElementById('genreRow');
   GENRES.forEach(g=>{
-    const b=document.createElement('button');
-    b.className='gbtn'; b.textContent=g.l;
-    b.onclick=()=>{ document.getElementById('sinput').value=g.q; doSearch(); };
+    const b = document.createElement('button');
+    b.className = 'gbtn'; b.textContent = g.l;
+    b.onclick = ()=>{ document.getElementById('sinput').value=g.q; doSearch(); };
     row.appendChild(b);
   });
 }
@@ -566,44 +710,60 @@ function initGenres(){
 //  SEARCH
 // ════════════════════════════════════════
 async function doSearch(){
-  const q=document.getElementById('sinput').value.trim();
+  const q = document.getElementById('sinput').value.trim();
   if(!q) return;
-  setStat('<span class="spin"></span>検索中…','var(--dim)');
-  document.getElementById('sgo').disabled=true;
-  document.getElementById('rlist').innerHTML='';
+  setStat('<span class="spin"></span>検索中…', 'var(--dim)');
+  document.getElementById('sgo').disabled = true;
+  document.getElementById('rlist').innerHTML = '';
   try{
-    const url=`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=20&q=${encodeURIComponent(q)}&key=${YT_KEY}`;
-    const r=await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status);
-    const d=await r.json(); if(d.error) throw new Error(d.error.message);
-    results=(d.items||[]).filter(i=>i.id?.videoId).map(i=>({
-      id:i.id.videoId, title:i.snippet.title,
-      channel:i.snippet.channelTitle,
-      thumb:i.snippet.thumbnails?.default?.url||''
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=20&q=${encodeURIComponent(q)}&key=${YT_KEY}`;
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    if(d.error) throw new Error(d.error.message);
+    results = (d.items||[]).filter(i=>i.id?.videoId).map(i=>({
+      id: i.id.videoId,
+      title: i.snippet.title,
+      channel: i.snippet.channelTitle,
+      thumb: i.snippet.thumbnails?.default?.url || ''
     }));
     renderResults();
-    setStat(results.length?`${results.length}件見つかりました`:'結果なし','var(--acc3)');
-  }catch(err){ setStat('[!] '+err.message,'var(--acc2)'); }
-  document.getElementById('sgo').disabled=false;
+    setStat(results.length ? `${results.length}件見つかりました` : '結果なし', 'var(--acc3)');
+  }catch(err){
+    setStat('⚠ '+err.message, 'var(--acc2)');
+  }
+  document.getElementById('sgo').disabled = false;
 }
 
 function renderResults(){
-  const list=document.getElementById('rlist');
+  const list = document.getElementById('rlist');
   if(!results.length){ list.innerHTML='<div class="empty">結果が見つかりませんでした</div>'; return; }
-  list.innerHTML='';
-  results.forEach((item,i)=>{
-    const div=document.createElement('div');
-    div.className='ri'; div.id='ri-'+item.id;
-    const inQ=queue.some(x=>x.id===item.id);
-    div.innerHTML=`
+  list.innerHTML = '';
+  results.forEach((item, i)=>{
+    const inQ = queue.some(x => x.id === item.id);
+    const div = document.createElement('div');
+    div.className = 'ri' + (inQ ? ' np' : '');
+    div.id = 'ri-'+item.id;
+    div.innerHTML = `
       <img class="ri-thumb" src="${item.thumb}" alt="" loading="lazy">
-      <div class="ri-info"><div class="ri-ttl">${esc(item.title)}</div><div class="ri-ch">${esc(item.channel)}</div></div>
+      <div class="ri-info">
+        <div class="ri-ttl">${esc(item.title)}</div>
+        <div class="ri-ch">${esc(item.channel)}</div>
+      </div>
       <div class="ri-act">
-        <span class="ri-pl" title="プレイリストに追加"><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style="pointer-events:none"><rect x="1" y="2" width="10" height="1.5" rx=".5"/><rect x="1" y="5" width="10" height="1.5" rx=".5"/><rect x="1" y="8" width="6" height="1.5" rx=".5"/><path d="M8 7v4l1.5-1 1.5 1V7h-3z"/></svg></span>
-        <span class="ri-add" title="キューに追加して再生">${inQ?'ON':'+'}</span>
+        <div class="ri-btn pl" title="プレイリストに追加">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="currentColor" style="pointer-events:none">
+            <rect x="1" y="2.5" width="13" height="2" rx="1"/>
+            <rect x="1" y="6.5" width="13" height="2" rx="1"/>
+            <rect x="1" y="10.5" width="8" height="2" rx="1"/>
+            <path d="M11 9.5v5l1.8-1.2 1.8 1.2v-5h-3.6z"/>
+          </svg>
+        </div>
+        <div class="ri-btn add" id="riadd-${item.id}" title="キューに追加して再生">${inQ ? '♪' : '＋'}</div>
       </div>`;
-    div.querySelector('.ri-add').onclick=(e)=>{ e.stopPropagation(); addAndPlay(i); };
-    div.querySelector('.ri-pl').onclick=(e)=>{ e.stopPropagation(); showDrop(item,e.currentTarget); };
-    div.onclick=()=>addAndPlay(i);
+    div.querySelector('.ri-btn.add').onclick = e => { e.stopPropagation(); addAndPlay(i); };
+    div.querySelector('.ri-btn.pl').onclick = e => { e.stopPropagation(); showDrop(item, e.currentTarget); };
+    div.onclick = ()=> addAndPlay(i);
     list.appendChild(div);
   });
 }
@@ -612,382 +772,402 @@ function renderResults(){
 //  PLAYBACK
 // ════════════════════════════════════════
 function addAndPlay(idx){
-  const item=results[idx];
-  const ex=queue.findIndex(x=>x.id===item.id);
-  ex!==-1 ? playIdx(ex) : (queue.push(item), playIdx(queue.length-1));
-  updateResultHighlight(item.id);
+  const item = results[idx];
+  const ex = queue.findIndex(x => x.id === item.id);
+  if(ex !== -1){
+    playIdx(ex);
+  } else {
+    queue.push(item);
+    playIdx(queue.length - 1);
+  }
+  updateAllResultHighlights();
 }
 
 function playIdx(idx){
-  if(idx<0||idx>=queue.length) return;
-  qi=idx;
-  if(!ytOk||!yt) return;
+  if(idx < 0 || idx >= queue.length) return;
+  qi = idx;
+  if(!ytOk || !yt){ updateBar(); return; }
   yt.loadVideoById(queue[idx].id);
   yt.playVideo();
-  updateBar(); renderQueue();
+  updateBar();
+  renderQueue();
 }
 
 function togglePP(){
-  if(!yt||!ytOk) return;
-  const s=yt.getPlayerState();
-  if(s===YT.PlayerState.PLAYING) yt.pauseVideo();
-  else if(s===YT.PlayerState.PAUSED) yt.playVideo();
-  else if(queue.length) playIdx(qi>=0?qi:0);
+  if(!yt || !ytOk) return;
+  const s = yt.getPlayerState();
+  if(s === YT.PlayerState.PLAYING) yt.pauseVideo();
+  else if(s === YT.PlayerState.PAUSED) yt.playVideo();
+  else if(queue.length) playIdx(qi >= 0 ? qi : 0);
 }
 
 function playNext(){
   if(!queue.length) return;
   let n;
-  if(repeatOne){ n=qi; }
-  else if(shuffle){ n=Math.floor(Math.random()*queue.length); }
-  else{ n=qi+1; if(n>=queue.length) n=repeatAll?0:-1; }
-  n>=0 ? playIdx(n) : (qi=-1, updateBar(), document.getElementById('barIconPlay').style.display='',document.getElementById('barIconPause').style.display='none');
+  if(repeatOne){ n = qi; }
+  else if(shuffle){ n = Math.floor(Math.random() * queue.length); }
+  else{ n = qi + 1; if(n >= queue.length) n = repeatAll ? 0 : -1; }
+  if(n >= 0) playIdx(n);
+  else{
+    qi = -1; updateBar();
+    document.getElementById('barIconPlay').style.display = '';
+    document.getElementById('barIconPause').style.display = 'none';
+  }
 }
 function playPrev(){
   if(!queue.length) return;
-  let p=qi-1; if(p<0) p=repeatAll?queue.length-1:0;
+  let p = qi - 1;
+  if(p < 0) p = repeatAll ? queue.length - 1 : 0;
   playIdx(p);
 }
 
 function setVol(v){
-  if(yt&&ytOk) yt.setVolume(+v);
-  document.getElementById('vol').style.setProperty('--p',v+'%');
-  ls('yt_vol',v);
+  if(yt && ytOk) yt.setVolume(+v);
+  document.getElementById('vol').style.setProperty('--p', v+'%');
+  ls('yt_vol', v);
 }
 
 function toggleMode(m){
-  if(m==='shuffle')  shuffle=!shuffle;
-  if(m==='repeat')   { repeatAll=!repeatAll; if(repeatAll) repeatOne=false; }
-  if(m==='repeat1')  { repeatOne=!repeatOne; if(repeatOne) repeatAll=false; }
-  document.getElementById('mShuffle').classList.toggle('on',shuffle);
-  document.getElementById('mRepeat').classList.toggle('on',repeatAll);
-  document.getElementById('mRepeat1').classList.toggle('on',repeatOne);
+  if(m==='shuffle')  shuffle = !shuffle;
+  if(m==='repeat')   { repeatAll = !repeatAll; if(repeatAll) repeatOne = false; }
+  if(m==='repeat1')  { repeatOne = !repeatOne; if(repeatOne) repeatAll = false; }
+  document.getElementById('mShuffle').classList.toggle('on', shuffle);
+  document.getElementById('mRepeat').classList.toggle('on', repeatAll);
+  document.getElementById('mRepeat1').classList.toggle('on', repeatOne);
 }
 
 // ════════════════════════════════════════
-//  QUEUE RENDER
+//  QUEUE
 // ════════════════════════════════════════
 function clearQueue(){
-  if(yt&&ytOk) yt.stopVideo();
-  queue=[]; qi=-1; renderQueue(); updateBar();
-  document.getElementById('barIconPlay').style.display='';document.getElementById('barIconPause').style.display='none';
+  if(yt && ytOk) yt.stopVideo();
+  queue = []; qi = -1;
+  currentPlayingPlId = null;
+  renderQueue(); updateBar();
+  document.getElementById('barIconPlay').style.display = '';
+  document.getElementById('barIconPause').style.display = 'none';
+  updateAllResultHighlights();
 }
+
 function renderQueue(){
-  const list=document.getElementById('qlist');
-  if(!queue.length){ list.innerHTML='<div class="empty">キューが空です<br>SEARCH から追加しよう</div>'; updateQBadge(); return; }
-  list.innerHTML='';
-  queue.forEach((item,i)=>{
-    const d=document.createElement('div');
-    d.className='qi'+(i===qi?' nq':'');
-    d.innerHTML=`<span class="qi-n">${i+1}</span><span class="qi-t">${esc(item.title)}</span><span class="qi-del" data-i="${i}">x</span>`;
-    d.onclick=e=>{ if(e.target.classList.contains('qi-del')) removeQ(+e.target.dataset.i); else playIdx(i); };
+  const list = document.getElementById('qlist');
+  if(!queue.length){
+    list.innerHTML = '<div class="empty">キューが空です<br>SEARCH から追加しよう</div>';
+    updateQBadge(); return;
+  }
+  list.innerHTML = '';
+  queue.forEach((item, i)=>{
+    const d = document.createElement('div');
+    d.className = 'qi' + (i === qi ? ' nq' : '');
+    d.innerHTML = `
+      <span class="qi-n">${i+1}</span>
+      <span class="qi-t">${esc(item.title)}</span>
+      <span class="qi-del" data-i="${i}">✕</span>`;
+    d.onclick = e => {
+      if(e.target.classList.contains('qi-del')) removeQ(+e.target.dataset.i);
+      else playIdx(i);
+    };
     list.appendChild(d);
   });
   updateQBadge();
 }
+
 function removeQ(idx){
-  if(idx===qi&&yt&&ytOk){ yt.stopVideo(); qi=-1; }
-  else if(idx<qi) qi--;
-  queue.splice(idx,1); renderQueue(); updateBar();
+  if(idx === qi && yt && ytOk){ yt.stopVideo(); qi = -1; }
+  else if(idx < qi) qi--;
+  queue.splice(idx, 1);
+  renderQueue(); updateBar();
+  updateAllResultHighlights();
 }
+
 function updateQBadge(){
-  const n=queue.length;
-  document.getElementById('qBadge').textContent=n?`(${n})`:'';
+  const n = queue.length;
+  document.getElementById('qBadge').textContent = n ? `(${n})` : '';
 }
 
 // ════════════════════════════════════════
 //  BAR UPDATE
 // ════════════════════════════════════════
-// Track which playlist is currently being played from
-let currentPlaylistId = null;
-
 function updateBar(){
-  if(qi>=0&&queue[qi]){
-    const it=queue[qi];
-    // Find if this song belongs to a playlist
+  if(qi >= 0 && queue[qi]){
+    const it = queue[qi];
     let plName = '';
-    if(currentPlaylistId){
-      const pl = getPl(currentPlaylistId);
-      if(pl && pl.songs.some(s=>s.id===it.id)) plName = pl.name;
-      else currentPlaylistId = null;
+    if(currentPlayingPlId){
+      const pl = getPl(currentPlayingPlId);
+      if(pl && pl.songs.some(s => s.id === it.id)) plName = pl.name;
+      else currentPlayingPlId = null;
     }
-    document.getElementById('npTop').textContent='NOW PLAYING';
-    document.getElementById('npTitle').textContent=it.title;
-    document.getElementById('npSub').textContent=plName ? `[${plName}] ${it.channel}` : it.channel;
-    // Broadcast for in-game music display (includes playlist name)
-    try{ localStorage.setItem('yt_nowplaying', JSON.stringify({title:it.title, channel:it.channel, id:it.id, playlist:plName})); }catch(e){}
+    document.getElementById('npLabel').textContent = plName ? `♪ ${plName}` : 'NOW PLAYING';
+    document.getElementById('npTitle').textContent = it.title;
+    document.getElementById('npSub').textContent = it.channel;
+    try{
+      localStorage.setItem('yt_nowplaying', JSON.stringify({
+        title: it.title, channel: it.channel, id: it.id, playlist: plName
+      }));
+    }catch(e){}
   } else {
-    document.getElementById('npTop').textContent='MUSIC';
-    document.getElementById('npTitle').textContent='曲を選んでください';
-    document.getElementById('npSub').textContent='SEARCH または PLAYLIST から';
+    document.getElementById('npLabel').textContent = 'MUSIC';
+    document.getElementById('npTitle').textContent = '曲を選んでください';
+    document.getElementById('npSub').textContent = 'SEARCH または PLAYLIST から';
     try{ localStorage.removeItem('yt_nowplaying'); }catch(e){}
-    currentPlaylistId = null;
+    currentPlayingPlId = null;
   }
 }
 
-function updateResultHighlight(id){
-  document.querySelectorAll('.ri').forEach(el=>{
-    el.classList.remove('np');
-    el.querySelector('.ri-add').textContent='＋';
+function updateAllResultHighlights(){
+  results.forEach(item => {
+    const el = document.getElementById('ri-'+item.id);
+    if(!el) return;
+    const inQ = queue.some(x => x.id === item.id);
+    const isPlaying = qi >= 0 && queue[qi] && queue[qi].id === item.id;
+    el.classList.toggle('np', isPlaying);
+    const addBtn = document.getElementById('riadd-'+item.id);
+    if(addBtn) addBtn.textContent = inQ ? '♪' : '＋';
   });
-  const el=document.getElementById('ri-'+id);
-  if(el){ el.classList.add('np'); el.querySelector('.ri-add').textContent='ON'; }
 }
 
 // ════════════════════════════════════════
-//  PLAYLISTS — DATA (Firebase Cloud)
+//  PLAYLISTS — NAVIGATION
 // ════════════════════════════════════════
-function loadPlaylists(){
-  // Handled by Firebase real-time listener in initFirebase()
-  // Fallback: render empty state
-  renderPlSidebar();
+function showPlList(){
+  selPl = null;
+  document.getElementById('plViewList').classList.remove('hidden');
+  document.getElementById('plViewDetail').classList.remove('visible');
 }
-function fbSavePl(pl){
-  // Write single playlist to Firebase
-  if(!fbDb){ showToast('クラウド未接続'); return; }
-  const clean = {
-    id: pl.id,
-    name: pl.name,
-    songs: pl.songs.map(s=>({id:s.id, title:s.title, channel:s.channel, thumb:s.thumb||''})),
-    createdAt: pl.createdAt || Date.now(),
-    updatedAt: Date.now()
-  };
-  fbDb.ref('shared_playlists/'+pl.id).set(clean).catch(e=>{ showToast('保存エラー: '+e.message); });
-}
-function fbDeletePl(id){
-  if(!fbDb){ showToast('クラウド未接続'); return; }
-  fbDb.ref('shared_playlists/'+id).remove().catch(e=>{ showToast('削除エラー: '+e.message); });
-}
-function getPl(id){ return playlists.find(p=>p.id===id); }
 
+function showPlDetail(id){
+  selPl = id;
+  renderPlDetail();
+  document.getElementById('plViewList').classList.add('hidden');
+  document.getElementById('plViewDetail').classList.add('visible');
+}
+
+// ════════════════════════════════════════
+//  PLAYLISTS — DATA
+// ════════════════════════════════════════
 function newPlaylist(){
-  showModal('新しいプレイリスト名', '', name=>{
-    if(!name||!name.trim()) return;
-    if(!fbDb){ showToast('クラウド未接続。再読み込みしてください'); return; }
-    const pl={
+  showModal('新しいプレイリスト名', '', name => {
+    if(!name || !name.trim()) return;
+    const pl = {
       id: Date.now()+'_'+Math.random().toString(36).slice(2),
       name: name.trim(), songs: [],
       createdAt: Date.now(), updatedAt: Date.now()
     };
-    // Optimistic update: add locally right away so UI responds instantly
+    // Optimistic local update
     playlists.push(pl);
-    selPl=pl.id;
-    renderPlSidebar();
-    renderPlDetail();
+    renderPlList();
+    fbSavePl(pl);
+    selPl = pl.id;
+    showPlDetail(pl.id);
     swTab('playlists');
     openDrawer();
     showToast(`「${pl.name}」を作成しました`);
-    // Then persist to Firebase (listener will sync back but local state is already correct)
-    fbSavePl(pl);
   });
 }
 
-function renamePl(id){
-  const pl=getPl(id); if(!pl) return;
-  showModal('プレイリスト名を変更', pl.name, name=>{
-    if(!name||!name.trim()) return;
-    pl.name=name.trim();
-    renderPlSidebar(); renderPlDetail();
+function renameCurPl(){
+  const pl = getPl(selPl); if(!pl) return;
+  showModal('プレイリスト名を変更', pl.name, name => {
+    if(!name || !name.trim()) return;
+    pl.name = name.trim();
+    document.getElementById('plDetailName').textContent = pl.name;
+    renderPlList();
     fbSavePl(pl);
     showToast('名前を変更しました');
   });
 }
 
-function deletePl(id){
-  const pl=getPl(id); if(!pl) return;
-  if(!confirm(`「${pl.name}」を削除しますか？\n（全員の画面から削除されます）`)) return;
-  if(selPl===id) selPl=null;
-  fbDeletePl(id);
+function deleteCurPl(){
+  const pl = getPl(selPl); if(!pl) return;
+  if(!confirm(`「${pl.name}」を削除しますか？`)) return;
+  fbDeletePl(pl.id);
+  playlists = playlists.filter(p => p.id !== pl.id);
+  renderPlList();
+  showPlList();
   showToast('削除しました');
 }
 
 function addSongToPl(plId, song){
-  const pl=getPl(plId); if(!pl) return;
-  if(pl.songs.some(s=>s.id===song.id)){ showToast('既に追加されています'); return; }
-  pl.songs.push({id:song.id, title:song.title, channel:song.channel, thumb:song.thumb||''});
+  const pl = getPl(plId); if(!pl) return;
+  if(pl.songs.some(s => s.id === song.id)){ showToast('既に追加されています'); return; }
+  pl.songs.push({id:song.id, title:song.title, channel:song.channel||'', thumb:song.thumb||''});
   fbSavePl(pl);
+  // Refresh detail view if this playlist is open
+  if(selPl === plId) renderPlDetail();
+  renderPlList(); // update count in list
   showToast(`「${pl.name}」に追加しました`);
 }
 
 function removeSongFromPl(plId, songId){
-  const pl=getPl(plId); if(!pl) return;
-  pl.songs=pl.songs.filter(s=>s.id!==songId);
-  fbSavePl(pl); renderPlDetail();
+  const pl = getPl(plId); if(!pl) return;
+  pl.songs = pl.songs.filter(s => s.id !== songId);
+  fbSavePl(pl);
+  renderPlDetail();
+  renderPlList();
 }
 
-function moveSong(plId, idx, dir){
-  const pl=getPl(plId); if(!pl) return;
-  const ni=idx+dir;
-  if(ni<0||ni>=pl.songs.length) return;
-  [pl.songs[idx],pl.songs[ni]]=[pl.songs[ni],pl.songs[idx]];
-  fbSavePl(pl); renderPlDetail();
-}
-
-// ════════════════════════════════════════
-//  PLAYLISTS — RENDER
-// ════════════════════════════════════════
-function renderPlSidebar(){
-  const list=document.getElementById('plList');
-  if(!playlists.length){ list.innerHTML='<div class="empty" style="padding:14px;">プレイリストなし</div>'; return; }
-  list.innerHTML='';
-  playlists.forEach(pl=>{
-    const d=document.createElement('div');
-    d.className='pl-item'+(pl.id===selPl?' sel':'');
-    d.innerHTML=`<span class="pl-name">${esc(pl.name)}</span><span class="pl-cnt">${pl.songs.length}</span>`;
-    d.onclick=()=>{ selPl=pl.id; renderPlSidebar(); renderPlDetail(); };
-    list.appendChild(d);
-  });
-  document.getElementById('plBadge').textContent=playlists.length?`(${playlists.length})`:'';
-}
-
-function renderPlDetail(){
-  const head=document.getElementById('plMainHead');
-  const songs=document.getElementById('plSongs');
-  const pl=getPl(selPl);
-  if(!pl){
-    document.getElementById('plTitle').textContent='← リストを選択';
-    document.getElementById('plTitle').style.color='var(--dim)';
-    head.innerHTML=`<span id="plTitle" style="color:var(--dim);">← リストを選択</span>`;
-    songs.innerHTML='<div class="empty">プレイリストを選択してください</div>'; return;
-  }
-  head.innerHTML=`
-    <span id="plTitle">${esc(pl.name)}</span>
-    <button class="pl-act-btn play" onclick="playPlaylist('${pl.id}')">▶ 再生</button>
-    <button class="pl-act-btn share" onclick="sharePlaylist('${pl.id}')">SHARE</button>
-    <button class="pl-act-btn" onclick="renamePl('${pl.id}')">RENAME</button>
-    <button class="pl-act-btn danger" onclick="deletePl('${pl.id}')">DEL</button>
-  `;
-  if(!pl.songs.length){ songs.innerHTML='<div class="empty">曲がありません<br>SEARCH の + ボタンで追加</div>'; return; }
-  songs.innerHTML='';
-  pl.songs.forEach((s,i)=>{
-    const d=document.createElement('div');
-    d.className='ps'+(queue[qi]&&queue[qi].id===s.id?' np':'');
-    d.innerHTML=`
-      <span class="ps-n">${i+1}</span>
-      <span class="ps-t">${esc(s.title)}</span>
-      <span class="ps-up" data-i="${i}" title="上へ">▲</span>
-      <span class="ps-dn" data-i="${i}" title="下へ">▼</span>
-      <span class="ps-del" data-id="${s.id}" title="削除">x</span>`;
-    d.querySelector('.ps-up').onclick=e=>{ e.stopPropagation(); moveSong(pl.id,i,-1); };
-    d.querySelector('.ps-dn').onclick=e=>{ e.stopPropagation(); moveSong(pl.id,i,+1); };
-    d.querySelector('.ps-del').onclick=e=>{ e.stopPropagation(); removeSongFromPl(pl.id,s.id); };
-    d.onclick=e=>{ if(e.target.classList.contains('ps-up')||e.target.classList.contains('ps-dn')||e.target.classList.contains('ps-del')) return; playFromPlaylist(pl.id,i); };
-    songs.appendChild(d);
-  });
-}
-
-function playPlaylist(plId){
-  const pl=getPl(plId); if(!pl||!pl.songs.length) return;
-  currentPlaylistId=plId;
-  queue=[...pl.songs]; qi=0;
+function playCurrentPl(){
+  const pl = getPl(selPl); if(!pl || !pl.songs.length){ showToast('曲がありません'); return; }
+  currentPlayingPlId = pl.id;
+  queue = [...pl.songs]; qi = 0;
   renderQueue(); playIdx(0);
   showToast(`「${pl.name}」を再生中`);
 }
 
 function playFromPlaylist(plId, idx){
-  const pl=getPl(plId); if(!pl) return;
-  currentPlaylistId=plId;
-  queue=[...pl.songs]; qi=idx;
+  const pl = getPl(plId); if(!pl) return;
+  currentPlayingPlId = plId;
+  queue = [...pl.songs]; qi = idx;
   renderQueue(); playIdx(idx);
+}
+
+// ════════════════════════════════════════
+//  PLAYLISTS — RENDER
+// ════════════════════════════════════════
+function renderPlList(){
+  const list = document.getElementById('plList');
+  document.getElementById('plBadge').textContent = playlists.length ? `(${playlists.length})` : '';
+  if(!playlists.length){
+    list.innerHTML = '<div class="empty">プレイリストがまだありません<br>NEW ボタンで作成しよう</div>';
+    return;
+  }
+  list.innerHTML = '';
+  playlists.forEach(pl => {
+    const d = document.createElement('div');
+    d.className = 'pl-item';
+    const isPlaying = currentPlayingPlId === pl.id;
+    d.innerHTML = `
+      <span class="pl-item-icon">${isPlaying ? '▶' : '♫'}</span>
+      <div class="pl-item-info">
+        <div class="pl-item-name">${esc(pl.name)}</div>
+        <div class="pl-item-cnt">${pl.songs.length}曲${isPlaying ? ' · 再生中' : ''}</div>
+      </div>
+      <span class="pl-item-arrow">›</span>`;
+    d.onclick = () => showPlDetail(pl.id);
+    list.appendChild(d);
+  });
+}
+
+function renderPlDetail(){
+  const pl = getPl(selPl);
+  if(!pl) return;
+  document.getElementById('plDetailName').textContent = pl.name;
+  const songs = document.getElementById('plDetailSongs');
+  if(!pl.songs || !pl.songs.length){
+    songs.innerHTML = '<div class="empty">曲がありません<br>SEARCH の ＋ ボタンで追加</div>';
+    return;
+  }
+  songs.innerHTML = '';
+  pl.songs.forEach((s, i) => {
+    const isNP = qi >= 0 && queue[qi] && queue[qi].id === s.id && currentPlayingPlId === pl.id;
+    const d = document.createElement('div');
+    d.className = 'ps' + (isNP ? ' np' : '');
+    d.innerHTML = `
+      <span class="ps-n">${i+1}</span>
+      <span class="ps-t">${esc(s.title)}</span>
+      <span class="ps-del" title="削除">✕</span>`;
+    d.querySelector('.ps-del').onclick = e => { e.stopPropagation(); removeSongFromPl(pl.id, s.id); };
+    d.onclick = e => { if(!e.target.classList.contains('ps-del')) playFromPlaylist(pl.id, i); };
+    songs.appendChild(d);
+  });
 }
 
 // ════════════════════════════════════════
 //  ADD TO PLAYLIST DROPDOWN
 // ════════════════════════════════════════
 function showDrop(song, anchor){
-  dropTarget=song;
-  const drop=document.getElementById('plDropdown');
-  const items=document.getElementById('plDropdownItems');
-  items.innerHTML='';
+  dropTarget = song;
+  const drop = document.getElementById('plDropdown');
+  const items = document.getElementById('plDropdownItems');
+  items.innerHTML = '';
+
   if(!playlists.length){
-    items.innerHTML=`<div class="pld-none">プレイリストがありません</div>
-    <div class="pld-item" onclick="newPlaylist();closeDrop();">＋ 新規作成</div>`;
+    items.innerHTML = `
+      <div class="pld-none">プレイリストがありません</div>
+      <div class="pld-sep"></div>
+      <div class="pld-item pld-new" onclick="closeDrop();newPlaylist();">＋ 新規作成</div>`;
   } else {
-    playlists.forEach(pl=>{
-      const d=document.createElement('div');
-      d.className='pld-item';
-      d.textContent=pl.name+(pl.songs.some(s=>s.id===song.id)?'  [OK]':'');
-      d.onclick=()=>{ addSongToPl(pl.id,song); closeDrop(); };
+    playlists.forEach(pl => {
+      const added = pl.songs.some(s => s.id === song.id);
+      const d = document.createElement('div');
+      d.className = 'pld-item' + (added ? ' added' : '');
+      d.innerHTML = `<span>${added ? '✓ ' : ''}</span><span>${esc(pl.name)}</span><small style="margin-left:auto;color:var(--dim);font-size:10px;">${pl.songs.length}曲</small>`;
+      d.onclick = () => { if(!added){ addSongToPl(pl.id, song); } else { showToast('既に追加済みです'); } closeDrop(); };
       items.appendChild(d);
     });
-    const nd=document.createElement('div');
-    nd.className='pld-item'; nd.style.borderTop='1px solid rgba(0,245,255,.1)';
-    nd.textContent='＋ 新規プレイリスト作成';
-    nd.onclick=()=>{ closeDrop(); newPlaylist(); };
+    const sep = document.createElement('div'); sep.className = 'pld-sep'; items.appendChild(sep);
+    const nd = document.createElement('div');
+    nd.className = 'pld-item pld-new';
+    nd.innerHTML = '<span>＋ 新規プレイリスト作成</span>';
+    nd.onclick = () => { closeDrop(); newPlaylist(); };
     items.appendChild(nd);
   }
-  // position near anchor
-  const rect=anchor.getBoundingClientRect();
-  drop.style.left=Math.min(rect.left, window.innerWidth-170)+'px';
-  drop.style.top=(rect.top-drop.offsetHeight-8)+'px';
-  drop.classList.add('show');
-  // reposition after render
+
+  const rect = anchor.getBoundingClientRect();
+  drop.style.display = 'block';
   requestAnimationFrame(()=>{
-    const dh=drop.offsetHeight;
-    let top=rect.top-dh-8;
-    if(top<8) top=rect.bottom+8;
-    drop.style.top=top+'px';
+    const dw = drop.offsetWidth;
+    const dh = drop.offsetHeight;
+    let left = rect.right - dw;
+    if(left < 8) left = 8;
+    if(left + dw > window.innerWidth - 8) left = window.innerWidth - dw - 8;
+    let top = rect.top - dh - 8;
+    if(top < 8) top = rect.bottom + 8;
+    drop.style.left = left + 'px';
+    drop.style.top = top + 'px';
+    drop.classList.add('show');
   });
 }
-function closeDrop(){ document.getElementById('plDropdown').classList.remove('show'); dropTarget=null; }
 
-// ════════════════════════════════════════
-//  SHARE PLAYLIST
-// ════════════════════════════════════════
-function sharePlaylist(plId){
-  const pl=getPl(plId); if(!pl) return;
-  // Since playlists are cloud-shared, just copy the playlist name + song count info
-  // Also provide a URL with base64 data as fallback for cross-server sharing
-  const data=btoa(unescape(encodeURIComponent(JSON.stringify({name:pl.name, songs:pl.songs}))));
-  const url=location.origin+location.pathname+'?pl='+data;
-  const msg = `[${pl.name}] ${pl.songs.length}曲\n${url}`;
-  navigator.clipboard.writeText(url).then(()=>{
-    showToast('共有URLをコピーしました！');
-  }).catch(()=>{
-    prompt('このURLをコピーしてください:', url);
-  });
+function closeDrop(){
+  const d = document.getElementById('plDropdown');
+  d.classList.remove('show');
+  dropTarget = null;
 }
 
 // ════════════════════════════════════════
 //  MODAL
 // ════════════════════════════════════════
 function showModal(title, defaultVal, cb){
-  modalCb=cb;
-  document.getElementById('modalTitle').textContent=title;
-  const inp=document.getElementById('modalInput');
-  inp.value=defaultVal||'';
+  modalCb = cb;
+  document.getElementById('modalTitle').textContent = title;
+  const inp = document.getElementById('modalInput');
+  inp.value = defaultVal || '';
   document.getElementById('modal').classList.add('show');
-  setTimeout(()=>inp.focus(),100);
-  inp.onkeydown=e=>{ if(e.key==='Enter') modalConfirm(); if(e.key==='Escape') closeModal(); };
+  setTimeout(()=> inp.focus(), 50);
+  inp.onkeydown = e => {
+    if(e.key === 'Enter') modalConfirm();
+    if(e.key === 'Escape') closeModal();
+  };
 }
 function modalConfirm(){
-  const v=document.getElementById('modalInput').value.trim();
-  const cb=modalCb;   // ← closeModalの前に保存
+  const v = document.getElementById('modalInput').value.trim();
+  const cb = modalCb; // save BEFORE closeModal clears it
   closeModal();
   if(cb) cb(v);
 }
 function closeModal(){
   document.getElementById('modal').classList.remove('show');
-  modalCb=null;
+  modalCb = null;
 }
 
 // ════════════════════════════════════════
 //  TOAST
 // ════════════════════════════════════════
-let toastTimer=null;
+let toastTimer = null;
 function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2500);
 }
 
 // ════════════════════════════════════════
 //  UTILS
 // ════════════════════════════════════════
-function setStat(h,c){ const e=document.getElementById('stat'); e.innerHTML=h; e.style.color=c||'var(--acc)'; }
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function ls(k,v){ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }
+function setStat(h, c){ const e = document.getElementById('stat'); e.innerHTML = h; e.style.color = c || 'var(--acc)'; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function ls(k, v){ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }
 </script>
 </body>
 </html>
