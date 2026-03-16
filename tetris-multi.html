@@ -1241,37 +1241,38 @@ window.rematch=async()=>{
   const prevSlot=mySlot;
   const prevName=(document.getElementById('myNameTag')?.textContent||'PLAYER').split(' ')[0]||'PLAYER';
 
-  // Firebase listeners を止める（ルームは消さない）
+  // ゲーム状態クリア（Firebaseリスナーは止めるがルームは消さない）
   offAll();
-  gameRunning=false;endedOnce=false;
+  gameRunning=false; endedOnce=false;
   if(animId){cancelAnimationFrame(animId);animId=null;}
-  game=null;myFinalRank=null;totalPlayers=0;statAtkSent=0;
+  game=null; myFinalRank=null; totalPlayers=0; statAtkSent=0;
   Object.keys(oppInfo).forEach(k=>delete oppInfo[k]);
-  dasStop();clearInterval(sdi);sdi=null;
-  Object.keys(uiC).forEach(k=>uiC[k]=-1);uiC.b2b=null;
+  dasStop(); clearInterval(sdi); sdi=null;
+  Object.keys(uiC).forEach(k=>uiC[k]=-1); uiC.b2b=null;
 
   try{
     if(prevSlot==='p1'){
-      // ── ホスト ──
-      // ① ゲームデータ・ガベージ・生存フラグをクリア
-      await remove(ref(db,'multi/'+prevCode+'/game'));
-      await remove(ref(db,'multi/'+prevCode+'/garb'));
-      await remove(ref(db,'multi/'+prevCode+'/alive'));
+      // ══ ホスト ══
+      // ① 前のゲームデータを削除
+      await Promise.all([
+        remove(ref(db,'multi/'+prevCode+'/game')),
+        remove(ref(db,'multi/'+prevCode+'/garb')),
+        remove(ref(db,'multi/'+prevCode+'/alive')),
+      ]);
 
-      // ② p1以外のスロットを全て null に（未参加プレイヤーが残って見えるバグの修正）
-      let rSnap; try{ rSnap=await get(ref(db,'multi/'+prevCode)); }catch(e){ throw new Error('接続エラー'); }
+      // ② ルームをatomicにリセット：status=waiting、非p1スロットをnull
+      const rSnap = await get(ref(db,'multi/'+prevCode));
       if(!rSnap.exists()) throw new Error('ルームが見つかりません');
-      const roomVal=rSnap.val();
-      const maxP=roomVal.maxPlayers||3;
-      const clearUpd={status:'waiting',gameStartAt:null,activeSlots:null};
-      ['p2','p3','p4'].slice(0,maxP-1).forEach(s=>{ clearUpd[s]=null; });
-      await update(ref(db,'multi/'+prevCode),clearUpd);
-
-      // ③ p1自身を再登録
-      await update(ref(db,'multi/'+prevCode+'/p1'),{name:prevName,alive:true});
+      const maxP = rSnap.val().maxPlayers||3;
+      const resetData = { status:'waiting', gameStartAt:null, activeSlots:null };
+      ['p2','p3','p4'].slice(0,maxP-1).forEach(s=>{ resetData[s]=null; });
+      // p1スロットも確実に再設定（alive:trueで待機可能状態に）
+      resetData['p1'] = { name:prevName, alive:true };
+      await update(ref(db,'multi/'+prevCode), resetData);
       onDisconnect(ref(db,'multi/'+prevCode)).remove();
 
-      roomCode=prevCode;mySlot=prevSlot;endedOnce=false;
+      // ③ 待機画面に移行
+      roomCode=prevCode; mySlot='p1'; endedOnce=false;
       document.getElementById('displayRoomCode').textContent=prevCode;
       document.getElementById('statusRoom').textContent='MULTI: '+prevCode;
       document.getElementById('resultOverlay').classList.remove('show');
@@ -1279,56 +1280,59 @@ window.rematch=async()=>{
       listenWait();
 
     } else {
-      // ── 非ホスト ──
-      // Firebase リスナーで status==='waiting' になるのをリアルタイム待機（最大20秒）
+      // ══ 非ホスト ══
+      // ホストがリセットするまでFirebaseをリアルタイム監視（最大30秒）
       _rematchActive=true;
       if(statusEl) statusEl.textContent='ホストのリマッチを待っています...';
-      showToast('⏳ ホストのリマッチを待っています...', 'warn');
+      showToast('⏳ ホストのリマッチを待っています...','warn');
+
       const rRef=ref(db,'multi/'+prevCode);
-      await new Promise((resolve,reject)=>{
-        // onValue()はunsubscribe関数を返す（Firebase modular v10の正式パターン）
+      const roomData = await new Promise((resolve,reject)=>{
         let unsub=null;
-        const done=(fn)=>{ clearTimeout(timer); if(unsub){try{unsub();}catch(e){}} fn(); };
-        const timer=setTimeout(()=>done(()=>reject(new Error('ホストが応答しません。もう一度お試しください'))),20000);
+        const done=(fn)=>{
+          clearTimeout(timer);
+          if(unsub){ try{unsub();}catch(e){} unsub=null; }
+          fn();
+        };
+        const timer=setTimeout(()=>done(()=>reject(new Error('ホストが応答しません（30秒タイムアウト）'))),30000);
         unsub=onValue(rRef,snap=>{
           const d=snap.val();
           if(!d){ done(()=>reject(new Error('ルームが削除されました'))); return; }
-          if(d.status==='waiting'){ done(()=>resolve()); }
+          if(d.status==='waiting'){ done(()=>resolve(d)); }
         });
       });
 
-      // waiting 確認 — 最新データを取得してスロットを確保
-      // BACK TO LOBBY が押された場合はここで中断（leaveRoomがflagをfalseにする）
+      // BACK TO LOBBY が押された場合は中断
       if(!_rematchActive) return;
-      const freshSnap=await get(rRef);
-      if(!freshSnap.exists()) throw new Error('ルームが見つかりません');
-      const freshD=freshSnap.val()||{};
-      const maxP2=freshD.maxPlayers||3;
+
+      const maxP2=roomData.maxPlayers||3;
       const slots=['p1','p2','p3','p4'].slice(0,maxP2);
 
-      // 自分のスロットが空き(null)ならそのまま、他人に取られていれば空きを探す
+      // 自分のスロットを確保（nullなら再利用、他人が使っていれば別スロット）
       let targetSlot=prevSlot;
-      if(freshD[prevSlot]&&freshD[prevSlot].name&&freshD[prevSlot].name!==prevName){
-        targetSlot=slots.find(s=>!freshD[s])||null;
+      if(roomData[prevSlot] && roomData[prevSlot].name && roomData[prevSlot].name!==prevName){
+        targetSlot=slots.find(s=>!roomData[s])||null;
         if(!targetSlot) throw new Error('空きスロットがありません');
       }
 
-      // スロットを書き込み（alive:trueで確実に再参加）
-      mySlot=targetSlot;roomCode=prevCode;endedOnce=false;
+      // スロット書き込み
+      mySlot=targetSlot; roomCode=prevCode; endedOnce=false;
       await update(rRef,{[targetSlot]:{name:prevName,alive:true}});
       onDisconnect(ref(db,'multi/'+prevCode+'/'+targetSlot)).remove();
 
+      if(!_rematchActive) return; // 書き込み中にキャンセルされた場合
+      _rematchActive=false;
       document.getElementById('displayRoomCode').textContent=prevCode;
       document.getElementById('statusRoom').textContent='MULTI: '+prevCode;
-      _rematchActive=false;
       document.getElementById('resultOverlay').classList.remove('show');
       showScreen('waitingScreen');
       listenWait();
     }
   }catch(err){
+    _rematchActive=false;
     if(statusEl) statusEl.textContent='⚠ '+err.message;
     btn.disabled=false;
-    roomCode=prevCode;mySlot=prevSlot;
+    roomCode=prevCode; mySlot=prevSlot;
   }
 };
 
@@ -1342,17 +1346,15 @@ window.leaveRoom=async()=>{
   resetState();
   if(!wasBot&&code&&slot&&db){
     try{
-      // ゲームデータにgameOver記録（他プレイヤーに退出を通知）
+      // gameOver を記録して他プレイヤーに通知
       await update(ref(db,'multi/'+code+'/game'),{[slot]:{gameOver:true,score:0,board:[]}});
-      // 自分のaliveをfalseにして他プレイヤーのUI即更新
+      // alive を false にする
       await update(ref(db,'multi/'+code+'/alive'),{[slot]:false});
-      // p1（ホスト）が退出する場合はルーム全体を削除
-      if(slot==='p1'){
-        await remove(ref(db,'multi/'+code));
-      } else {
-        // 非ホストはスロットをnullに（待機画面に残っているプレイヤーに空きを知らせる）
+      // 非ホストの場合はスロットを null にする
+      if(slot!=='p1'){
         await update(ref(db,'multi/'+code),{[slot]:null});
       }
+      // p1はonDisconnectに任せる（rematchで戻るためルームは保持する）
     }catch(e){}
   }
   showScreen('lobbyScreen');
@@ -1453,19 +1455,6 @@ async function startGame(roomData){
   update(ref(db,'multi/'+roomCode+'/alive'),{[mySlot]:true}).catch(()=>{});
 
   const PUSH=50;let lastPush=0,pendOut=0,lastMusicCheck=0;
-  // ゲーム中にルームが削除されたら（ホスト切断など）ゲームを終了する
-  const roomWatchRef=ref(db,'multi/'+roomCode+'/status');
-  _oppLs['room_status']=roomWatchRef;
-  onValue(roomWatchRef,snap=>{
-    if(!gameRunning)return;
-    // status=nullはルーム削除を意味する（ホスト切断など）
-    if(snap.val()===null&&gameRunning&&!endedOnce){
-      showToast('ホストが切断しました','warn');
-      // 非ホストは1位扱いで終了、ホスト自身が消えた場合はスキップ
-      if(mySlot!=='p1') endGame(1);
-    }
-  });
-
   const loop=ts=>{
     if(!gameRunning)return;
     game.update(ts);game.draw();

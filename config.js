@@ -1,6 +1,17 @@
-export const APP_VERSION = "2.5.0";
+export const APP_VERSION = "2.6.0";
 
 export const UPDATE_LOG = [
+  {
+    version: "2.6.0",
+    title: "再戦システム完全再実装",
+    changes: [
+      "再戦ボタンを押すとロビーに戻るバグを修正。原因は複数の競合する処理（room_statusウォッチャーの誤検知・leaveRoomの過剰なルーム削除・.then()チェーンのエラーが外部try-catchに届かない問題）でした。",
+      "rematch()関数を完全に書き直し。ホストはgame/garb/aliveを並列削除後、1回のupdateでルームをアトミックにリセットするよう変更しました。",
+      "非ホストのリマッチ待機をasync/awaitで実装し直し、エラーが確実にcatchブロックに届くようになりました。",
+      "leaveRoom()からホストのルーム全削除処理を削除。ホスト退出時はonDisconnectに任せ、再戦の可能性を残すようにしました。",
+      "startGame()内のroomStatusウォッチャーを削除。このウォッチャーがrematch時のstatus変更を誤検知してendGame()を呼ぶことがありました。"
+    ]
+  },
   {
     version: "2.5.0",
     title: "リマッチ表示・QMカウントダウン修正",
