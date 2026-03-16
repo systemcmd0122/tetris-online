@@ -104,12 +104,12 @@
   .center-col{display:flex;flex-direction:column;align-items:center;gap:8px;align-self:center}
   .vs-text{font-family:'Press Start 2P',monospace;font-size:16px;background:linear-gradient(180deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(0,245,255,.5))}
 
-  .side-panel{display:flex;flex-direction:column;gap:8px;min-width:88px}
-  .panel-box{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:9px}
-  .panel-box-title{font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:6px}
-  .score-value{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--accent3);text-shadow:0 0 15px rgba(170,255,0,.5);word-break:break-all}
-  .level-value{font-family:'Press Start 2P',monospace;font-size:18px;color:var(--accent);text-shadow:0 0 20px rgba(0,245,255,.5)}
-  .lines-value{font-family:'Press Start 2P',monospace;font-size:13px;color:var(--text)}
+  .side-panel{display:flex;flex-direction:column;gap:8px;min-width:100px}
+  .panel-box{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:10px}
+  .panel-box-title{font-size:11px;color:var(--dim);letter-spacing:2px;margin-bottom:7px}
+  .score-value{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--accent3);text-shadow:0 0 15px rgba(170,255,0,.5);word-break:break-all}
+  .level-value{font-family:'Press Start 2P',monospace;font-size:20px;color:var(--accent);text-shadow:0 0 20px rgba(0,245,255,.5)}
+  .lines-value{font-family:'Press Start 2P',monospace;font-size:14px;color:var(--text)}
   #nextCanvas,#holdCanvas{border:none;background:rgba(0,0,0,.4)}
 
   .controls-hint{width:100%;max-width:720px;display:flex;justify-content:center;gap:14px;margin-top:8px;flex-wrap:wrap}
@@ -129,8 +129,8 @@
   @media(max-width:640px){
     .mobile-controls{display:flex}
     .controls-hint{display:none}
-    .side-panel{min-width:68px}
-    .score-value{font-size:9px}
+    .side-panel{min-width:76px}
+    .score-value{font-size:10px}
     .panel-box{padding:7px}
   }
 
@@ -211,20 +211,20 @@
 
   /* ── Enhanced side panel ── */
   .panel-box.combo-box{border-color:rgba(170,255,0,.35);background:rgba(170,255,0,.04)}
-  .combo-value{font-family:'Press Start 2P',monospace;font-size:20px;color:var(--accent3);text-shadow:0 0 20px rgba(170,255,0,.8);transition:transform .1s;line-height:1.1}
+  .combo-value{font-family:'Press Start 2P',monospace;font-size:22px;color:var(--accent3);text-shadow:0 0 20px rgba(170,255,0,.8);transition:transform .1s;line-height:1.1}
   .combo-value.pop{animation:comboPop .3s ease-out}
   @keyframes comboPop{0%{transform:scale(1.8);color:#fff}100%{transform:scale(1)}}
-  .combo-label-inline{font-size:7px;color:rgba(170,255,0,.6);letter-spacing:2px;margin-top:2px}
+  .combo-label-inline{font-size:9px;color:rgba(170,255,0,.6);letter-spacing:2px;margin-top:2px}
 
-  .b2b-badge{display:inline-block;font-size:7px;letter-spacing:1px;padding:2px 5px;border-radius:2px;border:1px solid;margin-top:4px;transition:all .2s}
+  .b2b-badge{display:inline-block;font-size:8px;letter-spacing:1px;padding:3px 6px;border-radius:2px;border:1px solid;margin-top:4px;transition:all .2s}
   .b2b-badge.off{border-color:var(--border);color:var(--dim);background:transparent}
   .b2b-badge.on{border-color:#ff8800;color:#ff8800;background:rgba(255,136,0,.1);box-shadow:0 0 8px rgba(255,136,0,.4);animation:b2bGlow 1s ease-in-out infinite alternate}
   @keyframes b2bGlow{0%{box-shadow:0 0 4px rgba(255,136,0,.3)}100%{box-shadow:0 0 14px rgba(255,136,0,.7)}}
 
   .panel-box.atk-box{border-color:rgba(255,51,85,.3);background:rgba(255,51,85,.03)}
   .atk-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
-  .atk-label{font-size:8px;color:var(--dim);letter-spacing:1px}
-  .atk-val{font-family:'Press Start 2P',monospace;font-size:9px}
+  .atk-label{font-size:10px;color:var(--dim);letter-spacing:1px}
+  .atk-val{font-family:'Press Start 2P',monospace;font-size:11px}
   .atk-val.sent{color:var(--accent3)}
   .atk-val.recv{color:var(--red)}
   .pending-garb-row{display:flex;align-items:center;gap:3px;margin-top:4px;flex-wrap:wrap}
@@ -239,8 +239,8 @@
   /* ── Enhanced result overlay ── */
   .result-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin:10px 0;max-width:320px}
   .rs-cell{text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:2px;padding:8px}
-  .rs-cell-label{font-size:8px;color:var(--dim);letter-spacing:2px;margin-bottom:4px}
-  .rs-cell-val{font-family:'Press Start 2P',monospace;font-size:13px;color:var(--accent3)}
+  .rs-cell-label{font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:4px}
+  .rs-cell-val{font-family:'Press Start 2P',monospace;font-size:14px;color:var(--accent3)}
 
   /* ── Match flash ── */
   .match-flash{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:38;pointer-events:none}
@@ -287,7 +287,7 @@
     </div>
     <button class="btn btn-primary" onclick="createRoom()">＋ オンライン対戦（ルーム作成）</button>
     <button class="btn btn-bot" onclick="toggleBotDifficulty()"><span style="display:flex;align-items:center;justify-content:center;gap:8px"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor"><rect x="2" y="4" width="9" height="7" rx="1"/><rect x="4" y="2" width="5" height="2"/><rect x="4" y="6" width="2" height="2" fill="black" opacity=".4"/><rect x="7" y="6" width="2" height="2" fill="black" opacity=".4"/><rect x="0" y="6" width="2" height="1.5" rx=".5"/><rect x="11" y="6" width="2" height="1.5" rx=".5"/></svg>VS BOT（ボット対戦）</span></button>
-    <a href="how-to.html" class="btn btn-secondary" style="text-decoration:none;text-align:center;display:block;"><span style="display:flex;align-items:center;justify-content:center;gap:8px"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="5.5"/><path d="M6.5 4a1.5 1.5 0 0 1 1.5 1.5c0 1-1.5 1.5-1.5 2.5"/><circle cx="6.5" cy="10" r=".6" fill="currentColor" stroke="none"/></svg>あそびかた解説</span></a>
+    <a href="how-to.html" class="btn btn-secondary" style="text-decoration:none;text-align:center;display:block;font-size:10px;opacity:0.7;" onclick="document.getElementById('botDifficulty').classList.remove('show')">→ あそびかた</a>
     <div class="bot-difficulty" id="botDifficulty">
       <div class="bot-difficulty-label">DIFFICULTY</div>
       <div class="diff-btns">
@@ -335,20 +335,20 @@
 <div class="screen" id="gameScreen">
   <div class="game-header">
     <span class="game-title">TETRIS BATTLE</span>
-    <div id="oppMusicBanner" style="display:none;align-items:center;gap:6px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.3);border-radius:3px;padding:4px 10px;flex:1;margin:0 10px;min-width:0;overflow:hidden;flex-direction:column;">
+    <div id="oppMusicBanner" style="display:none;align-items:center;gap:6px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.3);border-radius:3px;padding:5px 10px;flex:1;margin:0 10px;min-width:0;overflow:hidden;flex-direction:column;">
       <div style="display:flex;align-items:center;gap:5px;width:100%;min-width:0;">
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="#aaff00" style="flex-shrink:0"><path d="M2 8V3l7-1.5v5"/><circle cx="1.5" cy="8" r="1.5"/><circle cx="7.5" cy="6.5" r="1.5"/></svg>
-        <span id="oppMusicPlaylistLabel" style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(170,255,0,0.6);flex-shrink:0;letter-spacing:1px;white-space:nowrap;"></span>
-        <span id="oppMusicTitle" style="font-size:9px;color:#aaff00;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0px;font-weight:700;min-width:0;"></span>
+        <svg width="12" height="12" viewBox="0 0 10 10" fill="#aaff00" style="flex-shrink:0"><path d="M2 8V3l7-1.5v5"/><circle cx="1.5" cy="8" r="1.5"/><circle cx="7.5" cy="6.5" r="1.5"/></svg>
+        <span id="oppMusicPlaylistLabel" style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(170,255,0,0.6);flex-shrink:0;letter-spacing:1px;white-space:nowrap;"></span>
+        <span id="oppMusicTitle" style="font-size:11px;color:#aaff00;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0px;font-weight:700;min-width:0;"></span>
       </div>
     </div>
     <div class="game-header-right">
       <button class="sound-btn on" id="soundBtn" onclick="toggleSound()">
-        <svg id="soundIconOn" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M1 4h2l3-3v10L3 8H1z"/><path d="M8 3.5A3.5 3.5 0 0 1 8 8.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M9.5 2A5 5 0 0 1 9.5 10" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
-        <svg id="soundIconOff" width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style="display:none"><path d="M1 4h2l3-3v10L3 8H1z"/><line x1="8" y1="4" x2="11" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="11" y1="4" x2="8" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
+        <svg id="soundIconOn" width="13" height="13" viewBox="0 0 12 12" fill="currentColor"><path d="M1 4h2l3-3v10L3 8H1z"/><path d="M8 3.5A3.5 3.5 0 0 1 8 8.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M9.5 2A5 5 0 0 1 9.5 10" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+        <svg id="soundIconOff" width="13" height="13" viewBox="0 0 12 12" fill="currentColor" style="display:none"><path d="M1 4h2l3-3v10L3 8H1z"/><line x1="8" y1="4" x2="11" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="11" y1="4" x2="8" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
         <span id="soundLabel">ON</span>
       </button>
-      <button class="btn btn-secondary" style="width:auto;padding:5px 12px;font-size:8px;" onclick="leaveRoom()">QUIT</button>
+      <button class="btn btn-secondary" style="width:auto;padding:6px 14px;font-size:9px;" onclick="leaveRoom()">QUIT</button>
     </div>
   </div>
   <div class="game-layout">
@@ -616,7 +616,7 @@ const ROT_NAMES=['0','R','2','L'];
 const LINE_SCORES=[0,100,300,500,800];
 const TSPIN_SCORES=[400,800,1200,1600];
 const B2B_MULT=1.5;
-const LOCK_DELAY=500;
+const LOCK_DELAY=750;
 const MAX_RESETS=15;
 
 class Bag{

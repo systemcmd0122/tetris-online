@@ -79,23 +79,23 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
 .my-outer{display:flex;gap:6px;align-items:flex-start;flex-shrink:0}
 .side-col{display:flex;flex-direction:column;gap:6px;width:80px}
 .panel-box{background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:7px}
-.panel-box-title{font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:5px}
-.score-value{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--accent3);word-break:break-all}
+.panel-box-title{font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:6px}
+.score-value{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--accent3);word-break:break-all}
 .score-value.score-pop{animation:scorePop .35s ease-out}
 @keyframes scorePop{0%{transform:scale(1.3);color:#fff}100%{transform:scale(1)}}
-.level-value{font-family:'Press Start 2P',monospace;font-size:14px;color:var(--accent)}
-.lines-value{font-family:'Press Start 2P',monospace;font-size:11px}
+.level-value{font-family:'Press Start 2P',monospace;font-size:15px;color:var(--accent)}
+.lines-value{font-family:'Press Start 2P',monospace;font-size:12px}
 #nextCanvas,#holdCanvas{border:none;background:rgba(0,0,0,.4);display:block}
-.combo-value{font-family:'Press Start 2P',monospace;font-size:16px;color:var(--accent3);line-height:1.1}
+.combo-value{font-family:'Press Start 2P',monospace;font-size:17px;color:var(--accent3);line-height:1.1}
 .combo-value.pop{animation:comboPop .3s ease-out}
 @keyframes comboPop{0%{transform:scale(1.8);color:#fff}100%{transform:scale(1)}}
-.b2b-badge{display:inline-block;font-size:6px;letter-spacing:1px;padding:2px 4px;border-radius:2px;border:1px solid;margin-top:3px}
+.b2b-badge{display:inline-block;font-size:7px;letter-spacing:1px;padding:2px 5px;border-radius:2px;border:1px solid;margin-top:3px}
 .b2b-badge.off{border-color:var(--border);color:var(--dim)}
 .b2b-badge.on{border-color:#ff8800;color:#ff8800;background:rgba(255,136,0,.1);animation:b2bGlow 1s ease-in-out infinite alternate}
 @keyframes b2bGlow{0%{box-shadow:0 0 4px rgba(255,136,0,.3)}100%{box-shadow:0 0 12px rgba(255,136,0,.7)}}
 .atk-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
-.atk-label{font-size:7px;color:var(--dim);letter-spacing:1px}
-.atk-val{font-family:'Press Start 2P',monospace;font-size:8px}
+.atk-label{font-size:9px;color:var(--dim);letter-spacing:1px}
+.atk-val{font-family:'Press Start 2P',monospace;font-size:9px}
 .atk-val.sent{color:var(--accent3)}
 .atk-val.recv{color:var(--red)}
 .pending-garb-row{display:flex;align-items:center;gap:2px;margin-top:3px;flex-wrap:wrap}
@@ -121,12 +121,12 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
 .board-wrap{position:relative}
 .lock-flash{position:absolute;inset:0;background:rgba(255,255,255,.06);pointer-events:none;opacity:0;border-radius:1px;transition:opacity .05s}
 .lock-flash.show{opacity:1}
-.attack-count-badge{position:absolute;top:4px;left:4px;background:rgba(255,51,85,.9);color:#fff;font-family:'Press Start 2P',monospace;font-size:6px;padding:2px 4px;border-radius:2px;opacity:0;z-index:6;pointer-events:none}
+.attack-count-badge{position:absolute;top:4px;left:4px;background:rgba(255,51,85,.9);color:#fff;font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 5px;border-radius:2px;opacity:0;z-index:6;pointer-events:none}
 .attack-count-badge.show{opacity:1;animation:badgePop .3s ease-out}
 @keyframes badgePop{0%{transform:scale(1.8)}100%{transform:scale(1)}}
 .board-wrap.shake{animation:boardShake .25s ease-out}
 @keyframes boardShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
-.action-popup{position:absolute;top:20px;left:50%;transform:translateX(-50%);font-family:'Press Start 2P',monospace;font-size:7px;color:var(--accent3);text-shadow:0 0 10px rgba(170,255,0,.8);pointer-events:none;opacity:0;white-space:nowrap;z-index:5}
+.action-popup{position:absolute;top:20px;left:50%;transform:translateX(-50%);font-family:'Press Start 2P',monospace;font-size:8px;color:var(--accent3);text-shadow:0 0 10px rgba(170,255,0,.8);pointer-events:none;opacity:0;white-space:nowrap;z-index:5}
 .action-popup.show{opacity:1;animation:popUp .8s ease-out forwards}
 @keyframes popUp{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-30px)}}
 .opponents-area{display:flex;flex-wrap:nowrap;gap:10px;align-items:flex-start;flex-shrink:0}
@@ -152,8 +152,8 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
 .overlay-title.mid{color:var(--warn)}
 .result-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin:8px 0;max-width:300px}
 .rs-cell{text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:2px;padding:7px}
-.rs-cell-label{font-size:7px;color:var(--dim);letter-spacing:2px;margin-bottom:4px}
-.rs-cell-val{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--accent3)}
+.rs-cell-label{font-size:8px;color:var(--dim);letter-spacing:2px;margin-bottom:4px}
+.rs-cell-val{font-family:'Press Start 2P',monospace;font-size:12px;color:var(--accent3)}
 .final-rank{font-family:'Press Start 2P',monospace;font-size:clamp(40px,8vw,80px);line-height:1;text-align:center}
 .final-rank.r1{color:#ffd700;text-shadow:0 0 40px rgba(255,215,0,.7)}
 .final-rank.r2{color:#c0c0c0;text-shadow:0 0 30px rgba(192,192,192,.5)}
@@ -251,18 +251,18 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
 <div class="screen" id="gameScreen">
   <div class="game-header">
     <span class="game-title">TETRIS MULTI BATTLE</span>
-    <div id="myMusicBanner" style="display:none;align-items:center;gap:5px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.3);border-radius:3px;padding:3px 8px;flex:1;margin:0 8px;min-width:0;overflow:hidden;">
-      <svg width="9" height="9" viewBox="0 0 10 10" fill="#aaff00" style="flex-shrink:0"><path d="M2 8V3l7-1.5v5"/><circle cx="1.5" cy="8" r="1.5"/><circle cx="7.5" cy="6.5" r="1.5"/></svg>
-      <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(170,255,0,0.7);flex-shrink:0;letter-spacing:1px;">YOU:</span>
-      <span id="myMusicTitle" style="font-size:9px;color:#aaff00;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:1px;min-width:0;"></span>
+    <div id="myMusicBanner" style="display:none;align-items:center;gap:5px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.3);border-radius:3px;padding:4px 9px;flex:1;margin:0 8px;min-width:0;overflow:hidden;">
+      <svg width="11" height="11" viewBox="0 0 10 10" fill="#aaff00" style="flex-shrink:0"><path d="M2 8V3l7-1.5v5"/><circle cx="1.5" cy="8" r="1.5"/><circle cx="7.5" cy="6.5" r="1.5"/></svg>
+      <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(170,255,0,0.7);flex-shrink:0;letter-spacing:1px;">YOU:</span>
+      <span id="myMusicTitle" style="font-size:11px;color:#aaff00;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:1px;min-width:0;font-weight:700;"></span>
     </div>
     <div class="game-header-right">
       <button class="sound-btn on" id="soundBtn" onclick="toggleSound()">
-        <svg id="soundIconOn" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M1 4h2l3-3v10L3 8H1z"/><path d="M8 3.5A3.5 3.5 0 0 1 8 8.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M9.5 2A5 5 0 0 1 9.5 10" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
-        <svg id="soundIconOff" width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style="display:none"><path d="M1 4h2l3-3v10L3 8H1z"/><line x1="8" y1="4" x2="11" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="11" y1="4" x2="8" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
+        <svg id="soundIconOn" width="13" height="13" viewBox="0 0 12 12" fill="currentColor"><path d="M1 4h2l3-3v10L3 8H1z"/><path d="M8 3.5A3.5 3.5 0 0 1 8 8.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M9.5 2A5 5 0 0 1 9.5 10" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+        <svg id="soundIconOff" width="13" height="13" viewBox="0 0 12 12" fill="currentColor" style="display:none"><path d="M1 4h2l3-3v10L3 8H1z"/><line x1="8" y1="4" x2="11" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="11" y1="4" x2="8" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
         <span id="soundLabel">ON</span>
       </button>
-      <button class="btn btn-secondary" style="width:auto;padding:5px 10px;font-size:8px;" onclick="leaveRoom()">QUIT</button>
+      <button class="btn btn-secondary" style="width:auto;padding:6px 12px;font-size:9px;" onclick="leaveRoom()">QUIT</button>
     </div>
   </div>
   <div class="game-scale-wrap" id="gameScaleWrap">
@@ -485,7 +485,7 @@ class TetrisGame{
     if(this.over)return null;
     if(this.waiting){if(ts>=this.nextTs){this.waiting=false;this.current=mkP(this.bag.next());while(!this.valid(this.current)&&this.current.y>-4)this.current.y--;if(!this.valid(this.current))this.over=true;}return null;}
     const og=!this.valid(this.current,0,1);
-    if(og){if(!this.onGnd){this.onGnd=true;this.lockTm=ts;}if(ts-this.lockTm>=500){this.onGnd=false;return this._lock();}}
+    if(og){if(!this.onGnd){this.onGnd=true;this.lockTm=ts;}if(ts-this.lockTm>=750){this.onGnd=false;return this._lock();}}
     else{this.onGnd=false;this.lockTm=null;if(ts-this.lastDrop>=this.spd){this.lastDrop=ts;this.current.y++;}}
     return null;
   }
@@ -603,7 +603,7 @@ function buildOppArea(activeSlots){
     const musicTag=document.createElement('div');
     musicTag.id='oppMusic_'+sk;
     musicTag.style.cssText=`max-width:${W}px;width:${W}px;overflow:hidden;display:none;margin-top:3px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.25);border-radius:2px;padding:3px 7px;`;
-    musicTag.innerHTML=`<div id="oppMusicNote_${sk}" style="font-size:7px;color:#aaff00;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div><div id="oppMusicTitle_${sk}" style="font-size:9px;color:#e0f0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;margin-top:1px;"></div>`;
+    musicTag.innerHTML=`<div id="oppMusicNote_${sk}" style="font-size:8px;color:#aaff00;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div><div id="oppMusicTitle_${sk}" style="font-size:10px;color:#e0f0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;margin-top:2px;"></div>`;
     wrap.appendChild(cvs);wrap.appendChild(dead);
     sec.appendChild(lb);sec.appendChild(nt);sec.appendChild(wrap);sec.appendChild(stag);sec.appendChild(musicTag);
     area.appendChild(sec);
