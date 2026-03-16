@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /status.html
+
+Sitemap: https://tetris-online-9c827.web.app/sitemap.xml

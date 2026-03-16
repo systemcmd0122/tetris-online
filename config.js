@@ -1,6 +1,17 @@
-export const APP_VERSION = "1.9.0";
+export const APP_VERSION = "2.0.0";
 
 export const UPDATE_LOG = [
+  {
+    version: "2.0.0",
+    title: "SEO対応・クイックマッチ偽装改善",
+    changes: [
+      "全ページにSEOメタタグ（description・keywords・OGP・Twitter Card）を追加し、検索エンジンやSNSでの表示を最適化しました。",
+      "index.htmlにJSON-LD構造化データを追加し、Googleの検索結果リッチスニペットに対応しました。",
+      "sitemap.xmlとrobots.txtを新規作成し、クローラーが正しくページを巡回できるようになりました。",
+      "クイックマッチでボットにマッチした際、ランダムな人間らしい名前で偽装するようになりました。",
+      "マッチング画面・ゲーム中・ステータスバーからBOTであることを示す表示を全て削除しました。"
+    ]
+  },
   {
     version: "1.9.0",
     title: "ステータスページ監視精度向上",

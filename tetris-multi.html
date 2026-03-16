@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TETRIS BATTLE — マルチプレイヤー</title>
+<title>マルチ対戦 — TETRIS BATTLE</title>
+<meta name="description" content="TETRIS BATTLEのオンラインマルチ対戦モード。2〜4人でリアルタイム対戦。クイックマッチで自動マッチングも可能。">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://tetris-online-9c827.web.app/tetris-multi.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="マルチ対戦 — TETRIS BATTLE">
+<meta property="og:description" content="2〜4人リアルタイム対戦・クイックマッチ対応のオンラインテトリス。">
+<meta property="og:url" content="https://tetris-online-9c827.web.app/tetris-multi.html">
+<meta name="theme-color" content="#020408">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
 :root{--bg:#020408;--surface:#0a0f1a;--border:#1a2540;--accent:#00f5ff;--accent2:#ff0080;--accent3:#aaff00;--text:#e0f0ff;--dim:#4a6080;--red:#ff3355;--warn:#ffaa00;--p1c:#00f5ff;--p2c:#ff0080;--p3c:#aaff00;--p4c:#ff8800;}
@@ -237,7 +245,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
         クイックマッチ（自動マッチング）
       </span>
     </button>
-    <div style="font-size:9px;color:var(--dim);letter-spacing:1px;text-align:center;margin-bottom:14px;">対戦相手を自動で探します。見つからない場合はBOTと対戦</div>
+    <div style="font-size:9px;color:var(--dim);letter-spacing:1px;text-align:center;margin-bottom:14px;">対戦相手を自動で探してマッチングします</div>
     <div class="input-group">
       <div class="max-players-label">最大プレイヤー数（ルーム作成時）</div>
       <div class="max-players-sel">
@@ -269,7 +277,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
       <div class="match-timer-bar" id="matchTimerBar"></div>
     </div>
     <div style="font-size:10px;color:var(--dim);letter-spacing:1px;text-align:center;margin-bottom:14px;">
-      <span id="matchTimerText">30</span>秒後にBOTと対戦します
+      残り <span id="matchTimerText">30</span> 秒
     </div>
     <div id="matchFoundArea" style="display:none;">
       <div class="match-found-flash">MATCH FOUND!</div>
@@ -845,6 +853,19 @@ window.quickMatch = async () => {
   _qmListenerOff = () => { try{ off(queueRef, _qmListen); }catch(e){} };
 };
 
+// ── ランダムプレイヤー名生成（ボット偽装用） ──
+const _QM_BOT_NAMES = [
+  'HARUKI','RIKU','SORA','KAITO','YUI','AIKA','RINA','TOMO',
+  'KENTO','NANA','SHUN','MIKU','DAIKI','HINA','SOTA','YUNA',
+  'PLAYER7','PLAYER13','PLAYER42','PLAYER88','PLAYER99',
+  'ACE','NOVA','PIXEL','GHOST','ZERO','BLAZE','STORM',
+  'RYUSEI','HIKARU','AKIRA','MISAKI','KOHARU','TAKUMI',
+];
+function _qmRandomBotName(){
+  return _QM_BOT_NAMES[Math.floor(Math.random() * _QM_BOT_NAMES.length)];
+}
+let _qmBotDisplayName = ''; // ゲーム開始時に確定する偽装名
+
 // マッチ成立UI表示 → callback
 function _qmShowMatchFound(myName, oppName, cb){
   const oppN = mySlot === 'p1' ? oppName : myName; // p2は相手がmyName
@@ -859,16 +880,18 @@ function _qmShowMatchFound(myName, oppName, cb){
   setTimeout(cb, 1800);
 }
 
-// BOTフォールバック開始
+// BOTフォールバック開始（ボット名はランダムな人間名で偽装）
 function _startBotFallback(){
   if(_qmState !== 'searching') return;
   _qmState = 'bot';
   _qmIsBot = true;
+  _qmBotDisplayName = _qmRandomBotName();
   _qmCleanupQueue();
-  document.getElementById('matchStatusText').textContent = '対戦相手が見つかりませんでした';
+  // 「対戦相手が見つかりました」と同じ演出でボットを偽装
+  document.getElementById('matchStatusText').textContent = '対戦相手が見つかりました！';
   document.getElementById('matchFoundArea').style.display = 'block';
   document.getElementById('matchDots').style.display = 'none';
-  document.getElementById('matchOppName').textContent = 'BOT-NORMAL';
+  document.getElementById('matchOppName').textContent = _qmBotDisplayName;
   document.getElementById('matchTimerBar').style.width = '0%';
   playSound('go');
   setTimeout(() => {
@@ -924,10 +947,13 @@ function _startQmBotGame(){
   // 相手ボードエリアをBOT用に構築（buildOppArea が oppCvs_p2 を DOM に追加する）
   const active = ['p1','p2'];
   buildOppArea(active);
+  // 偽装名を使用（_qmBotDisplayName が空の場合はランダム生成）
+  if(!_qmBotDisplayName) _qmBotDisplayName = _qmRandomBotName();
   const oppNtEl = document.getElementById('oppName_p2');
-  if(oppNtEl) oppNtEl.textContent = 'BOT-NORMAL';
+  if(oppNtEl) oppNtEl.textContent = _qmBotDisplayName;
 
-  document.getElementById('statusRoom').textContent = 'QM: BOT';
+  // ステータスバーはルームコードを出さずにシンプルに
+  document.getElementById('statusRoom').textContent = 'QUICK MATCH';
 
   // buildOppArea の後に TetrisGame を生成（oppCvs_p2 が DOM に存在するため）
   game = new TetrisGame('myCanvas','holdCanvas','nextCanvas');
@@ -953,9 +979,9 @@ function _startQmBotGame(){
       const oppCvs = document.getElementById('oppCvs_p2');
       if(oppCvs) TetrisGame.drawOpp(oppCvs, bd, 200, 400);
 
-      // スコア表示
+      // スコア表示（偽装名を使用）
       const oppNt = document.getElementById('oppName_p2');
-      if(oppNt) oppNt.textContent = 'BOT-NORMAL (' + _qmBotGame.score + ')';
+      if(oppNt) oppNt.textContent = _qmBotDisplayName + ' (' + _qmBotGame.score + ')';
 
       // 自分の結果処理
       while(game.results.length > 0){
