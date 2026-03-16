@@ -1,6 +1,16 @@
-export const APP_VERSION = "1.7.0";
+export const APP_VERSION = "1.8.0";
 
 export const UPDATE_LOG = [
+  {
+    version: "1.8.0",
+    title: "システムステータスページ追加",
+    changes: [
+      "status.htmlを新たに追加しました。Firebase Realtime DB・Firestore・Google Fonts・YouTube IFrame API・YouTube Data APIの死活監視をリアルタイムで確認できます。",
+      "各サービスのレスポンスタイム（ms）と直近30回分のチェック履歴をバーグラフで表示します。",
+      "60秒ごとに自動再チェックし、タブ復帰時にも即座に更新されます。",
+      "index.htmlのメニュー下部に「ステータス」リンクを追加しました。"
+    ]
+  },
   {
     version: "1.7.0",
     title: "ボット対戦専用化・バグ修正・UI改善",
