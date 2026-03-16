@@ -1,6 +1,14 @@
-export const APP_VERSION = "2.4.0";
+export const APP_VERSION = "2.5.0";
 
 export const UPDATE_LOG = [
+  {
+    version: "2.5.0",
+    title: "リマッチ表示・QMカウントダウン修正",
+    changes: [
+      "非ホストのリマッチ待機中ステータスが表示されない問題を修正。結果画面をスクロール可能にし、待機テキストをトーストでも通知するようにしました。",
+      "クイックマッチでカウントダウンの「3」が表示されないバグを修正。p2がFirebaseのget()をスキップできるようmatchRefにgsa・プレイヤー名を埋め込み、余分なネットワーク遅延を排除しました。"
+    ]
+  },
   {
     version: "2.4.0",
     title: "非ホストのリマッチ競合バグ修正",

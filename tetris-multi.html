@@ -177,7 +177,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
 .mobile-btn{width:50px;height:50px;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;touch-action:manipulation;transition:background .1s}
 .mobile-btn:active{background:rgba(0,245,255,.15);border-color:var(--accent)}
 @media(max-width:640px){.mobile-controls{display:flex}}
-.overlay{position:fixed;inset:0;background:rgba(2,4,8,.93);display:none;align-items:center;justify-content:center;z-index:50;flex-direction:column;gap:12px}
+.overlay{position:fixed;inset:0;background:rgba(2,4,8,.93);display:none;align-items:center;justify-content:flex-start;padding:20px;overflow-y:auto;z-index:50;flex-direction:column;gap:12px}
 .overlay.show{display:flex}
 .overlay-title{font-family:'Press Start 2P',monospace;font-size:clamp(16px,3.5vw,30px);text-align:center}
 .overlay-title.win{color:var(--accent3);text-shadow:0 0 30px rgba(170,255,0,.6)}
@@ -807,7 +807,11 @@ window.quickMatch = async () => {
         });
         onDisconnect(rRef).remove();
         // マッチ情報を書き込み（p2が読む）
-        await set(ref(db, QM_MATCH_PATH + '/' + p2Entry.id), { code, role: 'p2', ts: getServerTime() });
+        await set(ref(db, QM_MATCH_PATH + '/' + p2Entry.id), {
+          code, role: 'p2', ts: getServerTime(),
+          gameStartAt: gsa,           // p2がget()不要でカウントダウンを開始できる
+          p1name: p1Entry.name, p2name: p2Entry.name
+        });
         // キューから両者を削除
         await remove(ref(db, QM_QUEUE_PATH + '/' + p1Entry.id));
         await remove(ref(db, QM_QUEUE_PATH + '/' + p2Entry.id));
@@ -844,11 +848,16 @@ window.quickMatch = async () => {
           _qmCleanup();
           mySlot = 'p2'; roomCode = code; endedOnce = false;
           document.getElementById('statusRoom').textContent = 'QM: ' + code;
-          // ルームデータを取得してゲーム開始
-          let snap2;
-          try{ snap2 = await get(ref(db, 'multi/' + code)); }catch(e){ showScreen('lobbyScreen'); return; }
-          if(!snap2.exists()){ showScreen('lobbyScreen'); showToast('ルームが見つかりません', 'warn'); return; }
-          startGame(snap2.val());
+          // matchRefに埋め込まれたデータを使ってゲーム開始（余分なget()を省いてカウントダウンを確実に同期）
+          const qmRoomData = {
+            p1: { name: md.p1name||p1Entry.name, alive: true },
+            p2: { name: md.p2name||p2Entry.name, alive: true },
+            status: 'started',
+            maxPlayers: 2,
+            gameStartAt: md.gameStartAt || (getServerTime() + 5000),
+            activeSlots: ['p1','p2']
+          };
+          startGame(qmRoomData);
         });
       });
     }
@@ -1274,6 +1283,7 @@ window.rematch=async()=>{
       // Firebase リスナーで status==='waiting' になるのをリアルタイム待機（最大20秒）
       _rematchActive=true;
       if(statusEl) statusEl.textContent='ホストのリマッチを待っています...';
+      showToast('⏳ ホストのリマッチを待っています...', 'warn');
       const rRef=ref(db,'multi/'+prevCode);
       await new Promise((resolve,reject)=>{
         // onValue()はunsubscribe関数を返す（Firebase modular v10の正式パターン）
