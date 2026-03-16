@@ -734,8 +734,8 @@ function startClock(){
 }
 
 function startRoomsListener(){
-  if(roomsListener)try{off(ref(db,'rooms'));}catch(e){}
-  onValue(ref(db,'rooms'),snap=>{
+  if(roomsListener)try{off(ref(db,'multi'));}catch(e){}
+  onValue(ref(db,'multi'),snap=>{
     const prev=Object.keys(roomsData).length;
     roomsData=snap.val()||{};
     const curr=Object.keys(roomsData).length;
@@ -748,7 +748,7 @@ function startRoomsListener(){
 }
 
 window.refreshAll=()=>{
-  get(ref(db,'rooms')).then(snap=>{roomsData=snap.val()||{};updateStats();renderTables();addLog('手動更新','info');});
+  get(ref(db,'multi')).then(snap=>{roomsData=snap.val()||{};updateStats();renderTables();addLog('手動更新','info');});
 };
 
 function updateStats(){
@@ -870,7 +870,7 @@ window.forceStop = async (code, customMsg) => {
 
   try {
     // Step 1: atomically write force_ended so both players see it simultaneously
-    await update(ref(db, `rooms/${code}`), {
+    await update(ref(db, `multi/${code}`), {
       status:   'force_ended',
       forceMsg: msg,
       forceTs:  Date.now()
@@ -882,7 +882,7 @@ window.forceStop = async (code, customMsg) => {
     // Step 2+3: after players have had time to read, delete the room
     setTimeout(async () => {
       try {
-        await remove(ref(db, `rooms/${code}`));
+        await remove(ref(db, `multi/${code}`));
         addLog(`ROOM ${code} 自動削除 (強制停止から10秒後)`, 'info');
       } catch(e) {
         addLog(`ROOM ${code} 自動削除失敗: ${e.message}`, 'error');
@@ -901,7 +901,7 @@ window.deleteRoom = async (code) => {
   // Show confirm for safety
   if (!confirm(`ROOM ${code} を削除しますか？\nこの操作は即座に実行され取り消せません。`)) return;
   try {
-    await remove(ref(db, `rooms/${code}`));
+    await remove(ref(db, `multi/${code}`));
     addLog(`ROOM ${code} 削除`, 'warn');
     persistLog(`Deleted room ${code}`, 'warn', {code});
     showToast(`ROOM ${code} を削除しました`, 'ok');
@@ -927,8 +927,8 @@ window.startSpec=code=>{
   addLog(`観戦開始: ROOM ${code}`,'info');
 
   const cv1=document.getElementById('specCv1'),cv2=document.getElementById('specCv2');
-  const rp1=ref(db,`rooms/${code}/game/p1`);
-  const rp2=ref(db,`rooms/${code}/game/p2`);
+  const rp1=ref(db,`multi/${code}/game/p1`);
+  const rp2=ref(db,`multi/${code}/game/p2`);
   onValue(rp1,s=>{const d=s.val();drawBoard(cv1,d);if(d){document.getElementById('ssP1Score').textContent=d.score||0;document.getElementById('ssP1Level').textContent=d.level||1;document.getElementById('ssP1Lines').textContent=d.lines||0;}});
   onValue(rp2,s=>{const d=s.val();drawBoard(cv2,d);if(d){document.getElementById('ssP2Score').textContent=d.score||0;document.getElementById('ssP2Level').textContent=d.level||1;document.getElementById('ssP2Lines').textContent=d.lines||0;}});
   specUnsub.p1=rp1;specUnsub.p2=rp2;
@@ -959,7 +959,7 @@ window.sendBroadcast=async()=>{
   if(!msg){showToast('メッセージを入力してください','err');return;}
   const codes=Object.keys(roomsData);
   const ts=Date.now();
-  await Promise.all(codes.map(code=>update(ref(db,`rooms/${code}`),{sysMsg:msg,sysMsgTs:ts}).catch(()=>{})));
+  await Promise.all(codes.map(code=>update(ref(db,`multi/${code}`),{sysMsg:msg,sysMsgTs:ts}).catch(()=>{})));
   const n=codes.length;
   addLog(`ブロードキャスト (${n}ルーム): "${msg}"`,"warn");
   persistLog(`Broadcast to ${n} rooms: "${msg}"`, 'admin', {n, msg});
@@ -976,7 +976,7 @@ window.closeMsgModal=()=>{document.getElementById('msgModal').classList.remove('
 window.sendRoomMsg=async()=>{
   const msg=document.getElementById('msgInput').value.trim();
   if(!msg||!_msgRoom)return;
-  await update(ref(db,`rooms/${_msgRoom}`),{sysMsg:msg,sysMsgTs:Date.now()}).catch(()=>{});
+  await update(ref(db,`multi/${_msgRoom}`),{sysMsg:msg,sysMsgTs:Date.now()}).catch(()=>{});
   addLog(`MSG to ROOM ${_msgRoom}: "${msg}"`,"info");
   showToast('メッセージ送信','ok');
   closeMsgModal();document.getElementById('msgInput').value='';
@@ -995,7 +995,7 @@ window.nukeAll = async () => {
     // Step 1: force_ended all active rooms so players see the screen
     const activeOps = codes
       .filter(c => roomsData[c]?.status !== 'force_ended')
-      .map(c => update(ref(db, `rooms/${c}`), {
+      .map(c => update(ref(db, `multi/${c}`), {
           status:   'force_ended',
           forceMsg: 'システムメンテナンスのため強制終了されました',
           forceTs:  Date.now()
@@ -1007,7 +1007,7 @@ window.nukeAll = async () => {
     await new Promise(r => setTimeout(r, 2000));
 
     // Step 3: delete everything
-    await remove(ref(db, 'rooms'));
+    await remove(ref(db, 'multi'));
     addLog('⚠ 全ルームNUKE完了', 'error');
     persistLog('Nuke all rooms executed', 'error');
     showToast('全ルームを削除しました', 'warn');
@@ -1026,7 +1026,7 @@ window.cleanupRooms = async () => {
   for (const [code, r] of Object.entries(roomsData)) {
     if (r.status === 'ended' || r.status === 'force_ended' ||
         r.status === 'p2_left' || r.status === 'p1_left') {
-      ops.push(remove(ref(db, `rooms/${code}`)).catch(() => {}));
+      ops.push(remove(ref(db, `multi/${code}`)).catch(() => {}));
       n++;
     }
   }
@@ -1080,7 +1080,7 @@ window.stopAllActive = async () => {
   const BATCH_MSG = '管理者によって全ルームが強制終了されました';
   // Batch write simultaneously for instant notification
   const ops = active.map(([code]) =>
-    update(ref(db, `rooms/${code}`), {
+    update(ref(db, `multi/${code}`), {
       status:   'force_ended',
       forceMsg: BATCH_MSG,
       forceTs:  Date.now()
@@ -1093,7 +1093,7 @@ window.stopAllActive = async () => {
 
   // Auto-delete after players have read
   setTimeout(async () => {
-    const delOps = active.map(([code]) => remove(ref(db, `rooms/${code}`)).catch(() => {}));
+    const delOps = active.map(([code]) => remove(ref(db, `multi/${code}`)).catch(() => {}));
     await Promise.all(delOps);
     addLog(`強制停止ルーム ${active.length}件 自動削除`, 'info');
   }, 10000);

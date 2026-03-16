@@ -258,7 +258,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
     <div class="divider">OR JOIN</div>
     <div class="input-group">
       <label>ROOM CODE</label>
-      <input type="text" id="roomCodeInput" placeholder="4桁コード" maxlength="4" style="text-align:center;letter-spacing:10px;font-size:20px;">
+      <input type="text" id="roomCodeInput" placeholder="4桁コード" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" style="text-align:center;letter-spacing:10px;font-size:20px;">
     </div>
     <button class="btn btn-secondary" onclick="joinRoom()">→ ルームに参加</button>
     <a href="index.html" class="btn btn-danger" style="display:block;margin-top:12px;">← メニューに戻る</a>
@@ -443,7 +443,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
 
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getDatabase,ref,set,get,onValue,off,update,remove,onDisconnect}
+import{getDatabase,ref,set,get,onValue,off,update,remove,onDisconnect,runTransaction}
   from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import{APP_VERSION}from'./config.js';
 
@@ -461,11 +461,11 @@ document.getElementById('versionDisp').textContent=`VER ${APP_VERSION}`;
   try{
     const snap=await get(ref(db,'matchmaking/queue'));
     if(!snap.exists())return;
-    const now=Date.now();
+    const now=getServerTime(); // クライアント時計ではなくサーバー時刻オフセット補正済み値を使用
     const removes=[];
     snap.forEach(child=>{
       const d=child.val();
-      if(d&&d.ts&&(now-d.ts)>5*60*1000) removes.push(remove(ref(db,'matchmaking/queue/'+child.key)));
+      if(d&&d.ts&&(now-d.ts)>10*60*1000) removes.push(remove(ref(db,'matchmaking/queue/'+child.key)));
     });
     if(removes.length) await Promise.all(removes);
   }catch(e){}
@@ -1003,9 +1003,9 @@ function _startQmBotGame(){
       }
       updateUI();
 
+      if(game.over && _qmBotGame.over && !endedOnce){ endGame(2); return; } // 同時死亡=2位扱い
       if(game.over && !endedOnce){ endGame(2); return; }
       if(_qmBotGame.over && !game.over && !endedOnce){ endGame(1); return; }
-      if(game.over && _qmBotGame.over && !endedOnce){ endGame(1); return; }
       animId = requestAnimationFrame(loop);
     };
     animId = requestAnimationFrame(loop);
@@ -1273,11 +1273,14 @@ window.rematch=async()=>{
       if(statusEl) statusEl.textContent='ホストのリマッチを待っています...';
       const rRef=ref(db,'multi/'+prevCode);
       await new Promise((resolve,reject)=>{
-        const timer=setTimeout(()=>{ try{off(rRef,_watchFn);}catch(e){} reject(new Error('ホストが応答しません。もう一度お試しください')); },20000);
-        const _watchFn=onValue(rRef,snap=>{
+        // onValue()はunsubscribe関数を返す（Firebase modular v10の正式パターン）
+        let unsub=null;
+        const done=(fn)=>{ clearTimeout(timer); if(unsub){try{unsub();}catch(e){}} fn(); };
+        const timer=setTimeout(()=>done(()=>reject(new Error('ホストが応答しません。もう一度お試しください'))),20000);
+        unsub=onValue(rRef,snap=>{
           const d=snap.val();
-          if(!d){ clearTimeout(timer);try{off(rRef,_watchFn);}catch(e){} reject(new Error('ルームが削除されました')); return; }
-          if(d.status==='waiting'){ clearTimeout(timer);try{off(rRef,_watchFn);}catch(e){} resolve(); }
+          if(!d){ done(()=>reject(new Error('ルームが削除されました'))); return; }
+          if(d.status==='waiting'){ done(()=>resolve()); }
         });
       });
 
@@ -1319,10 +1322,23 @@ window.leaveRoom=async()=>{
   document.getElementById('resultOverlay').classList.remove('show');
   document.getElementById('countdownOverlay').classList.remove('show');
   const mb=document.getElementById('myMusicBanner');if(mb)mb.style.display='none';
-  // BOTゲームの後始末
   _qmBotStop(); _qmIsBot=false;
   resetState();
-  if(!wasBot&&code&&slot&&db){try{await update(ref(db,'multi/'+code+'/game'),{[slot]:{gameOver:true,score:0,board:[]}});}catch(e){}}
+  if(!wasBot&&code&&slot&&db){
+    try{
+      // ゲームデータにgameOver記録（他プレイヤーに退出を通知）
+      await update(ref(db,'multi/'+code+'/game'),{[slot]:{gameOver:true,score:0,board:[]}});
+      // 自分のaliveをfalseにして他プレイヤーのUI即更新
+      await update(ref(db,'multi/'+code+'/alive'),{[slot]:false});
+      // p1（ホスト）が退出する場合はルーム全体を削除
+      if(slot==='p1'){
+        await remove(ref(db,'multi/'+code));
+      } else {
+        // 非ホストはスロットをnullに（待機画面に残っているプレイヤーに空きを知らせる）
+        await update(ref(db,'multi/'+code),{[slot]:null});
+      }
+    }catch(e){}
+  }
   showScreen('lobbyScreen');
 };
 
@@ -1340,6 +1356,21 @@ async function startGame(roomData){
   document.getElementById('myCanvas').style.cssText=`display:block;image-rendering:pixelated;border:1px solid ${SBORDER[myIdx]};box-shadow:0 0 16px ${SGLOW[myIdx]}`;
   buildOppArea(active);
   active.filter(s=>s!==mySlot).forEach(s=>{const el=document.getElementById('oppName_'+s);if(el)el.textContent=d[s]?.name||s.toUpperCase();});
+
+  // システムメッセージ（管理者ブロードキャスト）を監視
+  const sysMsgRef=ref(db,'multi/'+roomCode+'/sysMsgTs');
+  _oppLs['sysMsg']=sysMsgRef;
+  const _joinTs=getServerTime();
+  onValue(sysMsgRef,snap=>{
+    if(!gameRunning)return;
+    const ts=snap.val();
+    // ゲーム参加前に送信されたメッセージは無視
+    if(!ts||ts<_joinTs)return;
+    get(ref(db,'multi/'+roomCode+'/sysMsg')).then(s=>{
+      const msg=s.val();
+      if(msg) showToast('📢 '+msg,'warn');
+    }).catch(()=>{});
+  });
 
   // Watch alive state
   const aliveRef=ref(db,'multi/'+roomCode+'/alive');
@@ -1385,7 +1416,10 @@ async function startGame(roomData){
   onValue(myGRef,snap=>{
     const v=snap.val();if(!v||!v.n||!game)return;
     if(v.n>0){
-      game.pendGarb+=v.n;set(myGRef,{n:0});
+      const toAdd=v.n;
+      // アトミックにn=0にリセット（他プレイヤーの同時書き込みと競合しないよう）
+      runTransaction(myGRef,cur=>cur&&cur.n>0?{n:0}:cur).catch(()=>{});
+      game.pendGarb+=toAdd;
       const badge=document.getElementById('attackBadge');badge.textContent='+'+v.n+' !';badge.classList.remove('show');void badge.offsetWidth;badge.classList.add('show');setTimeout(()=>badge.classList.remove('show'),1200);
       flashAttack();playSound('attack');
     }
@@ -1403,6 +1437,19 @@ async function startGame(roomData){
   update(ref(db,'multi/'+roomCode+'/alive'),{[mySlot]:true}).catch(()=>{});
 
   const PUSH=50;let lastPush=0,pendOut=0,lastMusicCheck=0;
+  // ゲーム中にルームが削除されたら（ホスト切断など）ゲームを終了する
+  const roomWatchRef=ref(db,'multi/'+roomCode+'/status');
+  _oppLs['room_status']=roomWatchRef;
+  onValue(roomWatchRef,snap=>{
+    if(!gameRunning)return;
+    // status=nullはルーム削除を意味する（ホスト切断など）
+    if(snap.val()===null&&gameRunning&&!endedOnce){
+      showToast('ホストが切断しました','warn');
+      // 非ホストは1位扱いで終了、ホスト自身が消えた場合はスキップ
+      if(mySlot!=='p1') endGame(1);
+    }
+  });
+
   const loop=ts=>{
     if(!gameRunning)return;
     game.update(ts);game.draw();
@@ -1435,7 +1482,12 @@ async function startGame(roomData){
       if(pendOut>0){
         const gn=pendOut;pendOut=0;
         const aliveOpps=active.filter(s=>s!==mySlot&&oppInfo[s]?.alive);
-        if(aliveOpps.length>0){const tgt=aliveOpps[Math.floor(Math.random()*aliveOpps.length)];const tRef=ref(db,'multi/'+roomCode+'/garb/'+tgt);get(tRef).then(s=>{const ex=s.val()?.n||0;set(tRef,{n:ex+gn}).catch(()=>{});}).catch(()=>{});}
+        if(aliveOpps.length>0){
+          const tgt=aliveOpps[Math.floor(Math.random()*aliveOpps.length)];
+          const tRef=ref(db,'multi/'+roomCode+'/garb/'+tgt);
+          // runTransactionでアトミックに加算（同時攻撃の競合を防ぐ）
+          runTransaction(tRef,cur=>{ const prev=(cur&&cur.n)||0; return{n:prev+gn}; }).catch(()=>{});
+        }
       }
     }
     if(game.over&&!endedOnce){
@@ -1545,7 +1597,7 @@ function setupMob(id,fn,rep=false){
   btn.addEventListener('mouseleave',sp);
 }
 setupMob('btnLeft',()=>game?.move(-1),ARR);setupMob('btnRight',()=>game?.move(1),ARR);setupMob('btnDown',()=>game?.softDrop(),50);setupMob('btnRotate',()=>game?.rotate(1));setupMob('btnRotateL',()=>game?.rotate(-1));setupMob('btnHardDrop',()=>{if(game&&!game.waiting)game.hardDrop();});setupMob('btnHold',()=>game?.hold());
-(function(){let tx=0,ty=0;const c=document.getElementById('myCanvas');c.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});c.addEventListener('touchend',e=>{if(!game||!gameRunning)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.abs(dy)>50&&dy>0&&Math.abs(dy)>Math.abs(dx)*1.5)game.hardDrop();},{passive:true});})();
+(function(){let tx=0,ty=0;const c=document.getElementById('myCanvas');c.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});c.addEventListener('touchend',e=>{if(!game||!gameRunning||game.waiting)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.abs(dy)>50&&dy>0&&Math.abs(dy)>Math.abs(dx)*1.5)game.hardDrop();},{passive:true});})();
 document.getElementById('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')window.joinRoom();});
 document.getElementById('roomCodeInput').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^0-9]/g,'');});
 document.getElementById('playerName').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase();});

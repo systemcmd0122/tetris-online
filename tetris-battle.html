@@ -679,9 +679,9 @@ window.startBotGame=async(difficulty)=>{
     updateGameUI();
     document.getElementById('botNameTag').textContent=`${botName} (${botGame.score})`;
 
+    if(game.over&&botGame.over&&!endedOnce){endGame('DRAW');return;} // 同時判定を最優先
     if(game.over&&!endedOnce){endGame('LOSE');return;}
-    if(botGame.over&&!game.over&&!endedOnce){endGame('WIN');return;}
-    if(game.over&&botGame.over&&!endedOnce){endGame('DRAW');return;}
+    if(botGame.over&&!endedOnce){endGame('WIN');return;}
     animId=requestAnimationFrame(loop);
   };
   animId=requestAnimationFrame(loop);

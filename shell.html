@@ -1107,6 +1107,10 @@ function toast(msg){
 // ╚══════════════════════════════════╝
 function setStat(h,c){ const e=document.getElementById('stat'); e.innerHTML=h; e.style.color=c||'var(--acc)'; }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// ページを離れる・閉じる際に yt_nowplaying をクリア（多用途: マルチ対戦への影響防止）
+window.addEventListener('pagehide', () => {
+  try { localStorage.removeItem('yt_nowplaying'); } catch(e) {}
+});
 </script>
 </body>
 </html>
