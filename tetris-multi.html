@@ -616,6 +616,7 @@ class TetrisGame{
 
 // ── GAME STATE ──
 let roomCode=null,mySlot=null,game=null,gameRunning=false,animId=null;
+let _rematchActive=false; // 非ホストのリマッチ待機中フラグ
 let endedOnce=false,_maxPlayers=3,totalPlayers=0,myFinalRank=null,statAtkSent=0;
 const oppInfo={};// slot -> {canvas,W,H,alive}
 const _ls={room:null};const _oppLs={};
@@ -1018,6 +1019,7 @@ function offAll(){
 }
 function resetState(){
   offAll();gameRunning=false;endedOnce=false;
+  _rematchActive=false; // リマッチ待機をキャンセル
   if(animId){cancelAnimationFrame(animId);animId=null;}
   roomCode=null;mySlot=null;game=null;myFinalRank=null;totalPlayers=0;statAtkSent=0;
   Object.keys(oppInfo).forEach(k=>delete oppInfo[k]);
@@ -1270,6 +1272,7 @@ window.rematch=async()=>{
     } else {
       // ── 非ホスト ──
       // Firebase リスナーで status==='waiting' になるのをリアルタイム待機（最大20秒）
+      _rematchActive=true;
       if(statusEl) statusEl.textContent='ホストのリマッチを待っています...';
       const rRef=ref(db,'multi/'+prevCode);
       await new Promise((resolve,reject)=>{
@@ -1285,6 +1288,8 @@ window.rematch=async()=>{
       });
 
       // waiting 確認 — 最新データを取得してスロットを確保
+      // BACK TO LOBBY が押された場合はここで中断（leaveRoomがflagをfalseにする）
+      if(!_rematchActive) return;
       const freshSnap=await get(rRef);
       if(!freshSnap.exists()) throw new Error('ルームが見つかりません');
       const freshD=freshSnap.val()||{};
@@ -1305,6 +1310,7 @@ window.rematch=async()=>{
 
       document.getElementById('displayRoomCode').textContent=prevCode;
       document.getElementById('statusRoom').textContent='MULTI: '+prevCode;
+      _rematchActive=false;
       document.getElementById('resultOverlay').classList.remove('show');
       showScreen('waitingScreen');
       listenWait();

@@ -1,6 +1,14 @@
-export const APP_VERSION = "2.3.0";
+export const APP_VERSION = "2.4.0";
 
 export const UPDATE_LOG = [
+  {
+    version: "2.4.0",
+    title: "非ホストのリマッチ競合バグ修正",
+    changes: [
+      "非ホストが再戦待機中に「BACK TO LOBBY」を押した後、ホストが再戦を押すと強制的に待機画面へ遷移してしまうバグを修正しました。_rematchActiveフラグで待機をキャンセルできるようになりました。",
+      "leaveRoom() や cancelWaiting() を呼ぶと非ホストの再戦待機が即座に中断され、以後のFirebase書き込みやshowScreen()が実行されなくなりました。"
+    ]
+  },
   {
     version: "2.3.0",
     title: "管理コンソール修正・安定性向上",
@@ -22,7 +30,7 @@ export const UPDATE_LOG = [
       "リマッチのウェイター監視をFirebaseリアルタイムリスナーで実装し、unsubscribe関数を正しく使うよう修正しました。",
       "スワイプによるハードドロップにwaitingチェックを追加し、スポーン待ち中のスワイプ操作によるバグを修正しました。",
       "クイックマッチのボットフォールバックで、同時ゲームオーバー時に両者死亡=2位扱いとするよう修正しました。",
-      "ルームコード入力欄にinputmode='numeric'を追加し、モバイルで数字キーボードが表示されるようになりました。",
+      "ルームコード入力欄にinputmode=\"numeric\"を追加し、モバイルで数字キーボードが表示されるようになりました。",
       "マッチキューの古いエントリ削除にgetServerTime()を使用するよう変更し、クライアント時計のズレによる誤削除を防ぎました。"
     ]
   },
