@@ -1,6 +1,17 @@
-export const APP_VERSION = "2.6.0";
+export const APP_VERSION = "2.7.0";
 
 export const UPDATE_LOG = [
+  {
+    version: "2.7.0",
+    title: "Firebaseリスナー管理の完全再実装",
+    changes: [
+      "Firebase modular v10の正式パターン（unsubscribe関数）でリスナーを管理する_subs/_addSub/_removeSub システムに完全移行。off(ref)方式では特定タイミングで解除に失敗しロビーへ戻るバグが発生していました。",
+      "listenWait()を登録前に必ず既存リスナーを解除するよう修正し、二重登録によるバグを防止しました。",
+      "endGame()冒頭でoffAll()を呼び、ゲーム終了と同時に全Firebaseリスナーを確実に解除するようにしました。",
+      "クイックマッチのキューリスナーをunsubscribe関数パターンに変更し、_qmListenを独立した関数として整理しました。",
+      "括弧の不均衡（構文バグ）を修正しました。"
+    ]
+  },
   {
     version: "2.6.0",
     title: "再戦システム完全再実装",

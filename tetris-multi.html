@@ -618,8 +618,11 @@ class TetrisGame{
 let roomCode=null,mySlot=null,game=null,gameRunning=false,animId=null;
 let _rematchActive=false; // 非ホストのリマッチ待機中フラグ
 let endedOnce=false,_maxPlayers=3,totalPlayers=0,myFinalRank=null,statAtkSent=0;
-const oppInfo={};// slot -> {canvas,W,H,alive}
-const _ls={room:null};const _oppLs={};
+const oppInfo={};
+// ─── Firebase v10 リスナー管理 (unsubscribe関数を保持) ───────────────────
+const _subs={};
+function _addSub(key,fn){_removeSub(key);_subs[key]=fn;}
+function _removeSub(key){if(_subs[key]){try{_subs[key]();}catch(e){}delete _subs[key];}}
 const genCode=()=>Math.floor(1000+Math.random()*9000).toString();
 const SBORDER=['','#00f5ff','#ff0080','#aaff00','#ff8800'];
 const SGLOW=['','rgba(0,245,255,.3)','rgba(255,0,128,.3)','rgba(170,255,0,.3)','rgba(255,136,0,.3)'];
@@ -757,7 +760,9 @@ window.quickMatch = async () => {
   // キューを監視してマッチング処理
   const queueRef = ref(db, QM_QUEUE_PATH);
   let _matching = false;
-  const _qmListen = onValue(queueRef, async snap => {
+  // onValue returns unsubscribe function (Firebase v10 modular best practice)
+  let _qmUnsubQueue = null;
+  const _qmListen = async snap => {
     if(_qmState !== 'searching' || _matching) return;
     const data = snap.val();
     if(!data) return;
@@ -861,8 +866,9 @@ window.quickMatch = async () => {
         });
       });
     }
-  });
-  _qmListenerOff = () => { try{ off(queueRef, _qmListen); }catch(e){} };
+  }; // end _qmListen
+  _qmUnsubQueue = onValue(queueRef, _qmListen);
+  _qmListenerOff = () => { if(_qmUnsubQueue){try{_qmUnsubQueue();}catch(e){}} _qmUnsubQueue=null; };
 };
 
 // ── ランダムプレイヤー名生成（ボット偽装用） ──
@@ -1023,8 +1029,8 @@ function _startQmBotGame(){
 }
 
 function offAll(){
-  for(const k of Object.keys(_ls)){if(_ls[k]){try{off(_ls[k]);}catch(e){}}_ls[k]=null;}
-  for(const k of Object.keys(_oppLs)){if(_oppLs[k]){try{off(_oppLs[k]);}catch(e){}delete _oppLs[k];}}
+  // 全リスナーをunsubscribe関数で確実に解除
+  Object.keys(_subs).forEach(k=>_removeSub(k));
 }
 function resetState(){
   offAll();gameRunning=false;endedOnce=false;
@@ -1158,14 +1164,14 @@ window.createRoom=async()=>{
   listenWait();
 };
 function listenWait(){
-  if(_ls.room){try{off(_ls.room);}catch(e){}}_ls.room=null;
-  const rRef=ref(db,'multi/'+roomCode);_ls.room=rRef;
-  onValue(rRef,snap=>{
+  _removeSub('room'); // 既存のリスナーを確実に解除してから登録
+  const rRef=ref(db,'multi/'+roomCode);
+  _addSub('room', onValue(rRef,snap=>{
     const d=snap.val();
     if(!d){offAll();resetState();showScreen('lobbyScreen');showToast('ルームが削除されました','warn');return;}
-    if(d.status==='started'){off(rRef);_ls.room=null;startGame(d);return;}
+    if(d.status==='started'){_removeSub('room');startGame(d);return;}
     renderWait(d);
-  });
+  }));
 }
 function renderWait(d){
   const max=d.maxPlayers||3,slots=['p1','p2','p3','p4'].slice(0,max);
@@ -1377,31 +1383,30 @@ async function startGame(roomData){
 
   // システムメッセージ（管理者ブロードキャスト）を監視
   const sysMsgRef=ref(db,'multi/'+roomCode+'/sysMsgTs');
-  _oppLs['sysMsg']=sysMsgRef;
   const _joinTs=getServerTime();
-  onValue(sysMsgRef,snap=>{
+  _addSub('sysMsg', onValue(sysMsgRef,snap=>{
     if(!gameRunning)return;
     const ts=snap.val();
     // ゲーム参加前に送信されたメッセージは無視
     if(!ts||ts<_joinTs)return;
     get(ref(db,'multi/'+roomCode+'/sysMsg')).then(s=>{
       const msg=s.val();
-      if(msg) showToast('📢 '+msg,'warn');
+      // gameRunningを再チェック（非同期getが完了するまでの間に終了している可能性）
+      if(msg&&gameRunning) showToast('📢 '+msg,'warn');
     }).catch(()=>{});
-  });
+  }));
 
   // Watch alive state
   const aliveRef=ref(db,'multi/'+roomCode+'/alive');
-  _oppLs['alive']=aliveRef;
-  onValue(aliveRef,snap=>{
+  _addSub('alive', onValue(aliveRef,snap=>{
     const av=snap.val()||{};
     active.filter(s=>s!==mySlot).forEach(s=>{if(oppInfo[s])oppInfo[s].alive=av[s]!==false;});
-  });
+  }));
 
   // Watch opponent boards
   active.filter(s=>s!==mySlot).forEach(sk=>{
-    const oRef=ref(db,'multi/'+roomCode+'/game/'+sk);_oppLs[sk]=oRef;
-    onValue(oRef,snap=>{
+    const oRef=ref(db,'multi/'+roomCode+'/game/'+sk);
+    _addSub('opp_'+sk, onValue(oRef,snap=>{
       const od=snap.val();if(!od)return;
       const oc=oppInfo[sk];if(oc)TetrisGame.drawOpp(oc.canvas,od,oc.W,oc.H);
       const ns=document.getElementById('oppName_'+sk);if(ns)ns.textContent=(d[sk]?.name||sk)+' ('+od.score+')';
@@ -1426,22 +1431,21 @@ async function startGame(roomData){
         playSound('elim');
         update(ref(db,'multi/'+roomCode+'/alive'),{[sk]:false}).catch(()=>{});
       }
-    });
+    }));
   });
 
   // Watch incoming garbage
-  const myGRef=ref(db,'multi/'+roomCode+'/garb/'+mySlot);_oppLs['garb_my']=myGRef;
-  onValue(myGRef,snap=>{
+  const myGRef=ref(db,'multi/'+roomCode+'/garb/'+mySlot);
+  _addSub('garb_my', onValue(myGRef,snap=>{
     const v=snap.val();if(!v||!v.n||!game)return;
     if(v.n>0){
       const toAdd=v.n;
-      // アトミックにn=0にリセット（他プレイヤーの同時書き込みと競合しないよう）
       runTransaction(myGRef,cur=>cur&&cur.n>0?{n:0}:cur).catch(()=>{});
       game.pendGarb+=toAdd;
       const badge=document.getElementById('attackBadge');badge.textContent='+'+v.n+' !';badge.classList.remove('show');void badge.offsetWidth;badge.classList.add('show');setTimeout(()=>badge.classList.remove('show'),1200);
       flashAttack();playSound('attack');
     }
-  });
+  }));
 
   // Match flash
   const mf=document.getElementById('matchFlash');mf.classList.add('show');setTimeout(()=>mf.classList.remove('show'),2000);
@@ -1511,6 +1515,8 @@ async function startGame(roomData){
 // ── END GAME ──
 function endGame(rank){
   if(endedOnce)return;endedOnce=true;gameRunning=false;myFinalRank=rank;
+  // ゲーム終了と同時にFirebaseリスナーを全解除（staleコールバック防止）
+  offAll();
   const _mb=document.getElementById('myMusicBanner');if(_mb)_mb.style.display='none';
   if(animId){cancelAnimationFrame(animId);animId=null;}
   const score=game?.score||0,lvl=game?.level||1,lines=game?.lines||0;
