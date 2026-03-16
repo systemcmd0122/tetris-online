@@ -47,6 +47,28 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
 .btn-danger:hover{background:rgba(255,51,85,.1)}
 .btn-green{background:linear-gradient(135deg,#00cc66,#009944);color:#000;margin-top:10px}
 .btn-green:hover{transform:translateY(-1px);box-shadow:0 0 20px rgba(0,204,102,.5)}
+/* ── QUICK MATCH ── */
+.btn-match{background:linear-gradient(135deg,#ff8800,#ff4400);color:#fff;margin-top:0;border:none;
+  box-shadow:0 4px 0 rgba(100,30,0,.8);transition:all .15s;}
+.btn-match:hover{transform:translateY(-2px);box-shadow:0 6px 0 rgba(100,30,0,.8),0 0 30px rgba(255,136,0,.5);}
+.btn-match:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(100,30,0,.8);}
+/* Matching screen */
+.match-timer-wrap{width:100%;background:var(--s1);border-radius:3px;overflow:hidden;height:6px;margin:14px 0;}
+.match-timer-bar{height:100%;background:linear-gradient(90deg,var(--acc3),var(--acc));
+  border-radius:3px;transition:width .5s linear;width:100%;}
+.match-timer-bar.danger{background:linear-gradient(90deg,var(--red),var(--warn));}
+.match-status-text{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--acc3);
+  letter-spacing:2px;text-align:center;min-height:22px;}
+.match-found-flash{font-family:'Press Start 2P',monospace;font-size:18px;color:var(--acc3);
+  text-shadow:0 0 20px rgba(170,255,0,.8);letter-spacing:4px;text-align:center;
+  animation:matchFoundPop .4s ease-out forwards;}
+@keyframes matchFoundPop{0%{opacity:0;transform:scale(.4)}60%{transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+.match-player-preview{display:flex;align-items:center;justify-content:center;gap:20px;
+  margin:16px 0;font-size:12px;color:var(--tx);}
+.match-vs{font-family:'Press Start 2P',monospace;font-size:14px;
+  background:linear-gradient(180deg,var(--acc),var(--acc2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.match-pname{font-family:'Press Start 2P',monospace;font-size:9px;letter-spacing:1px;}
 .divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--dim);font-size:10px;letter-spacing:2px}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
 .max-players-label{font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:8px}
@@ -208,6 +230,14 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
       <label>PLAYER NAME</label>
       <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
     </div>
+    <!-- QUICK MATCH -->
+    <button class="btn btn-match" onclick="quickMatch()" style="margin-bottom:4px;">
+      <span style="display:flex;align-items:center;justify-content:center;gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1l1.8 3.6L13 5.1l-3 2.9.7 4.1L7 10.2l-3.7 1.9.7-4.1-3-2.9 4.2-.6z"/></svg>
+        クイックマッチ（自動マッチング）
+      </span>
+    </button>
+    <div style="font-size:9px;color:var(--dim);letter-spacing:1px;text-align:center;margin-bottom:14px;">対戦相手を自動で探します。見つからない場合はBOTと対戦</div>
     <div class="input-group">
       <div class="max-players-label">最大プレイヤー数（ルーム作成時）</div>
       <div class="max-players-sel">
@@ -224,6 +254,36 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
     </div>
     <button class="btn btn-secondary" onclick="joinRoom()">→ ルームに参加</button>
     <a href="index.html" class="btn btn-danger" style="display:block;margin-top:12px;">← メニューに戻る</a>
+  </div>
+</div>
+
+<!-- QUICK MATCHING SCREEN -->
+<div class="screen" id="matchingScreen">
+  <div class="logo" style="font-size:20px;margin-bottom:4px;">MATCHING</div>
+  <div class="subtitle">QUICK MATCH</div>
+  <div class="card" style="position:relative;max-width:420px;">
+    <div class="px-corner tl"></div><div class="px-corner tr"></div><div class="px-corner bl"></div><div class="px-corner br"></div>
+    <div class="card-title">▶ 対戦相手を検索中...</div>
+    <div class="match-status-text" id="matchStatusText">キューに参加しています...</div>
+    <div class="match-timer-wrap">
+      <div class="match-timer-bar" id="matchTimerBar"></div>
+    </div>
+    <div style="font-size:10px;color:var(--dim);letter-spacing:1px;text-align:center;margin-bottom:14px;">
+      <span id="matchTimerText">30</span>秒後にBOTと対戦します
+    </div>
+    <div id="matchFoundArea" style="display:none;">
+      <div class="match-found-flash">MATCH FOUND!</div>
+      <div class="match-player-preview">
+        <span class="match-pname" style="color:var(--acc)" id="matchMyName">YOU</span>
+        <span class="match-vs">VS</span>
+        <span class="match-pname" style="color:var(--acc2)" id="matchOppName">???</span>
+      </div>
+    </div>
+    <div class="waiting-indicator" id="matchDots">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      <span>SEARCHING</span>
+    </div>
+    <button class="btn btn-danger" onclick="cancelQuickMatch()">← キャンセル</button>
   </div>
 </div>
 
@@ -388,6 +448,21 @@ document.getElementById('statusText').textContent='ONLINE';
 document.getElementById('statusText').className='status-online';
 document.getElementById('versionDisp').textContent=`VER ${APP_VERSION}`;
 
+// マッチングキューの古いエントリ（5分以上）をページ読み込み時に清掃
+(async()=>{
+  try{
+    const snap=await get(ref(db,'matchmaking/queue'));
+    if(!snap.exists())return;
+    const now=Date.now();
+    const removes=[];
+    snap.forEach(child=>{
+      const d=child.val();
+      if(d&&d.ts&&(now-d.ts)>5*60*1000) removes.push(remove(ref(db,'matchmaking/queue/'+child.key)));
+    });
+    if(removes.length) await Promise.all(removes);
+  }catch(e){}
+})();
+
 // ── SOUND ──
 let audioCtx=null,soundEnabled=true;
 function getACtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
@@ -540,6 +615,376 @@ const genCode=()=>Math.floor(1000+Math.random()*9000).toString();
 const SBORDER=['','#00f5ff','#ff0080','#aaff00','#ff8800'];
 const SGLOW=['','rgba(0,245,255,.3)','rgba(255,0,128,.3)','rgba(170,255,0,.3)','rgba(255,136,0,.3)'];
 const SLCLS=['','lp1','lp2','lp3','lp4'];
+
+// ── BOT AI (for quick match fallback) ──
+const BOT_DELAYS=[250,120,40];
+const BOT_NOISE=[0.12,0.04,0.0];
+let _qmBotGame=null,_qmBotCtrl=null; // quick match bot instances
+
+class BotController{
+  constructor(game,difficulty=2){
+    this.game=game;this.difficulty=difficulty;
+    this.actionDelay=BOT_DELAYS[difficulty-1];
+    this.noise=BOT_NOISE[difficulty-1];
+    this.lastActionTs=0;this.moveQueue=[];
+  }
+  _sim(board,pName,rot,sx){
+    const m=PIECES[pName][rot];if(!m)return null;
+    for(let r=0;r<m.length;r++)for(let c=0;c<m[r].length;c++){if(m[r][c]&&(sx+c<0||sx+c>=COLS))return null;}
+    let py=-2,stopped=false;
+    while(!stopped){py++;for(let r=0;r<m.length;r++)for(let c=0;c<m[r].length;c++){if(!m[r][c])continue;const ny=py+r,nx=sx+c;if(ny>=ROWS){py--;stopped=true;break;}if(ny>=0&&board[ny][nx]){py--;stopped=true;break;}}if(py>ROWS)return null;}
+    const nb=board.map(r=>[...r]);
+    for(let r=0;r<m.length;r++)for(let c=0;c<m[r].length;c++){if(m[r][c]){const ny=py+r,nx=sx+c;if(ny<0||ny>=ROWS)return null;nb[ny][nx]=pName;}}
+    const filt=nb.filter(row=>!row.every(c=>c!==null));const cleared=ROWS-filt.length;while(filt.length<ROWS)filt.unshift(new Array(COLS).fill(null));
+    const heights=new Array(COLS).fill(0);for(let col=0;col<COLS;col++)for(let row=0;row<ROWS;row++){if(filt[row][col]){heights[col]=ROWS-row;break;}}
+    const aH=heights.reduce((a,b)=>a+b,0);let holes=0;for(let col=0;col<COLS;col++){let found=false;for(let row=0;row<ROWS;row++){if(filt[row][col])found=true;else if(found)holes++;}}
+    let bump=0;for(let col=0;col<COLS-1;col++)bump+=Math.abs(heights[col]-heights[col+1]);
+    return{score:-0.51*aH+(cleared===4?12.0:cleared*1.5)-0.40*holes-0.20*bump,nb:filt};
+  }
+  findBest(){
+    const board=this.game.board.slice(2).map(r=>r.map(c=>c||null));
+    const bag=this.game.bag;
+    const evaluate=(pName,nName)=>{
+      let bestS=-Infinity,bestR=0,bestX=3;
+      for(let r=0;r<4;r++)for(let x=-2;x<COLS+2;x++){
+        const res=this._sim(board,pName,r,x);if(!res)continue;
+        let ts=res.score;let bN=-Infinity;
+        for(let nr=0;nr<4;nr++)for(let nx=-2;nx<COLS+2;nx++){const nr2=this._sim(res.nb,nName,nr,nx);if(nr2&&nr2.score>bN)bN=nr2.score;}
+        if(bN!==-Infinity)ts+=bN;ts+=(Math.random()*2-1)*this.noise*4;
+        if(ts>bestS){bestS=ts;bestR=r;bestX=x;}
+      }
+      return{score:bestS,rot:bestR,x:bestX};
+    };
+    const curEval=evaluate(this.game.current.name,bag.peek(1)[0]);
+    let best={...curEval,isHold:false};
+    if(this.game.canHold){
+      const hName=this.game.held||bag.peek(1)[0];
+      const nName=this.game.held?bag.peek(1)[0]:bag.peek(2)[1];
+      const hEval=evaluate(hName,nName);
+      if(hEval.score>curEval.score)best={...hEval,isHold:true};
+    }
+    return best;
+  }
+  planMoves(targetRot,targetX){
+    const moves=[];const rd=((targetRot-this.game.current.rot)+4)%4;
+    if(rd===1)moves.push('rr');else if(rd===2){moves.push('rr');moves.push('rr');}else if(rd===3)moves.push('rl');
+    const dx=targetX-this.game.current.x,dir=dx>0?'mr':'ml';
+    for(let i=0;i<Math.abs(dx);i++)moves.push(dir);
+    moves.push('hd');return moves;
+  }
+  tick(ts){
+    if(!this.game||this.game.over)return;
+    if(this.game.waiting){this.moveQueue=[];return;}
+    if(ts-this.lastActionTs<this.actionDelay)return;
+    this.lastActionTs=ts;
+    if(!this.moveQueue.length){const b=this.findBest();this.moveQueue=b.isHold?['hold']:this.planMoves(b.rot,b.x);}
+    const a=this.moveQueue.shift();if(!a)return;
+    if(a==='rr')this.game.rotate(1);else if(a==='rl')this.game.rotate(-1);
+    else if(a==='mr')this.game.move(1);else if(a==='ml')this.game.move(-1);
+    else if(a==='hd'){this.game.hardDrop();this.moveQueue=[];}
+    else if(a==='hold'){this.game.hold();this.moveQueue=[];}
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// QUICK MATCH SYSTEM
+// ═══════════════════════════════════════════════════════
+const QM_TIMEOUT_MS = 30000; // 30秒でBOT対戦へ
+const QM_QUEUE_PATH = 'matchmaking/queue';
+const QM_MATCH_PATH = 'matchmaking/matches';
+
+let _qmState = null; // null | 'searching' | 'matched' | 'bot'
+let _qmMyId = null;   // 自分のキューID
+let _qmTimerStart = 0;
+let _qmTimerInterval = null;
+let _qmListenerOff = null;
+let _qmMatchListenerOff = null;
+let _qmIsBot = false;
+
+// タイマーバーUI更新
+function _qmUpdateTimer(){
+  if(_qmState !== 'searching') return;
+  const elapsed = Date.now() - _qmTimerStart;
+  const remain = Math.max(0, QM_TIMEOUT_MS - elapsed);
+  const pct = (remain / QM_TIMEOUT_MS) * 100;
+  const bar = document.getElementById('matchTimerBar');
+  const txt = document.getElementById('matchTimerText');
+  if(bar) { bar.style.width = pct + '%'; bar.className = 'match-timer-bar' + (pct < 30 ? ' danger' : ''); }
+  if(txt) txt.textContent = Math.ceil(remain / 1000);
+  if(remain <= 0) { clearInterval(_qmTimerInterval); _startBotFallback(); }
+}
+
+// クイックマッチ開始
+window.quickMatch = async () => {
+  if(_qmState) return;
+  const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
+  _qmState = 'searching';
+  _qmIsBot = false;
+  showScreen('matchingScreen');
+  document.getElementById('matchStatusText').textContent = 'キューに参加しています...';
+  document.getElementById('matchFoundArea').style.display = 'none';
+  document.getElementById('matchDots').style.display = 'flex';
+  document.getElementById('matchMyName').textContent = name;
+  document.getElementById('matchOppName').textContent = '???';
+  document.getElementById('matchTimerBar').style.width = '100%';
+  document.getElementById('matchTimerBar').className = 'match-timer-bar';
+
+  // 自分のエントリをキューに登録
+  _qmMyId = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  const myRef = ref(db, QM_QUEUE_PATH + '/' + _qmMyId);
+  try {
+    await set(myRef, { name, ts: getServerTime(), id: _qmMyId });
+    onDisconnect(myRef).remove();
+  } catch(e) {
+    _qmCleanup();
+    showScreen('lobbyScreen');
+    showToast('接続エラー: ' + e.message, 'warn');
+    return;
+  }
+
+  _qmTimerStart = Date.now();
+  _qmTimerInterval = setInterval(_qmUpdateTimer, 500);
+
+  // キューを監視してマッチング処理
+  const queueRef = ref(db, QM_QUEUE_PATH);
+  let _matching = false;
+  const _qmListen = onValue(queueRef, async snap => {
+    if(_qmState !== 'searching' || _matching) return;
+    const data = snap.val();
+    if(!data) return;
+
+    const entries = Object.values(data)
+      .filter(e => e && e.id && e.ts)
+      .sort((a, b) => a.ts - b.ts); // 古い順
+
+    if(entries.length < 2) {
+      document.getElementById('matchStatusText').textContent = 'マッチング中... (' + entries.length + '人待機中)';
+      return;
+    }
+
+    // 先頭2人（最も古いエントリ同士）でマッチング
+    const p1Entry = entries[0];
+    const p2Entry = entries[1];
+
+    // 自分がこのマッチに含まれているか確認
+    const amIp1 = p1Entry.id === _qmMyId;
+    const amIp2 = p2Entry.id === _qmMyId;
+    if(!amIp1 && !amIp2) return;
+
+    _matching = true;
+    document.getElementById('matchStatusText').textContent = '対戦相手が見つかりました！';
+
+    if(amIp1) {
+      // 自分がp1 → ルーム作成してmatchesに書き込む
+      const code = genCode();
+      const matchData = {
+        code,
+        p1: { name: p1Entry.name, id: p1Entry.id },
+        p2: { name: p2Entry.name, id: p2Entry.id },
+        ts: getServerTime()
+      };
+      try {
+        // ルームをFirebaseに作成
+        const rRef = ref(db, 'multi/' + code);
+        await set(rRef, {
+          p1: { name: p1Entry.name, alive: true },
+          p2: { name: p2Entry.name, alive: true },
+          status: 'started',
+          maxPlayers: 2,
+          gameStartAt: getServerTime() + 5000,
+          activeSlots: ['p1', 'p2'],
+          ts: getServerTime()
+        });
+        onDisconnect(rRef).remove();
+        // マッチ情報を書き込み（p2が読む）
+        await set(ref(db, QM_MATCH_PATH + '/' + p2Entry.id), { code, role: 'p2', ts: getServerTime() });
+        // キューから両者を削除
+        await remove(ref(db, QM_QUEUE_PATH + '/' + p1Entry.id));
+        await remove(ref(db, QM_QUEUE_PATH + '/' + p2Entry.id));
+
+        // マッチ確定UIを表示してからゲーム開始
+        _qmShowMatchFound(p1Entry.name, p2Entry.name, () => {
+          _qmCleanup();
+          mySlot = 'p1'; roomCode = code; endedOnce = false;
+          document.getElementById('statusRoom').textContent = 'QM: ' + code;
+          const roomData = { p1:{name:p1Entry.name,alive:true}, p2:{name:p2Entry.name,alive:true}, status:'started', maxPlayers:2, gameStartAt:getServerTime()+2000, activeSlots:['p1','p2'] };
+          startGame(roomData);
+        });
+      } catch(e) {
+        _matching = false;
+        _qmCleanup();
+        showScreen('lobbyScreen');
+        showToast('マッチングエラー: ' + e.message, 'warn');
+      }
+    } else {
+      // 自分がp2 → matchesに自分のIDのエントリが来るのを待つ
+      document.getElementById('matchStatusText').textContent = '対戦相手が見つかりました！接続中...';
+      const matchRef = ref(db, QM_MATCH_PATH + '/' + _qmMyId);
+      _qmMatchListenerOff = onValue(matchRef, async msnap => {
+        const md = msnap.val();
+        if(!md || !md.code) return;
+        if(_qmMatchListenerOff){ try{_qmMatchListenerOff();}catch(e){} _qmMatchListenerOff=null; }
+        // マッチ情報取得成功
+        const code = md.code;
+        // マッチエントリを削除
+        try{ await remove(ref(db, QM_MATCH_PATH + '/' + _qmMyId)); }catch(e){}
+
+        _qmShowMatchFound(p1Entry.name, p2Entry.name, async () => {
+          _qmCleanup();
+          mySlot = 'p2'; roomCode = code; endedOnce = false;
+          document.getElementById('statusRoom').textContent = 'QM: ' + code;
+          // ルームデータを取得してゲーム開始
+          let snap2;
+          try{ snap2 = await get(ref(db, 'multi/' + code)); }catch(e){ showScreen('lobbyScreen'); return; }
+          if(!snap2.exists()){ showScreen('lobbyScreen'); showToast('ルームが見つかりません', 'warn'); return; }
+          startGame(snap2.val());
+        });
+      });
+    }
+  });
+  _qmListenerOff = () => { try{ off(queueRef, _qmListen); }catch(e){} };
+};
+
+// マッチ成立UI表示 → callback
+function _qmShowMatchFound(myName, oppName, cb){
+  const oppN = mySlot === 'p1' ? oppName : myName; // p2は相手がmyName
+  const myN = mySlot === 'p1' ? myName : oppName;
+  document.getElementById('matchOppName').textContent = oppN || 'PLAYER';
+  document.getElementById('matchMyName').textContent = myN || 'PLAYER';
+  document.getElementById('matchFoundArea').style.display = 'block';
+  document.getElementById('matchDots').style.display = 'none';
+  document.getElementById('matchStatusText').textContent = '';
+  clearInterval(_qmTimerInterval);
+  playSound('go');
+  setTimeout(cb, 1800);
+}
+
+// BOTフォールバック開始
+function _startBotFallback(){
+  if(_qmState !== 'searching') return;
+  _qmState = 'bot';
+  _qmIsBot = true;
+  _qmCleanupQueue();
+  document.getElementById('matchStatusText').textContent = '対戦相手が見つかりませんでした';
+  document.getElementById('matchFoundArea').style.display = 'block';
+  document.getElementById('matchDots').style.display = 'none';
+  document.getElementById('matchOppName').textContent = 'BOT-NORMAL';
+  document.getElementById('matchTimerBar').style.width = '0%';
+  playSound('go');
+  setTimeout(() => {
+    if(_qmState !== 'bot') return;
+    _qmCleanup();
+    _startQmBotGame();
+  }, 1800);
+}
+
+// キュー＆マッチリスナー解除・Firebase削除
+async function _qmCleanupQueue(){
+  if(_qmMyId){
+    try{ await remove(ref(db, QM_QUEUE_PATH + '/' + _qmMyId)); }catch(e){}
+    try{ await remove(ref(db, QM_MATCH_PATH + '/' + _qmMyId)); }catch(e){}
+  }
+}
+function _qmCleanup(){
+  _qmState = null;
+  clearInterval(_qmTimerInterval); _qmTimerInterval = null;
+  if(_qmListenerOff){ try{_qmListenerOff();}catch(e){} _qmListenerOff = null; }
+  if(_qmMatchListenerOff){ try{_qmMatchListenerOff();}catch(e){} _qmMatchListenerOff = null; }
+  _qmCleanupQueue();
+  _qmMyId = null;
+}
+
+// クイックマッチキャンセル
+window.cancelQuickMatch = async () => {
+  _qmCleanup();
+  _qmIsBot = false;
+  _qmBotStop();
+  showScreen('lobbyScreen');
+};
+
+// ── QM BOTゲーム（完全ローカル） ──
+function _qmBotStop(){
+  if(_qmBotCtrl){ _qmBotCtrl = null; }
+  if(_qmBotGame){ _qmBotGame = null; }
+}
+
+function _startQmBotGame(){
+  const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
+  endedOnce = false;
+  mySlot = 'p1'; roomCode = null; totalPlayers = 2;
+  showScreen('gameScreen');
+  clearBoards();
+
+  // ゲーム画面の自分ボード設定
+  document.getElementById('myNameTag').textContent = name;
+  document.getElementById('myLabel').className = 'player-label lp1';
+  document.getElementById('myLabel').textContent = 'P1';
+  document.getElementById('myCanvas').style.cssText = `display:block;image-rendering:pixelated;border:1px solid ${SBORDER[1]};box-shadow:0 0 16px ${SGLOW[1]}`;
+
+  // 相手ボードエリアをBOT用に構築（buildOppArea が oppCvs_p2 を DOM に追加する）
+  const active = ['p1','p2'];
+  buildOppArea(active);
+  const oppNtEl = document.getElementById('oppName_p2');
+  if(oppNtEl) oppNtEl.textContent = 'BOT-NORMAL';
+
+  document.getElementById('statusRoom').textContent = 'QM: BOT';
+
+  // buildOppArea の後に TetrisGame を生成（oppCvs_p2 が DOM に存在するため）
+  game = new TetrisGame('myCanvas','holdCanvas','nextCanvas');
+  _qmBotGame = new TetrisGame('oppCvs_p2', null, null);
+  _qmBotCtrl = new BotController(_qmBotGame, 2); // NORMAL難易度
+  gameRunning = true; endedOnce = false;
+
+  const gsa = Date.now() + 4000;
+  doCountdown(gsa).then(aborted => {
+    if(aborted) return;
+
+    const loop = ts => {
+      if(!gameRunning) return;
+      game.update(ts); game.draw();
+      _qmBotCtrl.tick(ts); _qmBotGame.update(ts);
+
+      // Botボード描画
+      const bd = {
+        board: _qmBotGame.board.slice(2).map(r=>r.map(c=>c||'')),
+        cur: { name:_qmBotGame.current.name, rot:_qmBotGame.current.rot, x:_qmBotGame.current.x, y:_qmBotGame.current.y },
+        gameOver: _qmBotGame.over
+      };
+      const oppCvs = document.getElementById('oppCvs_p2');
+      if(oppCvs) TetrisGame.drawOpp(oppCvs, bd, 200, 400);
+
+      // スコア表示
+      const oppNt = document.getElementById('oppName_p2');
+      if(oppNt) oppNt.textContent = 'BOT-NORMAL (' + _qmBotGame.score + ')';
+
+      // 自分の結果処理
+      while(game.results.length > 0){
+        const res = game.results.shift();
+        if(res.garbageOut > 0){ statAtkSent += res.garbageOut; _qmBotGame.pendGarb += res.garbageOut; }
+        if(res.actionLabel) showAP(res.actionLabel);
+      }
+      // BOTの結果処理
+      while(_qmBotGame.results.length > 0){
+        const res = _qmBotGame.results.shift();
+        if(res.garbageOut > 0){
+          game.pendGarb += res.garbageOut;
+          const badge = document.getElementById('attackBadge');
+          badge.textContent = '+' + res.garbageOut + ' !';
+          badge.classList.remove('show'); void badge.offsetWidth; badge.classList.add('show');
+          setTimeout(() => badge.classList.remove('show'), 1200);
+          flashAttack(); playSound('attack');
+        }
+      }
+      updateUI();
+
+      if(game.over && !endedOnce){ endGame(2); return; }
+      if(_qmBotGame.over && !game.over && !endedOnce){ endGame(1); return; }
+      if(game.over && _qmBotGame.over && !endedOnce){ endGame(1); return; }
+      animId = requestAnimationFrame(loop);
+    };
+    animId = requestAnimationFrame(loop);
+  });
+}
 
 function offAll(){
   for(const k of Object.keys(_ls)){if(_ls[k]){try{off(_ls[k]);}catch(e){}}_ls[k]=null;}
@@ -834,12 +1279,14 @@ window.rematch=async()=>{
 
 // ── LEAVE ROOM ──
 window.leaveRoom=async()=>{
-  const code=roomCode,slot=mySlot;
+  const code=roomCode,slot=mySlot,wasBot=_qmIsBot;
   document.getElementById('resultOverlay').classList.remove('show');
   document.getElementById('countdownOverlay').classList.remove('show');
   const mb=document.getElementById('myMusicBanner');if(mb)mb.style.display='none';
+  // BOTゲームの後始末
+  _qmBotStop(); _qmIsBot=false;
   resetState();
-  if(code&&slot&&db){try{await update(ref(db,'multi/'+code+'/game'),{[slot]:{gameOver:true,score:0,board:[]}});}catch(e){}}
+  if(!wasBot&&code&&slot&&db){try{await update(ref(db,'multi/'+code+'/game'),{[slot]:{gameOver:true,score:0,board:[]}});}catch(e){}}
   showScreen('lobbyScreen');
 };
 
@@ -984,6 +1431,9 @@ function endGame(rank){
   document.getElementById('rs-score').textContent=score;document.getElementById('rs-level').textContent=lvl;document.getElementById('rs-lines').textContent=lines;document.getElementById('rs-atk').textContent=statAtkSent;
   document.getElementById('resultSub').textContent=totalPlayers+'人中 第'+rank+'位';
   document.getElementById('rankDisplay').textContent=rank;
+  // BOTゲーム（クイックマッチフォールバック）はリマッチ不可
+  const rematchBtn=document.getElementById('rematchBtn');
+  if(rematchBtn) rematchBtn.style.display=_qmIsBot?'none':'';
   document.getElementById('resultOverlay').classList.add('show');
 }
 
