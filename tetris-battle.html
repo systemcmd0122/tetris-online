@@ -455,7 +455,7 @@ class TetrisGame{
     this.score+=d*2;this.lastAct={type:'hard'};playSound('harddrop');return this._lock();
   }
   ghostY(){let g=this.current.y;while(this.valid(this.current,0,g-this.current.y+1))g++;return g;}
-  _rstLock(){if(this.onGnd&&this.lockRst<MAX_RESETS){this.lockTm=null;this.lockRst++;}}
+  _rstLock(){if(this.onGnd&&this.lockRst<MAX_RESETS){this.lockTm=performance.now();this.lockRst++;}}
   _tSpin(){if(this.current.name!=='T'||!this.lastAct||this.lastAct.type!=='rotate')return false;const{x,y}=this.current;const cs=[[x,y],[x+2,y],[x,y+2],[x+2,y+2]];return cs.filter(([cx,cy])=>cy<0||cy>=ROWS||cx<0||cx>=COLS||!!this._get(cx,cy)).length>=3;}
   _lock(){
     for(const[cx,cy]of this.cells()){if(cy>=0)this._set(cx,cy,this.current.name);else this.over=true;}
@@ -490,7 +490,7 @@ class TetrisGame{
       return null;
     }
     const og=!this.valid(this.current,0,1);
-    if(og){if(!this.onGnd){this.onGnd=true;this.lockTm=ts;}if(ts-this.lockTm>=LOCK_DELAY){this.onGnd=false;return this._lock();}}
+    if(og){if(!this.onGnd||this.lockTm===null){this.onGnd=true;this.lockTm=ts;}if(ts-this.lockTm>=LOCK_DELAY){this.onGnd=false;return this._lock();}}
     else{this.onGnd=false;this.lockTm=null;if(ts-this.lastDrop>=this.spd){this.lastDrop=ts;this.current.y++;}}
     return null;
   }

@@ -547,7 +547,7 @@ class TetrisGame{
     let d=0;while(this.valid(this.current,0,1)){this.current.y++;d++;}this.score+=d*2;this.lastAct={type:'hard'};playSound('harddrop');return this._lock();
   }
   ghostY(){let g=this.current.y;while(this.valid(this.current,0,g-this.current.y+1))g++;return g;}
-  _rstLock(){if(this.onGnd&&this.lockRst<15){this.lockTm=null;this.lockRst++;}}
+  _rstLock(){if(this.onGnd&&this.lockRst<15){this.lockTm=performance.now();this.lockRst++;}}
   _tSpin(){if(this.current.name!=='T'||!this.lastAct||this.lastAct.type!=='rotate')return false;const{x,y}=this.current;const cs=[[x,y],[x+2,y],[x,y+2],[x+2,y+2]];return cs.filter(([cx,cy])=>cy<0||cy>=ROWS||cx<0||cx>=COLS||!!this._get(cx,cy)).length>=3;}
   _lock(){
     for(const[cx,cy]of this.cells()){if(cy>=0)this._set(cx,cy,this.current.name);else this.over=true;}
@@ -568,7 +568,7 @@ class TetrisGame{
   _clearLines(){let n=0;for(let r=ROWS-1;r>=0;r--){if(this.board[r+2].every(c=>c!==null)){this.board.splice(r+2,1);this.board.unshift(Array(COLS).fill(null));n++;r++;this.dirty=true;}}return n;}
   _addGarb(n){if(n<=0)return;const h=Math.floor(Math.random()*COLS);for(let i=0;i<n;i++){this.board.shift();const r=Array(COLS).fill('G');r[h]=null;this.board.push(r);}this.dirty=true;}
   hold(){
-    if(!this.canHold)return false;
+    if(!this.canHold||this.waiting)return false;
     const name=this.current.name;
     if(this.held)this.current=mkP(this.held);else this.current=mkP(this.bag.next());
     this.held=name;this.canHold=false;this.lockTm=null;this.lockRst=0;this.onGnd=false;
@@ -578,7 +578,7 @@ class TetrisGame{
     if(this.over)return null;
     if(this.waiting){if(ts>=this.nextTs){this.waiting=false;this.current=mkP(this.bag.next());while(!this.valid(this.current)&&this.current.y>-4)this.current.y--;if(!this.valid(this.current))this.over=true;}return null;}
     const og=!this.valid(this.current,0,1);
-    if(og){if(!this.onGnd){this.onGnd=true;this.lockTm=ts;}if(ts-this.lockTm>=750){this.onGnd=false;return this._lock();}}
+    if(og){if(!this.onGnd||this.lockTm===null){this.onGnd=true;this.lockTm=ts;}if(ts-this.lockTm>=750){this.onGnd=false;return this._lock();}}
     else{this.onGnd=false;this.lockTm=null;if(ts-this.lastDrop>=this.spd){this.lastDrop=ts;this.current.y++;}}
     return null;
   }
@@ -785,6 +785,7 @@ window.quickMatch = async () => {
     if(amIp1) {
       // 自分がp1 → ルーム作成してmatchesに書き込む
       const code = genCode();
+      const gsa = getServerTime() + 5000; // 両者共通の開始時刻
       const matchData = {
         code,
         p1: { name: p1Entry.name, id: p1Entry.id },
@@ -799,7 +800,7 @@ window.quickMatch = async () => {
           p2: { name: p2Entry.name, alive: true },
           status: 'started',
           maxPlayers: 2,
-          gameStartAt: getServerTime() + 5000,
+          gameStartAt: gsa,
           activeSlots: ['p1', 'p2'],
           ts: getServerTime()
         });
@@ -815,7 +816,8 @@ window.quickMatch = async () => {
           _qmCleanup();
           mySlot = 'p1'; roomCode = code; endedOnce = false;
           document.getElementById('statusRoom').textContent = 'QM: ' + code;
-          const roomData = { p1:{name:p1Entry.name,alive:true}, p2:{name:p2Entry.name,alive:true}, status:'started', maxPlayers:2, gameStartAt:getServerTime()+2000, activeSlots:['p1','p2'] };
+          // p1/p2共通のgasを使用して同期を保証
+          const roomData = { p1:{name:p1Entry.name,alive:true}, p2:{name:p2Entry.name,alive:true}, status:'started', maxPlayers:2, gameStartAt:gsa, activeSlots:['p1','p2'] };
           startGame(roomData);
         });
       } catch(e) {
@@ -837,7 +839,7 @@ window.quickMatch = async () => {
         // マッチエントリを削除
         try{ await remove(ref(db, QM_MATCH_PATH + '/' + _qmMyId)); }catch(e){}
 
-        _qmShowMatchFound(p1Entry.name, p2Entry.name, async () => {
+        _qmShowMatchFound(p2Entry.name, p1Entry.name, async () => {
           _qmCleanup();
           mySlot = 'p2'; roomCode = code; endedOnce = false;
           document.getElementById('statusRoom').textContent = 'QM: ' + code;
@@ -868,10 +870,8 @@ let _qmBotDisplayName = ''; // ゲーム開始時に確定する偽装名
 
 // マッチ成立UI表示 → callback
 function _qmShowMatchFound(myName, oppName, cb){
-  const oppN = mySlot === 'p1' ? oppName : myName; // p2は相手がmyName
-  const myN = mySlot === 'p1' ? myName : oppName;
-  document.getElementById('matchOppName').textContent = oppN || 'PLAYER';
-  document.getElementById('matchMyName').textContent = myN || 'PLAYER';
+  document.getElementById('matchOppName').textContent = oppName || 'PLAYER';
+  document.getElementById('matchMyName').textContent = myName || 'PLAYER';
   document.getElementById('matchFoundArea').style.display = 'block';
   document.getElementById('matchDots').style.display = 'none';
   document.getElementById('matchStatusText').textContent = '';
@@ -961,7 +961,7 @@ function _startQmBotGame(){
   _qmBotCtrl = new BotController(_qmBotGame, 2); // NORMAL難易度
   gameRunning = true; endedOnce = false;
 
-  const gsa = Date.now() + 4000;
+  const gsa = getServerTime() + 4000;
   doCountdown(gsa).then(aborted => {
     if(aborted) return;
 
@@ -1218,7 +1218,7 @@ window.cancelWaiting=async()=>{
 
 // ── REMATCH ──
 // ホスト(p1): ルームを waiting にリセット → ウェイティング画面へ
-// 非ホスト: 同じルームコードに自動再参加
+// 非ホスト: ホストのリセットを Firebase リスナーで待ってから再参加
 window.rematch=async()=>{
   if(!roomCode||!mySlot)return;
   const statusEl=document.getElementById('rematchStatus');
@@ -1226,12 +1226,11 @@ window.rematch=async()=>{
   btn.disabled=true;
   if(statusEl) statusEl.textContent='接続中...';
 
-  // ゲームデータをクリア
   const prevCode=roomCode;
   const prevSlot=mySlot;
-  const prevName = (document.getElementById('myNameTag')?.textContent||'PLAYER').split(' ')[0] || 'PLAYER';
+  const prevName=(document.getElementById('myNameTag')?.textContent||'PLAYER').split(' ')[0]||'PLAYER';
 
-  // Firebase listeners を止める（ただしルームは消さない）
+  // Firebase listeners を止める（ルームは消さない）
   offAll();
   gameRunning=false;endedOnce=false;
   if(animId){cancelAnimationFrame(animId);animId=null;}
@@ -1240,55 +1239,67 @@ window.rematch=async()=>{
   dasStop();clearInterval(sdi);sdi=null;
   Object.keys(uiC).forEach(k=>uiC[k]=-1);uiC.b2b=null;
 
-  // 結果オーバーレイは残したまま処理
   try{
     if(prevSlot==='p1'){
-      // ホスト: ルームを待機状態にリセット（プレイヤー情報は保持、ゲームデータだけ消す）
-      await update(ref(db,'multi/'+prevCode),{
-        status:'waiting',
-        gameStartAt:null,
-        activeSlots:null,
-      });
-      // ゲームデータ・ガベージをクリア
+      // ── ホスト ──
+      // ① ゲームデータ・ガベージ・生存フラグをクリア
       await remove(ref(db,'multi/'+prevCode+'/game'));
       await remove(ref(db,'multi/'+prevCode+'/garb'));
       await remove(ref(db,'multi/'+prevCode+'/alive'));
 
-      // 自分の状態を復元
+      // ② p1以外のスロットを全て null に（未参加プレイヤーが残って見えるバグの修正）
+      let rSnap; try{ rSnap=await get(ref(db,'multi/'+prevCode)); }catch(e){ throw new Error('接続エラー'); }
+      if(!rSnap.exists()) throw new Error('ルームが見つかりません');
+      const roomVal=rSnap.val();
+      const maxP=roomVal.maxPlayers||3;
+      const clearUpd={status:'waiting',gameStartAt:null,activeSlots:null};
+      ['p2','p3','p4'].slice(0,maxP-1).forEach(s=>{ clearUpd[s]=null; });
+      await update(ref(db,'multi/'+prevCode),clearUpd);
+
+      // ③ p1自身を再登録
+      await update(ref(db,'multi/'+prevCode+'/p1'),{name:prevName,alive:true});
+      onDisconnect(ref(db,'multi/'+prevCode)).remove();
+
       roomCode=prevCode;mySlot=prevSlot;endedOnce=false;
       document.getElementById('displayRoomCode').textContent=prevCode;
       document.getElementById('statusRoom').textContent='MULTI: '+prevCode;
       document.getElementById('resultOverlay').classList.remove('show');
       showScreen('waitingScreen');
       listenWait();
+
     } else {
-      // 非ホスト: ルームが再び waiting になるのを待ってから再参加
+      // ── 非ホスト ──
+      // Firebase リスナーで status==='waiting' になるのをリアルタイム待機（最大20秒）
+      if(statusEl) statusEl.textContent='ホストのリマッチを待っています...';
       const rRef=ref(db,'multi/'+prevCode);
-      let snap;
-      try{ snap=await get(rRef); }catch(e){ throw new Error('接続エラー'); }
-      if(!snap.exists()) throw new Error('ルームが見つかりません');
-      const d=snap.val();
-      if(d.status!=='waiting'){
-        // ホストがまだリセットしていない場合は少し待ってリトライ
-        if(statusEl) statusEl.textContent='ホストのリマッチを待っています...';
-        await new Promise(res=>setTimeout(res,2000));
-        const snap2=await get(rRef);
-        const d2=snap2.val();
-        if(!d2||d2.status!=='waiting') throw new Error('ルームがまだ準備中です。しばらく待ってから再試行してください');
-      }
-      // 同じスロットが空いていれば再利用、なければ別スロット
-      const max=d.maxPlayers||3;
-      const slots=['p1','p2','p3','p4'].slice(0,max);
-      const freshSnap=await get(rRef);const freshD=freshSnap.val()||{};
+      await new Promise((resolve,reject)=>{
+        const timer=setTimeout(()=>{ try{off(rRef,_watchFn);}catch(e){} reject(new Error('ホストが応答しません。もう一度お試しください')); },20000);
+        const _watchFn=onValue(rRef,snap=>{
+          const d=snap.val();
+          if(!d){ clearTimeout(timer);try{off(rRef,_watchFn);}catch(e){} reject(new Error('ルームが削除されました')); return; }
+          if(d.status==='waiting'){ clearTimeout(timer);try{off(rRef,_watchFn);}catch(e){} resolve(); }
+        });
+      });
+
+      // waiting 確認 — 最新データを取得してスロットを確保
+      const freshSnap=await get(rRef);
+      if(!freshSnap.exists()) throw new Error('ルームが見つかりません');
+      const freshD=freshSnap.val()||{};
+      const maxP2=freshD.maxPlayers||3;
+      const slots=['p1','p2','p3','p4'].slice(0,maxP2);
+
+      // 自分のスロットが空き(null)ならそのまま、他人に取られていれば空きを探す
       let targetSlot=prevSlot;
       if(freshD[prevSlot]&&freshD[prevSlot].name&&freshD[prevSlot].name!==prevName){
-        // 自分のスロットが他人に取られていたら空きを探す
         targetSlot=slots.find(s=>!freshD[s])||null;
         if(!targetSlot) throw new Error('空きスロットがありません');
       }
+
+      // スロットを書き込み（alive:trueで確実に再参加）
       mySlot=targetSlot;roomCode=prevCode;endedOnce=false;
       await update(rRef,{[targetSlot]:{name:prevName,alive:true}});
       onDisconnect(ref(db,'multi/'+prevCode+'/'+targetSlot)).remove();
+
       document.getElementById('displayRoomCode').textContent=prevCode;
       document.getElementById('statusRoom').textContent='MULTI: '+prevCode;
       document.getElementById('resultOverlay').classList.remove('show');
@@ -1298,7 +1309,6 @@ window.rematch=async()=>{
   }catch(err){
     if(statusEl) statusEl.textContent='⚠ '+err.message;
     btn.disabled=false;
-    // roomCode/mySlotを元に戻す
     roomCode=prevCode;mySlot=prevSlot;
   }
 };
