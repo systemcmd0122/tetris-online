@@ -8,7 +8,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
 :root{--bg:#020408;--surface:#0a0f1a;--border:#1a2540;--accent:#00f5ff;--accent2:#ff0080;--accent3:#aaff00;--text:#e0f0ff;--dim:#4a6080;--red:#ff3355;--warn:#ffaa00;--p1c:#00f5ff;--p2c:#ff0080;--p3c:#aaff00;--p4c:#ff8800;}
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Orbitron',monospace;min-height:100vh;overflow-x:hidden}
+/* ゲーム中はスクロール完全無効 */
+body.game-active{overflow:hidden;position:fixed;width:100%}
 #bgCanvas{position:fixed;inset:0;z-index:0;opacity:.16;pointer-events:none}
 .scanlines-overlay{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.13) 2px,rgba(0,0,0,.13) 4px)}
 .scanline{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,245,255,.3),transparent);animation:scan 4s linear infinite;pointer-events:none;z-index:2}
@@ -349,7 +352,11 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
     <div class="rs-cell"><div class="rs-cell-label">ATK SENT</div><div class="rs-cell-val" id="rs-atk">0</div></div>
   </div>
   <div style="font-size:11px;color:var(--dim);letter-spacing:2px;" id="resultSub"></div>
-  <button class="btn btn-primary" style="width:220px;margin-top:10px;" onclick="leaveRoom()">BACK TO LOBBY</button>
+  <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;justify-content:center;">
+    <button class="btn btn-primary" style="width:180px;" onclick="rematch()" id="rematchBtn">▶ REMATCH</button>
+    <button class="btn btn-secondary" style="width:180px;margin-top:0;" onclick="leaveRoom()">BACK TO LOBBY</button>
+  </div>
+  <div id="rematchStatus" style="font-size:10px;color:var(--dim);letter-spacing:2px;margin-top:10px;min-height:16px;text-align:center;"></div>
 </div>
 
 <!-- COUNTDOWN -->
@@ -452,7 +459,10 @@ class TetrisGame{
   }
   move(dx){if(this.valid(this.current,dx)){this.current.x+=dx;this.lastAct={type:'move'};this._rstLock();playSound('move');return true;}return false;}
   softDrop(){if(this.valid(this.current,0,1)){this.current.y++;this.score++;this.lastAct={type:'move'};this.onGnd=false;this.lockTm=null;return true;}return false;}
-  hardDrop(){let d=0;while(this.valid(this.current,0,1)){this.current.y++;d++;}this.score+=d*2;this.lastAct={type:'hard'};playSound('harddrop');return this._lock();}
+  hardDrop(){
+    if(this.waiting)return null; // 次ミノ出現待ち中は無視（スペース連打バグ対策）
+    let d=0;while(this.valid(this.current,0,1)){this.current.y++;d++;}this.score+=d*2;this.lastAct={type:'hard'};playSound('harddrop');return this._lock();
+  }
   ghostY(){let g=this.current.y;while(this.valid(this.current,0,g-this.current.y+1))g++;return g;}
   _rstLock(){if(this.onGnd&&this.lockRst<15){this.lockTm=null;this.lockRst++;}}
   _tSpin(){if(this.current.name!=='T'||!this.lastAct||this.lastAct.type!=='rotate')return false;const{x,y}=this.current;const cs=[[x,y],[x+2,y],[x,y+2],[x+2,y+2]];return cs.filter(([cx,cy])=>cy<0||cy>=ROWS||cx<0||cx>=COLS||!!this._get(cx,cy)).length>=3;}
@@ -543,7 +553,12 @@ function resetState(){
   dasStop();clearInterval(sdi);sdi=null;
   Object.keys(uiC).forEach(k=>uiC[k]=-1);uiC.b2b=null;
 }
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  // ゲーム画面中はbodyスクロールを完全に無効化
+  document.body.classList.toggle('game-active', id==='gameScreen');
+}
 function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.classList.remove('show');t.offsetHeight;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 function flashAttack(){const f=document.getElementById('attackFlash');f.classList.add('show');setTimeout(()=>f.classList.remove('show'),280);const bw=document.querySelector('.board-wrap');if(bw){bw.classList.remove('shake');void bw.offsetWidth;bw.classList.add('shake');setTimeout(()=>bw.classList.remove('shake'),260);}}
 function showAP(lbl){const p=document.getElementById('actionPopup');p.textContent=lbl.replace('\n',' / ');p.classList.remove('show');p.offsetHeight;p.classList.add('show');}
@@ -577,6 +592,9 @@ function clearBoards(){
   document.getElementById('scoreDisplay').textContent='0';document.getElementById('levelDisplay').textContent='1';document.getElementById('linesDisplay').textContent='0';document.getElementById('comboDisplay').textContent='0';document.getElementById('b2bBadge').className='b2b-badge off';document.getElementById('atkSentDisplay').textContent='0';document.getElementById('pendGarbDisplay').textContent='0';document.getElementById('pendGarbCells').innerHTML='';document.getElementById('garbBar').innerHTML='';document.getElementById('attackBadge').classList.remove('show');document.getElementById('rankDisplay').textContent='?';document.getElementById('aliveDisplay').textContent='?';statAtkSent=0;myFinalRank=null;
   Object.keys(uiC).forEach(k=>{uiC[k]=-1});uiC.b2b=null;
   const mb=document.getElementById('myMusicBanner');if(mb)mb.style.display='none';
+  // リマッチボタンをリセット
+  const rb=document.getElementById('rematchBtn');if(rb)rb.disabled=false;
+  const rs=document.getElementById('rematchStatus');if(rs)rs.textContent='';
 }
 function buildOppArea(activeSlots){
   const area=document.getElementById('opponentsArea');
@@ -725,6 +743,93 @@ window.cancelWaiting=async()=>{
   const code=roomCode,slot=mySlot;offAll();resetState();
   if(code&&slot&&db){try{if(slot==='p1')await remove(ref(db,'multi/'+code));else await update(ref(db,'multi/'+code),{[slot]:null});}catch(e){}}
   showScreen('lobbyScreen');
+};
+
+// ── REMATCH ──
+// ホスト(p1): ルームを waiting にリセット → ウェイティング画面へ
+// 非ホスト: 同じルームコードに自動再参加
+window.rematch=async()=>{
+  if(!roomCode||!mySlot)return;
+  const statusEl=document.getElementById('rematchStatus');
+  const btn=document.getElementById('rematchBtn');
+  btn.disabled=true;
+  if(statusEl) statusEl.textContent='接続中...';
+
+  // ゲームデータをクリア
+  const prevCode=roomCode;
+  const prevSlot=mySlot;
+  const prevName = (document.getElementById('myNameTag')?.textContent||'PLAYER').split(' ')[0] || 'PLAYER';
+
+  // Firebase listeners を止める（ただしルームは消さない）
+  offAll();
+  gameRunning=false;endedOnce=false;
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  game=null;myFinalRank=null;totalPlayers=0;statAtkSent=0;
+  Object.keys(oppInfo).forEach(k=>delete oppInfo[k]);
+  dasStop();clearInterval(sdi);sdi=null;
+  Object.keys(uiC).forEach(k=>uiC[k]=-1);uiC.b2b=null;
+
+  // 結果オーバーレイは残したまま処理
+  try{
+    if(prevSlot==='p1'){
+      // ホスト: ルームを待機状態にリセット（プレイヤー情報は保持、ゲームデータだけ消す）
+      await update(ref(db,'multi/'+prevCode),{
+        status:'waiting',
+        gameStartAt:null,
+        activeSlots:null,
+      });
+      // ゲームデータ・ガベージをクリア
+      await remove(ref(db,'multi/'+prevCode+'/game'));
+      await remove(ref(db,'multi/'+prevCode+'/garb'));
+      await remove(ref(db,'multi/'+prevCode+'/alive'));
+
+      // 自分の状態を復元
+      roomCode=prevCode;mySlot=prevSlot;endedOnce=false;
+      document.getElementById('displayRoomCode').textContent=prevCode;
+      document.getElementById('statusRoom').textContent='MULTI: '+prevCode;
+      document.getElementById('resultOverlay').classList.remove('show');
+      showScreen('waitingScreen');
+      listenWait();
+    } else {
+      // 非ホスト: ルームが再び waiting になるのを待ってから再参加
+      const rRef=ref(db,'multi/'+prevCode);
+      let snap;
+      try{ snap=await get(rRef); }catch(e){ throw new Error('接続エラー'); }
+      if(!snap.exists()) throw new Error('ルームが見つかりません');
+      const d=snap.val();
+      if(d.status!=='waiting'){
+        // ホストがまだリセットしていない場合は少し待ってリトライ
+        if(statusEl) statusEl.textContent='ホストのリマッチを待っています...';
+        await new Promise(res=>setTimeout(res,2000));
+        const snap2=await get(rRef);
+        const d2=snap2.val();
+        if(!d2||d2.status!=='waiting') throw new Error('ルームがまだ準備中です。しばらく待ってから再試行してください');
+      }
+      // 同じスロットが空いていれば再利用、なければ別スロット
+      const max=d.maxPlayers||3;
+      const slots=['p1','p2','p3','p4'].slice(0,max);
+      const freshSnap=await get(rRef);const freshD=freshSnap.val()||{};
+      let targetSlot=prevSlot;
+      if(freshD[prevSlot]&&freshD[prevSlot].name&&freshD[prevSlot].name!==prevName){
+        // 自分のスロットが他人に取られていたら空きを探す
+        targetSlot=slots.find(s=>!freshD[s])||null;
+        if(!targetSlot) throw new Error('空きスロットがありません');
+      }
+      mySlot=targetSlot;roomCode=prevCode;endedOnce=false;
+      await update(rRef,{[targetSlot]:{name:prevName,alive:true}});
+      onDisconnect(ref(db,'multi/'+prevCode+'/'+targetSlot)).remove();
+      document.getElementById('displayRoomCode').textContent=prevCode;
+      document.getElementById('statusRoom').textContent='MULTI: '+prevCode;
+      document.getElementById('resultOverlay').classList.remove('show');
+      showScreen('waitingScreen');
+      listenWait();
+    }
+  }catch(err){
+    if(statusEl) statusEl.textContent='⚠ '+err.message;
+    btn.disabled=false;
+    // roomCode/mySlotを元に戻す
+    roomCode=prevCode;mySlot=prevSlot;
+  }
 };
 
 // ── LEAVE ROOM ──
@@ -902,17 +1007,23 @@ let dasTimer=null,dasDir=0,arrTimer=null,sdi=null;
 function dasStart(dir){if(dasDir===dir)return;dasStop();dasDir=dir;game?.move(dir);dasTimer=setTimeout(()=>{arrTimer=setInterval(()=>{game?.move(dir);},ARR);},DAS);}
 function dasStop(){clearTimeout(dasTimer);clearInterval(arrTimer);dasTimer=null;arrTimer=null;dasDir=0;}
 document.addEventListener('keydown',e=>{
+  // ゲーム画面表示中はスクロール系キーを常時ブロック
+  const gameActive = document.getElementById('gameScreen')?.classList.contains('active');
+  if(gameActive && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code)){
+    e.preventDefault();
+  }
   if(keys.has(e.code))return;keys.add(e.code);if(!game||!gameRunning)return;
   switch(e.code){
-    case'ArrowLeft':e.preventDefault();dasStart(-1);break;
-    case'ArrowRight':e.preventDefault();dasStart(1);break;
-    case'ArrowUp':case'KeyX':e.preventDefault();game.rotate(1);break;
+    case'ArrowLeft':dasStart(-1);break;
+    case'ArrowRight':dasStart(1);break;
+    case'ArrowUp':case'KeyX':game.rotate(1);break;
     case'KeyZ':e.preventDefault();game.rotate(-1);break;
     case'ArrowDown':
-      e.preventDefault();
       if(!sdi){game.softDrop();sdi=setInterval(()=>{if(game&&gameRunning)game.softDrop();},50);}
       break;
-    case'Space':e.preventDefault();game.hardDrop();break;
+    case'Space':
+      if(game&&!game.waiting)game.hardDrop();
+      break;
     case'KeyC':case'ShiftLeft':case'ShiftRight':e.preventDefault();game.hold();break;
   }
 });
@@ -947,7 +1058,7 @@ function setupMob(id,fn,rep=false){
   btn.addEventListener('mouseup',sp);
   btn.addEventListener('mouseleave',sp);
 }
-setupMob('btnLeft',()=>game?.move(-1),ARR);setupMob('btnRight',()=>game?.move(1),ARR);setupMob('btnDown',()=>game?.softDrop(),50);setupMob('btnRotate',()=>game?.rotate(1));setupMob('btnRotateL',()=>game?.rotate(-1));setupMob('btnHardDrop',()=>game?.hardDrop());setupMob('btnHold',()=>game?.hold());
+setupMob('btnLeft',()=>game?.move(-1),ARR);setupMob('btnRight',()=>game?.move(1),ARR);setupMob('btnDown',()=>game?.softDrop(),50);setupMob('btnRotate',()=>game?.rotate(1));setupMob('btnRotateL',()=>game?.rotate(-1));setupMob('btnHardDrop',()=>{if(game&&!game.waiting)game.hardDrop();});setupMob('btnHold',()=>game?.hold());
 (function(){let tx=0,ty=0;const c=document.getElementById('myCanvas');c.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});c.addEventListener('touchend',e=>{if(!game||!gameRunning)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;if(Math.abs(dy)>50&&dy>0&&Math.abs(dy)>Math.abs(dx)*1.5)game.hardDrop();},{passive:true});})();
 document.getElementById('roomCodeInput').addEventListener('keydown',e=>{if(e.key==='Enter')window.joinRoom();});
 document.getElementById('roomCodeInput').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^0-9]/g,'');});

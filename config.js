@@ -1,6 +1,18 @@
-export const APP_VERSION = "1.8.0";
+export const APP_VERSION = "1.9.0";
 
 export const UPDATE_LOG = [
+  {
+    version: "1.9.0",
+    title: "ステータスページ監視精度向上",
+    changes: [
+      "Firebase RTDB の確認方法を REST から Firebase SDK の WebSocket 接続（.info/connected）に変更し、実際の接続状態を正確に検出するようになりました。",
+      "Firebase RTDB で .info/connected が false → true の順に発火する仕様に対応し、true になるまで待機するよう修正しました。",
+      "Firestore の unsubscribe 処理を Modular SDK v10 の正しい方法に修正しました。",
+      "Google Fonts チェックを fetch 優先・<link>タグフォールバックの2段構えに変更しました。",
+      "YouTube IFrame API チェックを fetch（CORS拒否で誤エラー）から <script> タグの onload/onerror に変更し、正確に確認できるようになりました。",
+      "YouTube Data API チェックで APIキーが未設定の場合は no-cors モードでサーバー到達性のみ確認するよう改善しました。"
+    ]
+  },
   {
     version: "1.8.0",
     title: "システムステータスページ追加",

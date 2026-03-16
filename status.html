@@ -478,25 +478,53 @@ document.getElementById('infoVersion').textContent = APP_VERSION;
 // ══════════════════════════════════════════════════════════
 const HISTORY_KEY = 'status_history';
 const MAX_HISTORY = 30;
-
 function loadHistory() {
-  try { return JSON.parse(sessionStorage.getItem(HISTORY_KEY) || '[]'); }
-  catch { return []; }
+  try { return JSON.parse(sessionStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
 }
 function saveHistory(arr) {
-  try { sessionStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-MAX_HISTORY))); }
-  catch {}
+  try { sessionStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-MAX_HISTORY))); } catch {}
+}
+
+// ══════════════════════════════════════════════════════════
+// FIREBASE CONFIG（アプリと共通）
+// ══════════════════════════════════════════════════════════
+const FB_CFG = {
+  apiKey:        "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
+  authDomain:    "tetris-online-9c827.firebaseapp.com",
+  databaseURL:   "https://tetris-online-9c827-default-rtdb.firebaseio.com",
+  projectId:     "tetris-online-9c827",
+  storageBucket: "tetris-online-9c827.firebasestorage.app",
+  messagingSenderId: "1045054992314",
+  appId:         "1:1045054992314:web:7fea20b9be543d7cab3783"
+};
+
+// ── キャッシュ済み Firebase インスタンス ──
+let _fbApp = null, _fbDb = null, _fbFs = null;
+
+async function getFirebaseApp() {
+  if (_fbApp) return _fbApp;
+  const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+  _fbApp = getApps().length ? getApps()[0] : initializeApp(FB_CFG);
+  return _fbApp;
+}
+async function getFirebaseDB() {
+  if (_fbDb) return _fbDb;
+  const app = await getFirebaseApp();
+  const { getDatabase } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+  _fbDb = getDatabase(app);
+  return _fbDb;
+}
+async function getFirebaseFS() {
+  if (_fbFs) return _fbFs;
+  const app = await getFirebaseApp();
+  const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  _fbFs = getFirestore(app);
+  return _fbFs;
 }
 
 // ══════════════════════════════════════════════════════════
 // SERVICE DEFINITIONS
 // ══════════════════════════════════════════════════════════
-const FB_CONFIG = {
-  apiKey:    "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
-  databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com",
-  projectId: "tetris-online-9c827",
-};
-
 const CORE_SERVICES = [
   {
     id: 'firebase-rtdb',
@@ -542,105 +570,233 @@ const EXTERNAL_SERVICES = [
 // INDIVIDUAL CHECKS
 // ══════════════════════════════════════════════════════════
 
-// Firebase RTDB — ping .info/connected via REST
+// ── Firebase RTDB ──
+// Firebase SDK の .info/connected を購読して WebSocket 接続状態を確認する。
+// .info/connected は接続確立時に true になる。初回は false が来てから true になるため
+// true になるまで最大 8 秒待ち続ける。
 async function checkFirebaseRTDB() {
   const t0 = performance.now();
-  try {
-    const res = await fetchWithTimeout(
-      `${FB_CONFIG.databaseURL}/.json?timeout=5s&shallow=true`, 5000
-    );
-    const ms = Math.round(performance.now() - t0);
-    if (res.ok || res.status === 401 || res.status === 403) {
-      // 401/403 = DB exists but rules deny anonymous read → service is UP
-      return { status: 'ok', ms, detail: 'データベース接続 正常' };
+  return new Promise(async (resolve) => {
+    let resolved = false;
+    let unsub = null;
+
+    const done = (result) => {
+      if (resolved) return;
+      resolved = true;
+      if (unsub) { try { unsub(); } catch {} }
+      resolve(result);
+    };
+
+    const timer = setTimeout(() => {
+      done({ status: 'warn', ms: null, detail: '接続タイムアウト（8秒）—ネットワーク確認を' });
+    }, 8000);
+
+    try {
+      const db = await getFirebaseDB();
+      const { ref, onValue } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+      const connRef = ref(db, '.info/connected');
+
+      // onValue の戻り値が unsubscribe 関数（Modular SDK v10）
+      unsub = onValue(connRef, (snap) => {
+        const ms = Math.round(performance.now() - t0);
+        if (snap.val() === true) {
+          clearTimeout(timer);
+          done({ status: 'ok', ms, detail: 'WebSocket 接続確立・正常' });
+        }
+        // false の場合は接続中なのでそのまま待ち続ける（タイムアウトに任せる）
+      }, (err) => {
+        clearTimeout(timer);
+        const ms = Math.round(performance.now() - t0);
+        done({ status: 'error', ms, detail: err.message?.slice(0, 50) || 'SDK エラー' });
+      });
+    } catch(e) {
+      clearTimeout(timer);
+      done({ status: 'error', ms: null, detail: 'SDK 初期化失敗: ' + (e.message?.slice(0, 40) || '') });
     }
-    return { status: 'error', ms, detail: `HTTP ${res.status}` };
-  } catch(e) {
-    return { status: 'error', ms: null, detail: e.message?.slice(0,40) || 'タイムアウト' };
-  }
+  });
 }
 
-// Firebase Firestore — REST endpoint probe
+// ── Firebase Firestore ──
+// SDK を使って site_logs コレクションへの読み取りを試みる。
+// セキュリティルールで拒否される場合でも「接続できた」ことがわかる。
 async function checkFirebaseFirestore() {
   const t0 = performance.now();
   try {
-    const url = `https://firestore.googleapis.com/v1/projects/${FB_CONFIG.projectId}/databases/(default)/documents?pageSize=1&key=${FB_CONFIG.apiKey}`;
-    const res = await fetchWithTimeout(url, 6000);
+    const fs = await getFirebaseFS();
+    const { collection, getDocs, query, limit } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    // limit(1) で最小限のデータのみ取得
+    const q = query(collection(fs, 'site_logs'), limit(1));
+    await getDocs(q);
     const ms = Math.round(performance.now() - t0);
-    if (res.ok || res.status === 403 || res.status === 401) {
-      return { status: 'ok', ms, detail: 'Firestore エンドポイント 正常' };
+    return { status: 'ok', ms, detail: 'Firestore 接続・読み取り 正常' };
+  } catch(e) {
+    const ms = Math.round(performance.now() - t0);
+    const msg = e.message || '';
+    const code = e.code || '';
+    // permission-denied = 接続はできているがルールで拒否 → サービス自体は正常
+    if (code === 'permission-denied' || msg.includes('permission-denied') || msg.includes('PERMISSION_DENIED')) {
+      return { status: 'ok', ms, detail: 'Firestore 接続正常（セキュリティルール適用中）' };
     }
-    return { status: 'error', ms, detail: `HTTP ${res.status}` };
-  } catch(e) {
-    return { status: 'error', ms: null, detail: e.message?.slice(0,40) || 'タイムアウト' };
+    // missing collection は OK（コレクションが空なだけ）
+    if (code === 'not-found' || msg.includes('not-found')) {
+      return { status: 'ok', ms, detail: 'Firestore 接続正常（コレクションなし）' };
+    }
+    // ネットワーク・サービス障害
+    if (code === 'unavailable' || msg.includes('unavailable') || msg.includes('Failed to fetch') || msg.includes('network')) {
+      return { status: 'error', ms: ms || null, detail: 'Firestore 到達不可: ' + msg.slice(0, 40) };
+    }
+    return { status: 'warn', ms, detail: (msg.slice(0, 50) || 'Firestore 警告') };
   }
 }
 
-// Google Fonts — fetch CSS
-async function checkGoogleFonts() {
-  const t0 = performance.now();
-  try {
-    const res = await fetchWithTimeout(
-      'https://fonts.googleapis.com/css2?family=Orbitron:wght@400&display=swap', 5000
-    );
-    const ms = Math.round(performance.now() - t0);
-    if (res.ok) return { status: 'ok', ms, detail: 'フォント配信 正常' };
-    return { status: 'warn', ms, detail: `HTTP ${res.status}` };
-  } catch(e) {
-    return { status: 'error', ms: null, detail: 'フォントサーバー到達不可' };
-  }
+// ── Google Fonts ──
+// Google Fonts の CSS エンドポイントは CORS ヘッダーを返すため fetch が使える。
+// fetch を先に試し、CORS エラーが出た場合は <link> タグの onload で確認する。
+function checkGoogleFonts() {
+  return new Promise((resolve) => {
+    const t0 = performance.now();
+    const url = 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400&display=swap';
+
+    // fetch を優先（CORS対応済みのため通常は動作する）
+    fetch(url, { cache: 'no-store', credentials: 'omit' })
+      .then(res => {
+        const ms = Math.round(performance.now() - t0);
+        if (res.ok) {
+          resolve({ status: 'ok', ms, detail: 'Google Fonts 配信 正常' });
+        } else {
+          resolve({ status: 'warn', ms, detail: `HTTP ${res.status}` });
+        }
+      })
+      .catch(() => {
+        // CORS エラーやネットワークエラー時は <link> タグで再確認
+        const link = document.createElement('link');
+        link.rel  = 'stylesheet';
+        link.href = url + '&t=' + Date.now(); // キャッシュ回避
+
+        const timer = setTimeout(() => {
+          link.remove();
+          resolve({ status: 'warn', ms: null, detail: 'Google Fonts タイムアウト（6秒）' });
+        }, 6000);
+
+        link.onload = () => {
+          clearTimeout(timer);
+          const ms = Math.round(performance.now() - t0);
+          link.remove();
+          resolve({ status: 'ok', ms, detail: 'Google Fonts 配信 正常（リンクタグ確認）' });
+        };
+        link.onerror = () => {
+          clearTimeout(timer);
+          const ms = Math.round(performance.now() - t0);
+          link.remove();
+          resolve({ status: 'error', ms, detail: 'Google Fonts サーバー 到達不可' });
+        };
+        document.head.appendChild(link);
+      });
+  });
 }
 
-// YouTube Iframe API — check script availability
-async function checkYouTubeIframe() {
-  const t0 = performance.now();
-  try {
-    const res = await fetchWithTimeout('https://www.youtube.com/iframe_api', 6000);
-    const ms = Math.round(performance.now() - t0);
-    if (res.ok) return { status: 'ok', ms, detail: 'IFrame API スクリプト 正常' };
-    return { status: 'warn', ms, detail: `HTTP ${res.status}` };
-  } catch(e) {
-    return { status: 'error', ms: null, detail: 'YouTube 到達不可' };
-  }
+// ── YouTube IFrame API ──
+// fetchではなく <script> タグを動的生成して onload/onerror で確認。
+// すでに読み込み済みの場合はスキップして即 OK を返す。
+function checkYouTubeIframe() {
+  return new Promise((resolve) => {
+    const t0 = performance.now();
+
+    // 既にロード済みなら即OK
+    if (typeof YT !== 'undefined' && YT.Player) {
+      resolve({ status: 'ok', ms: 0, detail: 'IFrame API 読み込み済み・正常' });
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      resolve({ status: 'warn', ms: null, detail: 'スクリプトロードタイムアウト（6秒）' });
+    }, 6000);
+
+    const script = document.createElement('script');
+    script.src = 'https://www.youtube.com/iframe_api';
+    script.id  = '_yt_probe_' + Date.now();
+
+    script.onload = () => {
+      clearTimeout(timer);
+      const ms = Math.round(performance.now() - t0);
+      resolve({ status: 'ok', ms, detail: 'IFrame API スクリプト ロード正常' });
+    };
+    script.onerror = () => {
+      clearTimeout(timer);
+      const ms = Math.round(performance.now() - t0);
+      resolve({ status: 'error', ms, detail: 'YouTube スクリプトサーバー 到達不可' });
+    };
+
+    document.head.appendChild(script);
+  });
 }
 
-// YouTube Data API — test search endpoint (no key needed for /videos)
+// ── YouTube Data API v3 ──
+// googleapis.com は CORS ヘッダーを返すため fetch(mode:'cors') が使える。
+// 実際の API キーを使って /videos エンドポイントを叩き、200 または 400（keyエラー）で正常と判断。
+// ※ APIキーが無効・制限超過の場合は 403 が返るため別途判定する。
 async function checkYouTubeDataAPI() {
   const t0 = performance.now();
+  // yt_api_key を localStorage に保存している場合はそれを使う（shell.html と共通）
+  let apiKey = '';
   try {
-    // Hit the API without a valid key — a 400 Bad Request still means the endpoint is UP
-    const res = await fetchWithTimeout(
-      'https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&key=PROBE', 6000
-    );
-    const ms = Math.round(performance.now() - t0);
-    // 400 = bad key (expected), meaning API is reachable
-    if (res.ok || res.status === 400 || res.status === 403) {
-      return { status: 'ok', ms, detail: 'Data API エンドポイント 到達可能' };
-    }
-    if (res.status === 503 || res.status === 500) {
-      return { status: 'error', ms, detail: `サーバーエラー HTTP ${res.status}` };
-    }
-    return { status: 'warn', ms, detail: `HTTP ${res.status}` };
-  } catch(e) {
-    return { status: 'error', ms: null, detail: 'Google API 到達不可' };
-  }
-}
+    apiKey = localStorage.getItem('yt_api_key') || '';
+  } catch {}
 
-// ── Timeout wrapper ──
-function fetchWithTimeout(url, ms) {
-  return Promise.race([
-    fetch(url, { mode: 'cors', cache: 'no-store' }),
-    new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
-  ]);
+  // キーがある場合: 実リクエスト
+  if (apiKey) {
+    try {
+      const url = `https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&key=${encodeURIComponent(apiKey)}`;
+      const res = await Promise.race([
+        fetch(url, { cache: 'no-store' }),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 7000))
+      ]);
+      const ms = Math.round(performance.now() - t0);
+      if (res.ok) return { status: 'ok', ms, detail: 'Data API 正常（キー有効）' };
+      if (res.status === 403) {
+        const body = await res.json().catch(() => ({}));
+        const reason = body?.error?.errors?.[0]?.reason || '';
+        if (reason === 'quotaExceeded') return { status: 'warn', ms, detail: 'APIクォータ超過' };
+        if (reason === 'keyInvalid')    return { status: 'warn', ms, detail: 'APIキーが無効' };
+        return { status: 'warn', ms, detail: `403 Forbidden (${reason || 'アクセス拒否'})` };
+      }
+      if (res.status === 400) return { status: 'ok', ms, detail: 'Data API 到達正常（リクエストエラー）' };
+      return { status: 'warn', ms, detail: `HTTP ${res.status}` };
+    } catch(e) {
+      const ms = Math.round(performance.now() - t0);
+      return { status: 'error', ms: ms || null, detail: e.message?.slice(0, 50) || 'タイムアウト' };
+    }
+  }
+
+  // キーがない場合: no-cors モードでサーバー到達性のみ確認
+  // opaqueレスポンス（type==='opaque'）が返れば Google サーバーには届いている証拠
+  try {
+    const res = await Promise.race([
+      fetch('https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ', {
+        mode: 'no-cors', cache: 'no-store'
+      }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 7000))
+    ]);
+    const ms = Math.round(performance.now() - t0);
+    // no-cors では status=0, type='opaque' → サーバーには届いた
+    if (res.type === 'opaque' || res.status === 0) {
+      return { status: 'ok', ms, detail: 'Data API サーバー 到達確認（APIキー未設定）' };
+    }
+    return { status: 'ok', ms, detail: `Data API 到達正常 (HTTP ${res.status})` };
+  } catch(e) {
+    const ms = Math.round(performance.now() - t0);
+    return { status: 'error', ms: ms || null, detail: 'Google API サーバー 到達不可' };
+  }
 }
 
 // ══════════════════════════════════════════════════════════
 // RENDER HELPERS
 // ══════════════════════════════════════════════════════════
 function statusLabel(s) {
-  if (s === 'ok')       return 'ONLINE';
-  if (s === 'warn')     return 'DEGRADED';
-  if (s === 'error')    return 'OFFLINE';
+  if (s === 'ok')    return 'ONLINE';
+  if (s === 'warn')  return 'DEGRADED';
+  if (s === 'error') return 'OFFLINE';
   return 'CHECKING';
 }
 
@@ -649,7 +805,7 @@ function renderService(svc, containerId) {
   const existing  = document.getElementById('svc-' + svc.id);
   const el = existing || document.createElement('div');
   el.id        = 'svc-' + svc.id;
-  el.className = `svc checking`;
+  el.className = 'svc checking';
   el.innerHTML = `
     <div class="svc-icon">${svc.icon}</div>
     <div class="svc-info">
@@ -669,11 +825,10 @@ function updateService(svc, result) {
   const latency = document.getElementById('svc-latency-' + svc.id);
   const detail  = document.getElementById('svc-detail-'  + svc.id);
   if (!el) return;
-
-  el.className     = `svc ${result.status}`;
-  status.className = `svc-status ${result.status}`;
+  el.className       = `svc ${result.status}`;
+  status.className   = `svc-status ${result.status}`;
   status.textContent = statusLabel(result.status);
-  latency.textContent = result.ms !== null ? `${result.ms} ms` : '— ms';
+  latency.textContent = result.ms !== null && result.ms !== undefined ? `${result.ms} ms` : '— ms';
   detail.textContent  = result.detail || '';
 }
 
@@ -684,36 +839,24 @@ function renderUptimeBars(history) {
   const container = document.getElementById('uptimeBars');
   const label     = document.getElementById('uptimeLabel');
   container.innerHTML = '';
-
   if (history.length === 0) {
     label.textContent = 'データなし（初回チェック実行後に記録されます）';
     for (let i = 0; i < MAX_HISTORY; i++) {
       const b = document.createElement('div');
-      b.className = 'uptime-bar';
-      b.style.height = '14px';
-      b.setAttribute('data-tip', '未計測');
-      container.appendChild(b);
+      b.className = 'uptime-bar'; b.style.height = '14px';
+      b.setAttribute('data-tip', '未計測'); container.appendChild(b);
     }
     return;
   }
-
   const okCount = history.filter(h => h.overall === 'ok').length;
-  const pct     = Math.round((okCount / history.length) * 100);
+  const pct = Math.round((okCount / history.length) * 100);
   label.textContent = `稼働率 ${pct}%  （直近 ${history.length} 回 / 正常 ${okCount} 回）`;
-
-  // pad left with empty slots
   const padded = [...Array(MAX_HISTORY - history.length).fill(null), ...history];
-  padded.forEach((h, i) => {
+  padded.forEach(h => {
     const b = document.createElement('div');
     b.className = 'uptime-bar ' + (h ? h.overall : '');
-    const height = h
-      ? (h.overall === 'ok' ? 30 : h.overall === 'warn' ? 20 : 12)
-      : 14;
-    b.style.height = height + 'px';
-    const tip = h
-      ? `${h.time}  ${statusLabel(h.overall)}  avg ${h.avgMs ?? '?'}ms`
-      : '未計測';
-    b.setAttribute('data-tip', tip);
+    b.style.height = (h ? (h.overall === 'ok' ? 30 : h.overall === 'warn' ? 20 : 12) : 14) + 'px';
+    b.setAttribute('data-tip', h ? `${h.time}  ${statusLabel(h.overall)}  avg ${h.avgMs ?? '?'}ms` : '未計測');
     container.appendChild(b);
   });
 }
@@ -726,95 +869,71 @@ let isRunning = false;
 window.runChecks = async function() {
   if (isRunning) return;
   isRunning = true;
-
   const btn = document.getElementById('refreshBtn');
-  btn.classList.add('spinning');
-  btn.disabled = true;
-
+  btn.classList.add('spinning'); btn.disabled = true;
   const badge = document.getElementById('overallBadge');
   const badgeText = document.getElementById('overallText');
-  badge.className  = 'overall-badge checking';
+  badge.className = 'overall-badge checking';
   badgeText.textContent = 'CHECKING...';
 
-  // Init cards
   CORE_SERVICES.forEach(s => renderService(s, 'coreServices'));
   EXTERNAL_SERVICES.forEach(s => renderService(s, 'externalServices'));
 
-  // Run all checks in parallel
   const allSvcs = [...CORE_SERVICES, ...EXTERNAL_SERVICES];
   const results = await Promise.all(
-    allSvcs.map(s => s.check().catch(e => ({ status:'error', ms:null, detail:e.message })))
+    allSvcs.map(s => s.check().catch(e => ({ status:'error', ms:null, detail: e.message || 'エラー' })))
   );
-
   results.forEach((r, i) => updateService(allSvcs[i], r));
 
-  // ── Aggregate ──
-  const statuses = results.map(r => r.status);
+  const statuses   = results.map(r => r.status);
   const errorCount = statuses.filter(s => s === 'error').length;
   const warnCount  = statuses.filter(s => s === 'warn').length;
   const okCount    = statuses.filter(s => s === 'ok').length;
   const overall    = errorCount > 0 ? 'error' : warnCount > 0 ? 'warn' : 'ok';
-  const overallLabels = { ok: 'ALL SYSTEMS GO', warn: 'PARTIAL OUTAGE', error: 'SERVICE DOWN' };
-
   badge.className = `overall-badge ${overall}`;
-  badgeText.textContent = overallLabels[overall];
+  badgeText.textContent = { ok:'ALL SYSTEMS GO', warn:'PARTIAL OUTAGE', error:'SERVICE DOWN' }[overall];
 
-  // ── Latency avg ──
-  const validMs = results.map(r => r.ms).filter(ms => ms !== null);
-  const avgMs   = validMs.length ? Math.round(validMs.reduce((a,b) => a+b, 0) / validMs.length) : null;
+  const validMs = results.map(r => r.ms).filter(ms => ms !== null && ms !== undefined);
+  const avgMs = validMs.length ? Math.round(validMs.reduce((a,b) => a+b, 0) / validMs.length) : null;
 
-  // ── Info grid ──
   document.getElementById('infoServices').textContent = `${okCount}/${allSvcs.length}`;
   document.getElementById('infoAvgMs').textContent    = avgMs !== null ? `${avgMs} ms` : '— ms';
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-  document.getElementById('infoTime').textContent     = timeStr;
-  document.getElementById('lastUpdated').textContent  = `最終確認: ${now.toLocaleDateString('ja-JP')} ${timeStr}`;
+  document.getElementById('infoTime').textContent    = timeStr;
+  document.getElementById('lastUpdated').textContent = `最終確認: ${now.toLocaleDateString('ja-JP')} ${timeStr}`;
 
-  // ── Notice banner ──
   const notice = document.getElementById('noticeBanner');
   if (overall !== 'ok') {
-    const msgs = results
-      .map((r, i) => r.status !== 'ok' ? `${allSvcs[i].name}: ${r.detail}` : null)
-      .filter(Boolean);
-    notice.innerHTML = '⚠ ' + msgs.join('<br>⚠ ');
+    notice.innerHTML = '⚠ ' + results.map((r, i) => r.status !== 'ok' ? `${allSvcs[i].name}: ${r.detail}` : null).filter(Boolean).join('<br>⚠ ');
     notice.classList.add('show');
   } else {
     notice.classList.remove('show');
   }
 
-  // ── History ──
   const history = loadHistory();
   history.push({ time: timeStr, overall, avgMs });
   saveHistory(history);
   renderUptimeBars(history);
 
-  btn.classList.remove('spinning');
-  btn.disabled = false;
+  btn.classList.remove('spinning'); btn.disabled = false;
   isRunning = false;
 };
 
-// ── Auto-refresh every 60 seconds ──
+// ── Auto-refresh 60秒 / タブ復帰時 ──
 let autoTimer = null;
 function startAutoRefresh() {
   clearInterval(autoTimer);
-  autoTimer = setInterval(() => {
-    if (!document.hidden) runChecks();
-  }, 60_000);
+  autoTimer = setInterval(() => { if (!document.hidden) runChecks(); }, 60_000);
 }
 
-// ── Init ──
-// Render skeletons first
 CORE_SERVICES.forEach(s => renderService(s, 'coreServices'));
 EXTERNAL_SERVICES.forEach(s => renderService(s, 'externalServices'));
 renderUptimeBars(loadHistory());
-
 runChecks();
 startAutoRefresh();
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) runChecks();
-});
+document.addEventListener('visibilitychange', () => { if (!document.hidden) runChecks(); });
 </script>
 </body>
 </html>

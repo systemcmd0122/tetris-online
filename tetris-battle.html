@@ -12,7 +12,9 @@
     --text:#e0f0ff; --dim:#4a6080; --red:#ff3355; --warn:#ffaa00;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  html,body{margin:0;padding:0}
   body{background:var(--bg);color:var(--text);font-family:'Orbitron',monospace;min-height:100vh;overflow-x:hidden}
+  body.game-active{overflow:hidden;position:fixed;width:100%}
   #bgCanvas{position:fixed;inset:0;z-index:0;opacity:.16;pointer-events:none}
   .scanlines-overlay{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.13) 2px,rgba(0,0,0,0.13) 4px)}
   .scanline{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,245,255,.3),transparent);animation:scan 4s linear infinite;pointer-events:none;z-index:2}
@@ -728,20 +730,23 @@ function dasStart(dir){if(dasDir===dir)return;dasStop();dasDir=dir;game?.move(di
 function dasStop(){clearTimeout(dasTimer);clearInterval(arrTimer);dasTimer=null;arrTimer=null;dasDir=0;}
 
 document.addEventListener('keydown',e=>{
+  // ゲーム画面中はスクロール系キーを常時ブロック
+  const gameActive = document.getElementById('gameScreen')?.classList.contains('active');
+  if(gameActive && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code)){
+    e.preventDefault();
+  }
   if(keys.has(e.code))return;keys.add(e.code);
   if(!game||!gameRunning)return;
   switch(e.code){
-    case'ArrowLeft':  e.preventDefault();dasStart(-1);break;
-    case'ArrowRight': e.preventDefault();dasStart(1);break;
-    case'ArrowUp':    e.preventDefault();game.rotate(1);break;
+    case'ArrowLeft':  dasStart(-1);break;
+    case'ArrowRight': dasStart(1);break;
+    case'ArrowUp':    game.rotate(1);break;
     case'KeyX':       e.preventDefault();game.rotate(1);break;
     case'KeyZ':       e.preventDefault();game.rotate(-1);break;
     case'ArrowDown':
-      e.preventDefault();
       if(!softDropInterval){game.softDrop();softDropInterval=setInterval(()=>{if(game&&gameRunning)game.softDrop();},50);}
       break;
     case'Space':
-      e.preventDefault();
       // waiting中（次ミノ出現待ち）はハードドロップを無視して連打バグを防ぐ
       if(game&&!game.waiting)game.hardDrop();
       break;
@@ -787,7 +792,11 @@ setupMobile('btnHold',()=>game?.hold(),false);
 })();
 
 // ═══ UI HELPERS ═══
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.body.classList.toggle('game-active', id==='gameScreen');
+}
 function flashAttack(){const f=document.getElementById('attackFlash');f.classList.add('show');setTimeout(()=>f.classList.remove('show'),280);const bw=document.querySelector('.board-wrap');if(bw){bw.classList.remove('shake');void bw.offsetWidth;bw.classList.add('shake');setTimeout(()=>bw.classList.remove('shake'),260);}}
 function showActionPopup(label){const p=document.getElementById('actionPopup');p.textContent=label.replace('\n',' / ');p.classList.remove('show');p.offsetHeight;p.classList.add('show');}
 
