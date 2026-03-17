@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>マルチ対戦 — TETRIS BATTLE</title>
-<meta name="description" content="TETRIS BATTLEのオンラインマルチ対戦モード。2〜4人でリアルタイム対戦。クイックマッチで自動マッチングも可能。">
+<title>マルチ対戦 - TETRIS BATTLE</title>
+<meta name="description" content="TETRIS BATTLEのオンラインマルチ対戦モード。2-4人でリアルタイム対戦。クイックマッチで自動マッチングも可能。">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://tetris-online-9c827.web.app/tetris-multi.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="マルチ対戦 — TETRIS BATTLE">
-<meta property="og:description" content="2〜4人リアルタイム対戦・クイックマッチ対応のオンラインテトリス。">
+<meta property="og:title" content="マルチ対戦 - TETRIS BATTLE">
+<meta property="og:description" content="2-4人リアルタイム対戦・クイックマッチ対応のオンラインテトリス。">
 <meta property="og:url" content="https://tetris-online-9c827.web.app/tetris-multi.html">
 <meta name="theme-color" content="#020408">
 <style>
@@ -230,10 +230,10 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
 <!-- LOBBY -->
 <div class="screen active" id="lobbyScreen">
   <div class="logo">TETRIS</div>
-  <div class="subtitle">▶ MULTI BATTLE — 2〜4人対戦 ◀</div>
+  <div class="subtitle"> MULTI BATTLE - 2-4人対戦  <</div>
   <div class="card" style="position:relative;">
     <div class="px-corner tl"></div><div class="px-corner tr"></div><div class="px-corner bl"></div><div class="px-corner br"></div>
-    <div class="card-title">▶ PLAYER SETUP</div>
+    <div class="card-title"> PLAYER SETUP</div>
     <div class="input-group">
       <label>PLAYER NAME</label>
       <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
@@ -254,14 +254,14 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
         <button class="max-btn" id="maxBtn4" onclick="setMaxPlayers(4)">4人</button>
       </div>
     </div>
-    <button class="btn btn-primary" onclick="createRoom()">＋ ルームを作成して待機</button>
+    <button class="btn btn-primary" onclick="createRoom()">+  ルームを作成して待機</button>
     <div class="divider">OR JOIN</div>
     <div class="input-group">
       <label>ROOM CODE</label>
       <input type="text" id="roomCodeInput" placeholder="4桁コード" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" style="text-align:center;letter-spacing:10px;font-size:20px;">
     </div>
-    <button class="btn btn-secondary" onclick="joinRoom()">→ ルームに参加</button>
-    <a href="index.html" class="btn btn-danger" style="display:block;margin-top:12px;">← メニューに戻る</a>
+    <button class="btn btn-secondary" onclick="joinRoom()">-> ルームに参加</button>
+    <a href="index.html" class="btn btn-danger" style="display:block;margin-top:12px;"><- メニューに戻る</a>
   </div>
 </div>
 
@@ -271,7 +271,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
   <div class="subtitle">QUICK MATCH</div>
   <div class="card" style="position:relative;max-width:420px;">
     <div class="px-corner tl"></div><div class="px-corner tr"></div><div class="px-corner bl"></div><div class="px-corner br"></div>
-    <div class="card-title">▶ 対戦相手を検索中...</div>
+    <div class="card-title"> 対戦相手を検索中...</div>
     <div class="match-status-text" id="matchStatusText">キューに参加しています...</div>
     <div class="match-timer-wrap">
       <div class="match-timer-bar" id="matchTimerBar"></div>
@@ -291,7 +291,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
       <div class="dot"></div><div class="dot"></div><div class="dot"></div>
       <span>SEARCHING</span>
     </div>
-    <button class="btn btn-danger" onclick="cancelQuickMatch()">← キャンセル</button>
+    <button class="btn btn-danger" onclick="cancelQuickMatch()"><- キャンセル</button>
   </div>
 </div>
 
@@ -301,7 +301,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
   <div class="subtitle">FOR PLAYERS</div>
   <div class="card" style="position:relative;max-width:480px;">
     <div class="px-corner tl"></div><div class="px-corner tr"></div><div class="px-corner bl"></div><div class="px-corner br"></div>
-    <div class="card-title">▶ ROOM CODE</div>
+    <div class="card-title"> ROOM CODE</div>
     <div class="room-code-display" onclick="copyRoomCode()">
       <span class="code-label">SHARE THIS CODE</span>
       <span class="code" id="displayRoomCode">----</span>
@@ -313,8 +313,8 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
       <div class="dot"></div><div class="dot"></div><div class="dot"></div>
       <span id="waitingLabel">プレイヤーを待っています</span>
     </div>
-    <button class="btn btn-green" id="startGameBtn" style="display:none;" onclick="hostStartGame()">▶ ゲーム開始（ホスト）</button>
-    <button class="btn btn-danger" onclick="cancelWaiting()">← CANCEL</button>
+    <button class="btn btn-green" id="startGameBtn" style="display:none;" onclick="hostStartGame()"> ゲーム開始（ホスト）</button>
+    <button class="btn btn-danger" onclick="cancelWaiting()"><- CANCEL</button>
   </div>
 </div>
 
@@ -384,7 +384,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
   </div>
   </div><!-- /gameScaleWrap -->
   <div class="controls-hint">
-    <div class="key-hint"><span class="key">← →</span> 移動</div>
+    <div class="key-hint"><span class="key"><- -></span> 移動</div>
     <div class="key-hint"><span class="key">↑/X</span> 回転(右)</div>
     <div class="key-hint"><span class="key">Z</span> 回転(左)</div>
     <div class="key-hint"><span class="key">↓</span> ソフトドロップ</div>
@@ -398,9 +398,9 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
       <div class="mobile-btn" id="btnRotateL">↺</div>
     </div>
     <div class="mobile-row">
-      <div class="mobile-btn" id="btnLeft">←</div>
+      <div class="mobile-btn" id="btnLeft"><-</div>
       <div class="mobile-btn" id="btnDown">↓</div>
-      <div class="mobile-btn" id="btnRight">→</div>
+      <div class="mobile-btn" id="btnRight">-></div>
     </div>
     <div class="mobile-row">
       <div class="mobile-btn" id="btnHardDrop" style="width:104px;font-size:10px;">▼ DROP</div>
@@ -421,7 +421,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
   </div>
   <div style="font-size:11px;color:var(--dim);letter-spacing:2px;" id="resultSub"></div>
   <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;justify-content:center;">
-    <button class="btn btn-primary" style="width:180px;" onclick="rematch()" id="rematchBtn">▶ REMATCH</button>
+    <button class="btn btn-primary" style="width:180px;" onclick="rematch()" id="rematchBtn"> REMATCH</button>
     <button class="btn btn-secondary" style="width:180px;margin-top:0;" onclick="leaveRoom()">BACK TO LOBBY</button>
   </div>
   <div id="rematchStatus" style="font-size:10px;color:var(--dim);letter-spacing:2px;margin-top:10px;min-height:16px;text-align:center;"></div>
@@ -437,7 +437,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 20px rgba(0,245
     <span id="statusText">CONNECTING…</span>
     <span id="versionDisp" style="color:var(--accent2);font-weight:bold">VER ---</span>
   </div>
-  <span id="statusRoom">—</span>
+  <span id="statusRoom">-</span>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -789,7 +789,7 @@ window.quickMatch = async () => {
     document.getElementById('matchStatusText').textContent = '対戦相手が見つかりました！';
 
     if(amIp1) {
-      // 自分がp1 → ルーム作成してmatchesに書き込む
+      // 自分がp1 -> ルーム作成してmatchesに書き込む
       const code = genCode();
       const gsa = getServerTime() + 5000; // 両者共通の開始時刻
       const matchData = {
@@ -837,7 +837,7 @@ window.quickMatch = async () => {
         showToast('マッチングエラー: ' + e.message, 'warn');
       }
     } else {
-      // 自分がp2 → matchesに自分のIDのエントリが来るのを待つ
+      // 自分がp2 -> matchesに自分のIDのエントリが来るのを待つ
       document.getElementById('matchStatusText').textContent = '対戦相手が見つかりました！接続中...';
       const matchRef = ref(db, QM_MATCH_PATH + '/' + _qmMyId);
       _qmMatchListenerOff = onValue(matchRef, async msnap => {
@@ -884,7 +884,7 @@ function _qmRandomBotName(){
 }
 let _qmBotDisplayName = ''; // ゲーム開始時に確定する偽装名
 
-// マッチ成立UI表示 → callback
+// マッチ成立UI表示 -> callback
 function _qmShowMatchFound(myName, oppName, cb){
   document.getElementById('matchOppName').textContent = oppName || 'PLAYER';
   document.getElementById('matchMyName').textContent = myName || 'PLAYER';
@@ -1089,7 +1089,7 @@ function buildOppArea(activeSlots){
   area.innerHTML='';
   Object.keys(oppInfo).forEach(k=>delete oppInfo[k]);
   const ops=activeSlots.filter(s=>s!==mySlot);
-  const W=200,H=400; // Full size — same as player board
+  const W=200,H=400; // Full size - same as player board
   ops.forEach(sk=>{
     const idx=parseInt(sk.replace('p',''));
     const sec=document.createElement('div');
@@ -1105,7 +1105,7 @@ function buildOppArea(activeSlots){
     const dead=document.createElement('div');dead.className='opp-dead-overlay';dead.id='oppDead_'+sk;dead.textContent='OUT';
     // Score tag
     const stag=document.createElement('div');stag.className='opp-score-tag';stag.id='oppScore_'+sk;stag.textContent='0';
-    // Music tag — full width, 2-line display
+    // Music tag - full width, 2-line display
     const musicTag=document.createElement('div');
     musicTag.id='oppMusic_'+sk;
     musicTag.style.cssText=`max-width:${W}px;width:${W}px;overflow:hidden;display:none;margin-top:3px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.25);border-radius:2px;padding:3px 7px;`;
@@ -1187,7 +1187,7 @@ function renderWait(d){
     list.appendChild(div);
   });
   const sb=document.getElementById('startGameBtn'),wl=document.getElementById('waitingLabel');
-  if(filled.length>=2&&mySlot==='p1'){sb.style.display='block';sb.textContent=`▶ ゲーム開始 (${filled.length}人)`;wl.textContent=filled.length<max?`あと${max-filled.length}人参加可能`:'全員揃いました！';}
+  if(filled.length>=2&&mySlot==='p1'){sb.style.display='block';sb.textContent=` ゲーム開始 (${filled.length}人)`;wl.textContent=filled.length<max?`あと${max-filled.length}人参加可能`:'全員揃いました！';}
   else{sb.style.display='none';wl.textContent=mySlot==='p1'?'あと1人以上必要です':'ホストのゲーム開始を待っています';}
 }
 
@@ -1234,7 +1234,7 @@ window.cancelWaiting=async()=>{
 };
 
 // ── REMATCH ──
-// ホスト(p1): ルームを waiting にリセット → ウェイティング画面へ
+// ホスト(p1): ルームを waiting にリセット -> ウェイティング画面へ
 // 非ホスト: ホストのリセットを Firebase リスナーで待ってから再参加
 window.rematch=async()=>{
   if(!roomCode||!mySlot)return;
@@ -1336,7 +1336,7 @@ window.rematch=async()=>{
     }
   }catch(err){
     _rematchActive=false;
-    if(statusEl) statusEl.textContent='⚠ '+err.message;
+    if(statusEl) statusEl.textContent='[!]  '+err.message;
     btn.disabled=false;
     roomCode=prevCode; mySlot=prevSlot;
   }
@@ -1392,7 +1392,7 @@ async function startGame(roomData){
     get(ref(db,'multi/'+roomCode+'/sysMsg')).then(s=>{
       const msg=s.val();
       // gameRunningを再チェック（非同期getが完了するまでの間に終了している可能性）
-      if(msg&&gameRunning) showToast('📢 '+msg,'warn');
+      if(msg&&gameRunning) showToast('[MSG]  '+msg,'warn');
     }).catch(()=>{});
   }));
 
@@ -1418,7 +1418,7 @@ async function startGame(roomData){
           mn.style.display='block';
           const noteEl=document.getElementById('oppMusicNote_'+sk);
           const titleEl=document.getElementById('oppMusicTitle_'+sk);
-          if(noteEl) noteEl.textContent = od.musicPlaylist ? '♪ ['+od.musicPlaylist+']' : '♪ NOW PLAYING';
+          if(noteEl) noteEl.textContent = od.musicPlaylist ? 'MUSIC ['+od.musicPlaylist+']' : 'MUSIC NOW PLAYING';
           if(titleEl) titleEl.textContent = od.music||'';
         } else {
           mn.style.display='none';
@@ -1620,10 +1620,10 @@ document.getElementById('playerName').addEventListener('input',e=>{e.target.valu
 // ═══ FEEDBACK WIDGET ═════════════════════════════════════
 (function(){
   const FEEDBACK_TYPES = {
-    bug:      {label:'🐛 バグ',    cls:'sel-bug'},
-    feedback: {label:'💬 感想',    cls:'sel-feedback'},
-    idea:     {label:'💡 アイデア',cls:'sel-idea'},
-    other:    {label:'📌 その他',  cls:'sel-other'},
+    bug:      {label:'[BUG]  バグ',    cls:'sel-bug'},
+    feedback: {label:'[MSG]  感想',    cls:'sel-feedback'},
+    idea:     {label:'[IDEA]  アイデア',cls:'sel-idea'},
+    other:    {label:'[OTHER]  その他',  cls:'sel-other'},
   };
   let _fbType=null;
 
@@ -1694,22 +1694,22 @@ document.getElementById('playerName').addEventListener('input',e=>{e.target.valu
     <div id="fb-overlay">
       <div id="fb-modal">
         <button class="fb-x" id="fb-close">×</button>
-        <h2>📝 FEEDBACK</h2>
+        <h2>[REPORT]  FEEDBACK</h2>
         <div id="fb-body">
           <span class="fb-lbl">CATEGORY</span>
           <div class="fb-types">
-            <button class="fb-t" data-t="bug">🐛 バグ</button>
-            <button class="fb-t" data-t="feedback">💬 感想</button>
-            <button class="fb-t" data-t="idea">💡 アイデア</button>
-            <button class="fb-t" data-t="other">📌 その他</button>
+            <button class="fb-t" data-t="bug">[BUG]  バグ</button>
+            <button class="fb-t" data-t="feedback">[MSG]  感想</button>
+            <button class="fb-t" data-t="idea">[IDEA]  アイデア</button>
+            <button class="fb-t" data-t="other">[OTHER]  その他</button>
           </div>
           <span class="fb-lbl">MESSAGE</span>
           <textarea class="fb-ta" id="fb-text" placeholder="例: ○○の操作をすると△△が起きます..." maxlength="1000"></textarea>
           <div class="fb-err" id="fb-err"></div>
-          <button class="fb-sub" id="fb-send">送信する ▶</button>
+          <button class="fb-sub" id="fb-send">送信する</button>
         </div>
         <div id="fb-done" style="display:none">
-          <div class="fb-ok">✓ 送信完了！<br>ありがとうございます</div>
+          <div class="fb-ok">[OK]  送信完了！<br>ありがとうございます</div>
           <button class="fb-sub" id="fb-done-close">閉じる</button>
         </div>
       </div>
@@ -1753,8 +1753,8 @@ document.getElementById('playerName').addEventListener('input',e=>{e.target.valu
 
   btnSend.onclick=async()=>{
     const text=fbText.value.trim();
-    if(!_fbType){fbErr.textContent='⚠ カテゴリを選択してください';return;}
-    if(text.length<5){fbErr.textContent='⚠ もう少し詳しく教えてください';return;}
+    if(!_fbType){fbErr.textContent='[!]  カテゴリを選択してください';return;}
+    if(text.length<5){fbErr.textContent='[!]  もう少し詳しく教えてください';return;}
     btnSend.disabled=true;btnSend.textContent='送信中...';fbErr.textContent='';
     try{
       const report={
@@ -1768,8 +1768,8 @@ document.getElementById('playerName').addEventListener('input',e=>{e.target.valu
       await push(ref(db,'reports'),report);
       fbBody.style.display='none';fbDone.style.display='';
     }catch(e){
-      fbErr.textContent='⚠ 送信失敗: '+(e.message||'エラー');
-      btnSend.disabled=false;btnSend.textContent='送信する ▶';
+      fbErr.textContent='[!]  送信失敗: '+(e.message||'エラー');
+      btnSend.disabled=false;btnSend.textContent='送信する';
     }
   };
 })();

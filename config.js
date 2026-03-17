@@ -1,6 +1,17 @@
-export const APP_VERSION = "2.8.0";
+export const APP_VERSION = "2.9.0";
 
 export const UPDATE_LOG = [
+  {
+    version: "2.9.0",
+    title: "UI改善・絵文字の廃止とSVGアイコン化",
+    changes: [
+      "サイト全体の絵文字を完全に廃止し、よりクリーンでモダンなSVGアイコンに置き換えました。",
+      "管理コンソールのナビゲーション、ステータスバッジ、操作ボタンをすべてSVG化し、視認性を向上させました。",
+      "音楽プレーヤーの操作パネル（再生・停止・スキップ・音量）をSVGアイコンに刷新しました。",
+      "フィードバックフォームのカテゴリ選択を直感的なSVGアイコンに変更しました。",
+      "全角記号や特殊記号を標準的なASCII文字に置き換え、表示の互換性を高めました。"
+    ]
+  },
   {
     version: "2.8.0",
     title: "フィードバック・バグ報告機能追加",
@@ -103,7 +114,7 @@ export const UPDATE_LOG = [
     title: "ステータスページ監視精度向上",
     changes: [
       "Firebase RTDB の確認方法を REST から Firebase SDK の WebSocket 接続（.info/connected）に変更し、実際の接続状態を正確に検出するようになりました。",
-      "Firebase RTDB で .info/connected が false → true の順に発火する仕様に対応し、true になるまで待機するよう修正しました。",
+      "Firebase RTDB で .info/connected が false -> true の順に発火する仕様に対応し、true になるまで待機するよう修正しました。",
       "Firestore の unsubscribe 処理を Modular SDK v10 の正しい方法に修正しました。",
       "Google Fonts チェックを fetch 優先・<link>タグフォールバックの2段構えに変更しました。",
       "YouTube IFrame API チェックを fetch（CORS拒否で誤エラー）から <script> タグの onload/onerror に変更し、正確に確認できるようになりました。",
@@ -139,7 +150,7 @@ export const UPDATE_LOG = [
       "プレイリスト作成・編集・削除がクラウドに即時反映され、ページ再読み込み後も保持されます。",
       "プレイリストパネルにクラウド接続ステータス（CLOUD SYNC ON）を表示するようになりました。",
       "プレイリストから再生中の場合、対戦相手の画面にプレイリスト名と曲名が表示されるようになりました。",
-      "マルチ対戦・ボット対戦どちらでも相手の「♪ [プレイリスト名] 曲名」が表示されます。"
+      "マルチ対戦・ボット対戦どちらでも相手の「MUSIC [プレイリスト名] 曲名」が表示されます。"
     ]
   },
   {

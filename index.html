@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TETRIS BATTLE — 無料オンライン対戦テトリス</title>
+  <title>TETRIS BATTLE - 無料オンライン対戦テトリス</title>
 
   <!-- SEO -->
-  <meta name="description" content="TETRIS BATTLEは無料で遊べるオンライン対戦テトリスゲームです。リアルタイムマルチプレイヤー（2〜4人）・クイックマッチ自動マッチング・ボット対戦に対応。ブラウザだけで今すぐ遊べます。">
+  <meta name="description" content="TETRIS BATTLEは無料で遊べるオンライン対戦テトリスゲームです。リアルタイムマルチプレイヤー（2-4人）・クイックマッチ自動マッチング・ボット対戦に対応。ブラウザだけで今すぐ遊べます。">
   <meta name="keywords" content="テトリス,オンライン対戦,無料テトリス,ブラウザゲーム,マルチプレイヤーテトリス,tetris,online tetris,multiplayer tetris,free tetris game,テトリスバトル">
   <meta name="robots" content="index, follow">
   <meta name="author" content="TETRIS BATTLE ONLINE">
@@ -16,16 +16,16 @@
   <!-- OGP (Open Graph) -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="TETRIS BATTLE">
-  <meta property="og:title" content="TETRIS BATTLE — 無料オンライン対戦テトリス">
-  <meta property="og:description" content="リアルタイム2〜4人対戦・クイックマッチ自動マッチング・ボット対戦対応。ブラウザだけで今すぐ無料で遊べるオンラインテトリス。">
+  <meta property="og:title" content="TETRIS BATTLE - 無料オンライン対戦テトリス">
+  <meta property="og:description" content="リアルタイム2-4人対戦・クイックマッチ自動マッチング・ボット対戦対応。ブラウザだけで今すぐ無料で遊べるオンラインテトリス。">
   <meta property="og:url" content="https://tetris-online-9c827.web.app/">
   <meta property="og:image" content="https://tetris-online-9c827.web.app/ogp.png">
   <meta property="og:locale" content="ja_JP">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="TETRIS BATTLE — 無料オンライン対戦テトリス">
-  <meta name="twitter:description" content="リアルタイム2〜4人対戦・クイックマッチ自動マッチング対応。ブラウザで今すぐ無料プレイ。">
+  <meta name="twitter:title" content="TETRIS BATTLE - 無料オンライン対戦テトリス">
+  <meta name="twitter:description" content="リアルタイム2-4人対戦・クイックマッチ自動マッチング対応。ブラウザで今すぐ無料プレイ。">
   <meta name="twitter:image" content="https://tetris-online-9c827.web.app/ogp.png">
 
   <!-- JSON-LD 構造化データ -->
@@ -34,7 +34,7 @@
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "TETRIS BATTLE",
-    "description": "無料で遊べるオンライン対戦テトリスゲーム。リアルタイムマルチプレイヤー（2〜4人）・クイックマッチ自動マッチング・ボット対戦に対応。",
+    "description": "無料で遊べるオンライン対戦テトリスゲーム。リアルタイムマルチプレイヤー（2-4人）・クイックマッチ自動マッチング・ボット対戦に対応。",
     "url": "https://tetris-online-9c827.web.app/",
     "applicationCategory": "GameApplication",
     "genre": "Puzzle",
@@ -231,7 +231,7 @@
       padding-left: 18px; line-height: 1.5;
     }
     .um-list li::before {
-      content: '▶'; position: absolute; left: 0; color: var(--acc3);
+      content: '>'; position: absolute; left: 0; color: var(--acc3);
       font-size: 9px; top: 4px;
     }
     .modal-btns { display: flex; gap: 12px; }
@@ -335,7 +335,7 @@
 <div class="container">
   <div class="pixel-deco" id="pixelDeco"></div>
   <div class="logo">TETRIS BATTLE</div>
-  <div class="subtitle">▶ ONLINE MODE ◀</div>
+  <div class="subtitle"> ONLINE MODE  <</div>
   <div class="menu-card">
     <div class="card-corner tl"></div>
     <div class="card-corner tr"></div>
@@ -343,7 +343,7 @@
     <div class="card-corner br"></div>
     <div class="menu">
       <a href="tetris-battle.html" class="menu-btn primary" style="background:linear-gradient(135deg,#7700ff,#cc00ff);box-shadow:0 5px 0 rgba(40,0,80,.9);" onclick="playSE('select')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="flex-shrink:0"><rect x="2" y="4" width="9" height="7" rx="1"/><rect x="4" y="2" width="5" height="2"/><rect x="4" y="6" width="2" height="2" fill="black" opacity=".4"/><rect x="7" y="6" width="2" height="2" fill="black" opacity=".4"/><rect x="0" y="6" width="2" height="1.5" rx=".5"/><rect x="11" y="6" width="2" height="1.5" rx=".5"/></svg>ボット対戦</span></a>
-      <a href="tetris-multi.html" class="menu-btn primary" style="background:linear-gradient(135deg,#cc00ff,#ff0080);box-shadow:0 5px 0 rgba(80,0,60,.9);" onclick="playSE('select')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="flex-shrink:0"><circle cx="4" cy="4" r="2.2"/><circle cx="9" cy="4" r="2.2"/><path d="M0 11c0-2.2 1.8-4 4-4h5c2.2 0 4 1.8 4 4H0z"/></svg>マルチ対戦（2〜4人）</span></a>
+      <a href="tetris-multi.html" class="menu-btn primary" style="background:linear-gradient(135deg,#cc00ff,#ff0080);box-shadow:0 5px 0 rgba(80,0,60,.9);" onclick="playSE('select')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="flex-shrink:0"><circle cx="4" cy="4" r="2.2"/><circle cx="9" cy="4" r="2.2"/><path d="M0 11c0-2.2 1.8-4 4-4h5c2.2 0 4 1.8 4 4H0z"/></svg>マルチ対戦（2-4人）</span></a>
       <a href="how-to.html" class="menu-btn secondary" onclick="playSE('click')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="5.5"/><path d="M6.5 4a1.5 1.5 0 0 1 1.5 1.5c0 1-1.5 1.5-1.5 2.5"/><circle cx="6.5" cy="10" r=".6" fill="currentColor" stroke="none"/></svg>あそびかた</span></a>
       <a href="updates.html" class="menu-btn secondary" onclick="playSE('click')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="flex-shrink:0"><rect x="1" y="2" width="11" height="1.5" rx=".5"/><rect x="1" y="5.5" width="11" height="1.5" rx=".5"/><rect x="1" y="9" width="7" height="1.5" rx=".5"/></svg>更新履歴</span></a>
     </div>
@@ -366,7 +366,7 @@
     <span style="flex-shrink:0;"><svg width="22" height="22" viewBox="0 0 22 22" fill="#aaff00"><path d="M8 17V7l10-2v10"/><circle cx="6" cy="17" r="2.5"/><circle cx="16" cy="15" r="2.5"/></svg></span>
     <div>
       <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:#aaff00;letter-spacing:1px;margin-bottom:4px;">BGM を流しながらプレイ</div>
-      <div style="font-size:10px;color:var(--dim);letter-spacing:1px;">音楽を聴きながらプレイしたい方はこちら →</div>
+      <div style="font-size:10px;color:var(--dim);letter-spacing:1px;">音楽を聴きながらプレイしたい方はこちら -></div>
     </div>
   </a>
   <!-- Subtle links: admin + status -->
@@ -616,7 +616,7 @@ const CNAMES = Object.keys(COLORS);
   frame();
 })();
 
-// ═══ IFRAME DETECTION — hide music banner when inside shell.html ═══
+// ═══ IFRAME DETECTION - hide music banner when inside shell.html ═══
 (function(){
   if (window.self !== window.top) {
     const banner = document.getElementById('musicBanner');
@@ -706,22 +706,22 @@ const CNAMES = Object.keys(COLORS);
     <div id="fb-overlay">
       <div id="fb-modal">
         <button class="fb-x" id="fb-close">×</button>
-        <h2>📝 FEEDBACK</h2>
+        <h2>[REPORT]  FEEDBACK</h2>
         <div id="fb-body">
           <span class="fb-lbl">CATEGORY</span>
           <div class="fb-types">
-            <button class="fb-t" data-t="bug">🐛 バグ</button>
-            <button class="fb-t" data-t="feedback">💬 感想</button>
-            <button class="fb-t" data-t="idea">💡 アイデア</button>
-            <button class="fb-t" data-t="other">📌 その他</button>
+            <button class="fb-t" data-t="bug">[BUG]  バグ</button>
+            <button class="fb-t" data-t="feedback">[MSG]  感想</button>
+            <button class="fb-t" data-t="idea">[IDEA]  アイデア</button>
+            <button class="fb-t" data-t="other">[OTHER]  その他</button>
           </div>
           <span class="fb-lbl">MESSAGE</span>
           <textarea class="fb-ta" id="fb-text" placeholder="例: ○○のページで△△が起きました..." maxlength="1000"></textarea>
           <div class="fb-err" id="fb-err"></div>
-          <button class="fb-sub" id="fb-send">送信する ▶</button>
+          <button class="fb-sub" id="fb-send">送信する  </button>
         </div>
         <div id="fb-done" style="display:none">
-          <div class="fb-ok">✓ 送信完了！<br>ありがとうございます</div>
+          <div class="fb-ok">[OK]  送信完了！<br>ありがとうございます</div>
           <button class="fb-sub" id="fb-done-close">閉じる</button>
         </div>
       </div>
@@ -753,8 +753,8 @@ const CNAMES = Object.keys(COLORS);
   document.getElementById('fb-send').onclick=async()=>{
     const text=document.getElementById('fb-text').value.trim();
     const errEl=document.getElementById('fb-err');
-    if(!_fbType){errEl.textContent='⚠ カテゴリを選択してください';return;}
-    if(text.length<5){errEl.textContent='⚠ もう少し詳しく教えてください';return;}
+    if(!_fbType){errEl.textContent='[!]  カテゴリを選択してください';return;}
+    if(text.length<5){errEl.textContent='[!]  もう少し詳しく教えてください';return;}
     const btn=document.getElementById('fb-send');
     btn.disabled=true;btn.textContent='送信中...';errEl.textContent='';
     try{
@@ -770,8 +770,8 @@ const CNAMES = Object.keys(COLORS);
       document.getElementById('fb-body').style.display='none';
       document.getElementById('fb-done').style.display='';
     }catch(e){
-      errEl.textContent='⚠ 送信失敗: '+(e.message||'エラー');
-      btn.disabled=false;btn.textContent='送信する ▶';
+      errEl.textContent='[!]  送信失敗: '+(e.message||'エラー');
+      btn.disabled=false;btn.textContent='送信する';
     }
   };
 })();

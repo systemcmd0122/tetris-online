@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎵 MUSIC — TETRIS BATTLE</title>
+  <title>MUSIC - TETRIS BATTLE</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
     :root {
@@ -241,45 +241,45 @@
 <div class="rainbow-bar"></div>
 
 <div class="header">
-  <span class="header-logo">🎵 MUSIC PLAYER</span>
-  <button class="hdr-btn" onclick="window.close()">✕</button>
+  <span class="header-logo">MUSIC PLAYER</span>
+  <button class="hdr-btn" onclick="window.close()">X</button>
 </div>
 
 <div class="tabs">
-  <div class="tab active" id="tab-player" onclick="switchTab('player')">▶ PLAYER</div>
-  <div class="tab" id="tab-search" onclick="switchTab('search')">🔍 SEARCH</div>
-  <div class="tab" id="tab-queue"  onclick="switchTab('queue')">📋 QUEUE <span id="qCount"></span></div>
+  <div class="tab active" id="tab-player" onclick="switchTab('player')">PLAYER</div>
+  <div class="tab" id="tab-search" onclick="switchTab('search')">SEARCH</div>
+  <div class="tab" id="tab-queue"  onclick="switchTab('queue')">QUEUE <span id="qCount"></span></div>
 </div>
 
 <!-- PLAYER PANEL -->
 <div class="panel active" id="panelPlayer">
   <div id="ytWrap">
     <div class="yt-placeholder" id="ytPlaceholder">
-      <div class="ph-icon">▶</div>
+      <div class="ph-icon"> </div>
       <p>SEARCH で曲を探して<br>追加しよう</p>
     </div>
     <div id="player"></div>
   </div>
   <div class="np-box">
-    <div class="np-label">▶ NOW PLAYING</div>
-    <div class="np-title" id="npTitle">—</div>
-    <div class="np-channel" id="npChannel">—</div>
+    <div class="np-label"> NOW PLAYING</div>
+    <div class="np-title" id="npTitle">-</div>
+    <div class="np-channel" id="npChannel">-</div>
   </div>
   <div class="transport">
-    <button class="tr-btn" onclick="playPrev()">⏮</button>
-    <button class="tr-btn playpause" id="btnPP" onclick="togglePlayPause()">▶</button>
-    <button class="tr-btn" onclick="playNext()">⏭</button>
+    <button class="tr-btn" onclick="playPrev()">|< </button>
+    <button class="tr-btn playpause" id="btnPP" onclick="togglePlayPause()"> </button>
+    <button class="tr-btn" onclick="playNext()"> >|</button>
     <div style="flex:1"></div>
   </div>
   <div class="vol-row">
-    <span class="vol-icon">🔊</span>
+    <span class="vol-icon">VOL</span>
     <input type="range" id="volSlider" min="0" max="100" value="70" oninput="setVolume(this.value)">
     <span class="vol-val" id="volVal">70</span>
   </div>
   <div class="mode-row">
-    <button class="mode-btn" id="mShuffle"   onclick="toggleShuffle()">🔀 SHUFFLE</button>
-    <button class="mode-btn" id="mRepeat"    onclick="toggleRepeat()">🔁 REPEAT</button>
-    <button class="mode-btn" id="mRepeatOne" onclick="toggleRepeatOne()">🔂 ×1</button>
+    <button class="mode-btn" id="mShuffle"   onclick="toggleShuffle()">SHUFFLE</button>
+    <button class="mode-btn" id="mRepeat"    onclick="toggleRepeat()">REPEAT</button>
+    <button class="mode-btn" id="mRepeatOne" onclick="toggleRepeatOne()">REPEAT1 ×1</button>
   </div>
 </div>
 
@@ -301,7 +301,7 @@
 <!-- QUEUE PANEL -->
 <div class="panel" id="panelQueue">
   <div class="queue-actions">
-    <button class="q-btn" onclick="clearQueue()">🗑 クリア</button>
+    <button class="q-btn" onclick="clearQueue()">DEL クリア</button>
     <span style="flex:1"></span>
     <span class="queue-count-label" id="queueCountLabel"></span>
   </div>
@@ -315,15 +315,15 @@
 const YT_API_KEY = 'AIzaSyCZbk49tTvV6sgnbMOMCwDbQWG28NfEroY';
 
 const GENRES = [
-  { label:'🕹 テトリス',   q:'tetris music remix' },
-  { label:'⚡ テクノ',     q:'techno electronic music' },
-  { label:'🎮 ゲームBGM',  q:'video game music bgm' },
-  { label:'🔥 EDM',       q:'EDM dance music' },
-  { label:'🎸 ロック',     q:'rock music energetic' },
-  { label:'🌙 Lo-Fi',     q:'lofi hip hop chill beats' },
-  { label:'🕹 レトロ',    q:'80s retro synthwave' },
-  { label:'🎹 ジャズ',    q:'jazz piano instrumental' },
-  { label:'🌊 チルアウト', q:'chillout ambient music' },
+  { label:'テトリス', q:'tetris music remix', icon:'<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" style="margin-right:4px;vertical-align:middle"><path d="M1,11 h3 v-3 h-3 z M4,11 h3 v-3 h-3 z M7,11 h3 v-3 h-3 z M4,8 h3 v-3 h-3 z"/></svg>' },
+  { label:'テクノ',   q:'techno electronic music', icon:'<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" style="margin-right:4px;vertical-align:middle"><path d="M1,7 v3 m3,-5 v5 m3,-7 v7 m3,-5 v5 m3,-3 v3"/></svg>' },
+  { label:'ゲーム',   q:'video game music bgm', icon:'<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" style="margin-right:4px;vertical-align:middle"><path d="M1,5 h12 v6 h-12 z M4,8 h2 M8,8 h1 M10,8 h1"/></svg>' },
+  { label:'EDM',      q:'EDM dance music', icon:'<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" style="margin-right:4px;vertical-align:middle"><path d="M1,11 l12,-8 m-12,0 l12,8"/></svg>' },
+  { label:'ロック',   q:'rock music energetic', icon:'<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" style="margin-right:4px;vertical-align:middle"><path d="M4,13 v-10 l8,2 v10 Z"/></svg>' },
+  { label:'Lo-Fi',    q:'lofi hip hop chill beats', icon:'<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" style="margin-right:4px;vertical-align:middle"><path d="M7,1 a6,6 0 0 0 0,12 a6,6 0 0 0 0,-12 Z"/></svg>' },
+  { label:'レトロ',   q:'80s retro synthwave', icon:'<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" style="margin-right:4px;vertical-align:middle"><rect x="1" y="4" width="12" height="8"/><circle cx="4" cy="8" r="2"/><circle cx="10" cy="8" r="2"/></svg>' },
+  { label:'ジャズ',   q:'jazz piano instrumental', icon:'<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" style="margin-right:4px;vertical-align:middle"><path d="M2,2 h2 v10 h-2 z M6,2 h2 v10 h-2 z M10,2 h2 v10 h-2 z"/></svg>' },
+  { label:'チル',     q:'chillout ambient music', icon:'<svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor" style="margin-right:4px;vertical-align:middle"><path d="M1,10 Q7,5 13,10"/></svg>' },
 ];
 
 let ytPlayer = null, ytReady = false;
@@ -344,7 +344,7 @@ function switchTab(name) {
   const row = document.getElementById('genreRow');
   GENRES.forEach(g => {
     const b = document.createElement('button');
-    b.className = 'genre-btn'; b.textContent = g.label;
+    b.className = 'genre-btn'; b.innerHTML = (g.icon || "") + g.label;
     b.onclick = () => { document.getElementById('searchInput').value = g.q; switchTab('search'); doSearch(); };
     row.appendChild(b);
   });
@@ -365,7 +365,7 @@ function onYouTubeIframeAPIReady() {
         }
       },
       onStateChange: onStateChange,
-      onError: () => { setStatus('⚠ 再生エラー。次の曲へ…', 'var(--acc2)'); setTimeout(playNext, 1500); }
+      onError: () => { setStatus('[!]  再生エラー。次の曲へ…', 'var(--acc2)'); setTimeout(playNext, 1500); }
     }
   });
 }
@@ -377,11 +377,11 @@ function onStateChange(e) {
     else playNext();
   }
   if (s === YT.PlayerState.PLAYING) {
-    document.getElementById('btnPP').textContent = '⏸';
+    document.getElementById('btnPP').innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="3" y="2" width="3" height="10"/><rect x="8" y="2" width="3" height="10"/></svg>';
     document.getElementById('ytPlaceholder').style.display = 'none';
   }
   if (s === YT.PlayerState.PAUSED || s === YT.PlayerState.CUED) {
-    document.getElementById('btnPP').textContent = '▶';
+    document.getElementById('btnPP').innerHTML = '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3,2 l9,5 l-9,5 Z"/></svg>';
   }
 }
 
@@ -409,7 +409,7 @@ async function doSearch() {
     renderResults();
     setStatus(searchResults.length ? `${searchResults.length}件見つかりました` : '結果なし', 'var(--acc3)');
   } catch (err) {
-    setStatus('⚠ エラー: ' + err.message, 'var(--acc2)');
+    setStatus('[!]  エラー: ' + err.message, 'var(--acc2)');
   }
   document.getElementById('searchBtn').disabled = false;
 }
@@ -428,7 +428,7 @@ function renderResults() {
         <div class="ri-title">${esc(item.title)}</div>
         <div class="ri-ch">${esc(item.channel)}</div>
       </div>
-      <span class="ri-add">${inQ ? '♪' : '＋'}</span>
+      <span class="ri-add">${inQ ? 'MUSIC' : '+ '}</span>
     `;
     div.onclick = () => addAndPlay(i);
     list.appendChild(div);
@@ -447,10 +447,10 @@ function addAndPlay(idx) {
   }
   document.querySelectorAll('.ri').forEach(el => {
     el.classList.remove('playing');
-    el.querySelector('.ri-add').textContent = '＋';
+    el.querySelector('.ri-add').textContent = '+ ';
   });
   const el = document.getElementById('ri-' + item.id);
-  if (el) { el.classList.add('playing'); el.querySelector('.ri-add').textContent = '♪'; }
+  if (el) { el.classList.add('playing'); el.querySelector('.ri-add').textContent = 'MUSIC'; }
 }
 
 // ── PLAYBACK ──
@@ -458,7 +458,7 @@ function playIdx(idx) {
   if (idx < 0 || idx >= queue.length) return;
   queueIdx = idx;
   const item = queue[idx];
-  if (!ytReady || !ytPlayer) { setStatus('⚠ プレーヤー準備中…', 'var(--acc2)'); return; }
+  if (!ytReady || !ytPlayer) { setStatus('[!]  プレーヤー準備中…', 'var(--acc2)'); return; }
   ytPlayer.loadVideoById(item.id);
   ytPlayer.playVideo();
   updateNP();
@@ -472,8 +472,8 @@ function updateNP() {
     document.getElementById('npTitle').textContent = queue[queueIdx].title;
     document.getElementById('npChannel').textContent = queue[queueIdx].channel;
   } else {
-    document.getElementById('npTitle').textContent = '—';
-    document.getElementById('npChannel').textContent = '—';
+    document.getElementById('npTitle').textContent = '-';
+    document.getElementById('npChannel').textContent = '-';
   }
 }
 
@@ -492,7 +492,7 @@ function playNext() {
   else if (shuffle) { n = Math.floor(Math.random() * queue.length); }
   else { n = queueIdx + 1; if (n >= queue.length) n = repeatAll ? 0 : -1; }
   if (n >= 0) playIdx(n);
-  else { queueIdx = -1; updateNP(); document.getElementById('btnPP').textContent = '▶'; }
+  else { queueIdx = -1; updateNP(); document.getElementById('btnPP').textContent = ' '; }
 }
 
 function playPrev() {
@@ -522,7 +522,7 @@ function renderQueue() {
   queue.forEach((item, i) => {
     const div = document.createElement('div');
     div.className = 'qi' + (i === queueIdx ? ' playing-q' : '');
-    div.innerHTML = `<span class="qi-num">${i+1}</span><span class="qi-title">${esc(item.title)}</span><span class="qi-del" data-idx="${i}">✕</span>`;
+    div.innerHTML = `<span class="qi-num">${i+1}</span><span class="qi-title">${esc(item.title)}</span><span class="qi-del" data-idx="${i}">X</span>`;
     div.onclick = (e) => { if (e.target.classList.contains('qi-del')) removeQ(+e.target.dataset.idx); else playIdx(i); };
     list.appendChild(div);
   });
@@ -540,7 +540,7 @@ function clearQueue() {
   if (ytPlayer && ytReady) ytPlayer.stopVideo();
   queue = []; queueIdx = -1;
   renderQueue(); updateNP();
-  document.getElementById('btnPP').textContent = '▶';
+  document.getElementById('btnPP').textContent = ' ';
   document.getElementById('ytPlaceholder').style.display = 'flex';
 }
 

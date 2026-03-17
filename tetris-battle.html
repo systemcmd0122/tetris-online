@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ボット対戦 — TETRIS BATTLE</title>
+<title>ボット対戦 - TETRIS BATTLE</title>
 <meta name="description" content="TETRIS BATTLEのボット対戦モード。EASY・NORMAL・HARDの3段階難易度AIと対戦できます。">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://tetris-online-9c827.web.app/tetris-battle.html">
 <meta property="og:type" content="website">
-<meta property="og:title" content="ボット対戦 — TETRIS BATTLE">
+<meta property="og:title" content="ボット対戦 - TETRIS BATTLE">
 <meta property="og:description" content="3段階難易度のAIボットと1対1でテトリス対戦。無料でブラウザからすぐ遊べます。">
 <meta property="og:url" content="https://tetris-online-9c827.web.app/tetris-battle.html">
 <meta name="theme-color" content="#020408">
@@ -209,11 +209,11 @@
 <!-- ══ LOBBY ══ -->
 <div class="screen active" id="lobbyScreen">
   <div class="logo">TETRIS</div>
-  <div class="subtitle">BATTLE — VS BOT</div>
+  <div class="subtitle">BATTLE - VS BOT</div>
   <div class="card" style="position:relative;">
     <div class="px-corner tl"></div><div class="px-corner tr"></div>
     <div class="px-corner bl"></div><div class="px-corner br"></div>
-    <div class="card-title">▶ PLAYER SETUP</div>
+    <div class="card-title"> PLAYER SETUP</div>
     <div class="input-group">
       <label>PLAYER NAME</label>
       <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
@@ -244,7 +244,7 @@
 <!-- ══ GAME ══ -->
 <div class="screen" id="gameScreen">
   <div class="game-header">
-    <span class="game-title">TETRIS BATTLE — BOT</span>
+    <span class="game-title">TETRIS BATTLE - BOT</span>
     <div class="game-header-right">
       <button class="sound-btn on" id="soundBtn" onclick="toggleSound()">
         <svg id="soundIconOn" width="13" height="13" viewBox="0 0 12 12" fill="currentColor"><path d="M1 4h2l3-3v10L3 8H1z"/><path d="M8 3.5A3.5 3.5 0 0 1 8 8.5" stroke="currentColor" stroke-width="1.2" fill="none"/><path d="M9.5 2A5 5 0 0 1 9.5 10" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
@@ -304,7 +304,7 @@
     </div>
   </div>
   <div class="controls-hint">
-    <div class="key-hint"><span class="key">← →</span> 移動</div>
+    <div class="key-hint"><span class="key"><- -></span> 移動</div>
     <div class="key-hint"><span class="key">↑ / X</span> 回転(右)</div>
     <div class="key-hint"><span class="key">Z</span> 回転(左)</div>
     <div class="key-hint"><span class="key">↓</span> ソフトドロップ</div>
@@ -318,9 +318,9 @@
       <div class="mobile-btn" id="btnRotateL">↺</div>
     </div>
     <div class="mobile-row">
-      <div class="mobile-btn" id="btnLeft">←</div>
+      <div class="mobile-btn" id="btnLeft"><-</div>
       <div class="mobile-btn" id="btnDown">↓</div>
-      <div class="mobile-btn" id="btnRight">→</div>
+      <div class="mobile-btn" id="btnRight">-></div>
     </div>
     <div class="mobile-row">
       <div class="mobile-btn" id="btnHardDrop" style="width:116px;font-size:11px;letter-spacing:1px;">▼ DROP</div>
@@ -350,7 +350,7 @@
 
 <div class="status-bar">
   <span id="versionDisp" style="color:var(--accent2);font-weight:bold">VER ---</span>
-  <span id="statusRoom">—</span>
+  <span id="statusRoom">-</span>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -655,7 +655,7 @@ window.startBotGame=async(difficulty)=>{
     game.update(ts);game.draw();
     botCtrl.tick(ts);botGame.update(ts);
 
-    // Botの描画（serialize→drawOpp方式でゴースト非表示）
+    // Botの描画（serialize->drawOpp方式でゴースト非表示）
     const bd={board:botGame.board.slice(2).map(r=>r.map(c=>c||'')),cur:{name:botGame.current.name,rot:botGame.current.rot,x:botGame.current.x,y:botGame.current.y},over:botGame.over};
     TetrisGame.drawOpp(document.getElementById('opponentCanvas'),bd);
 
@@ -900,22 +900,22 @@ document.getElementById('playerName').addEventListener('input',e=>{e.target.valu
     <div id="fb-overlay">
       <div id="fb-modal">
         <button class="fb-x" id="fb-close">×</button>
-        <h2>📝 FEEDBACK</h2>
+        <h2>[REPORT]  FEEDBACK</h2>
         <div id="fb-body">
           <span class="fb-lbl">CATEGORY</span>
           <div class="fb-types">
-            <button class="fb-t" data-t="bug">🐛 バグ</button>
-            <button class="fb-t" data-t="feedback">💬 感想</button>
-            <button class="fb-t" data-t="idea">💡 アイデア</button>
-            <button class="fb-t" data-t="other">📌 その他</button>
+            <button class="fb-t" data-t="bug">[BUG]  バグ</button>
+            <button class="fb-t" data-t="feedback">[MSG]  感想</button>
+            <button class="fb-t" data-t="idea">[IDEA]  アイデア</button>
+            <button class="fb-t" data-t="other">[OTHER]  その他</button>
           </div>
           <span class="fb-lbl">MESSAGE</span>
           <textarea class="fb-ta" id="fb-text" placeholder="例: ○○の操作をすると△△が起きます..." maxlength="1000"></textarea>
           <div class="fb-err" id="fb-err"></div>
-          <button class="fb-sub" id="fb-send">送信する ▶</button>
+          <button class="fb-sub" id="fb-send">送信する</button>
         </div>
         <div id="fb-done" style="display:none">
-          <div class="fb-ok">✓ 送信完了！<br>ありがとうございます</div>
+          <div class="fb-ok">[OK]  送信完了！<br>ありがとうございます</div>
           <button class="fb-sub" id="fb-done-close">閉じる</button>
         </div>
       </div>
@@ -947,8 +947,8 @@ document.getElementById('playerName').addEventListener('input',e=>{e.target.valu
   document.getElementById('fb-send').onclick=async()=>{
     const text=document.getElementById('fb-text').value.trim();
     const errEl=document.getElementById('fb-err');
-    if(!_fbType){errEl.textContent='⚠ カテゴリを選択してください';return;}
-    if(text.length<5){errEl.textContent='⚠ もう少し詳しく教えてください';return;}
+    if(!_fbType){errEl.textContent='[!]  カテゴリを選択してください';return;}
+    if(text.length<5){errEl.textContent='[!]  もう少し詳しく教えてください';return;}
     const btn=document.getElementById('fb-send');
     btn.disabled=true;btn.textContent='送信中...';errEl.textContent='';
     try{
@@ -964,8 +964,8 @@ document.getElementById('playerName').addEventListener('input',e=>{e.target.valu
       document.getElementById('fb-body').style.display='none';
       document.getElementById('fb-done').style.display='';
     }catch(e){
-      errEl.textContent='⚠ 送信失敗: '+(e.message||'エラー');
-      btn.disabled=false;btn.textContent='送信する ▶';
+      errEl.textContent='[!]  送信失敗: '+(e.message||'エラー');
+      btn.disabled=false;btn.textContent='送信する';
     }
   };
 })();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TETRIS BATTLE — BGM MODE</title>
+  <title>TETRIS BATTLE - BGM MODE</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
     :root {
@@ -336,8 +336,8 @@
 <!-- DRAWER -->
 <div id="drawer">
   <div class="dh">
-    <span class="dh-title">♫ MUSIC PLAYER</span>
-    <button class="dh-close" onclick="closeDrawer()">✕ CLOSE</button>
+    <span class="dh-title">MUSIC PLAYER</span>
+    <button class="dh-close" onclick="closeDrawer()">X CLOSE</button>
   </div>
   <div class="tabs">
     <div class="tab on" id="tab-search"    onclick="swTab('search')">SEARCH</div>
@@ -363,7 +363,7 @@
   <div class="panel" id="pQueue">
     <div style="padding:10px;display:flex;flex-direction:column;gap:8px;flex:1;overflow:hidden;">
       <div class="qa">
-        <button class="qbtn" onclick="clearQueue()">✕ CLEAR</button>
+        <button class="qbtn" onclick="clearQueue()">X CLEAR</button>
         <div style="flex:1"></div>
         <button class="mode-btn" id="mShuffle" onclick="toggleMode('shuffle')">SHUFFLE</button>
         <button class="mode-btn" id="mRepeat"  onclick="toggleMode('repeat')">REPEAT</button>
@@ -380,7 +380,7 @@
       <div class="pl-list-head">
         <span class="pl-list-title">MY PLAYLISTS</span>
         <span id="plSyncDot" title="クラウド同期状態" style="color:var(--dim);">●</span>
-        <button class="pl-new-btn" onclick="newPlaylist()">＋ NEW</button>
+        <button class="pl-new-btn" onclick="newPlaylist()">+  NEW</button>
       </div>
       <div id="plList"><div class="empty">プレイリストがありません<br>NEW で作成しよう</div></div>
     </div>
@@ -388,11 +388,11 @@
     <!-- View B: 詳細 -->
     <div id="plViewDetail">
       <div class="pl-detail-head">
-        <button class="pl-back" onclick="goPlList()">◀ BACK</button>
-        <span id="plDetailName">—</span>
+        <button class="pl-back" onclick="goPlList()"> < BACK</button>
+        <span id="plDetailName">-</span>
       </div>
       <div class="pl-detail-acts">
-        <button class="pla play"  onclick="playCurrentPl()">▶ 再生</button>
+        <button class="pla play"  onclick="playCurrentPl()"> 再生</button>
         <button class="pla"       onclick="renameCurPl()">RENAME</button>
         <button class="pla del"   onclick="deleteCurPl()">DELETE</button>
       </div>
@@ -519,7 +519,7 @@ function getPls(){ return loadPls(); }
 function getPl(id){ return loadPls().find(p=>p.id===id); }
 
 // ╔══════════════════════════════════╗
-//  FIREBASE — optional cloud sync
+//  FIREBASE - optional cloud sync
 // ╚══════════════════════════════════╝
 function initFirebase(){
   try{
@@ -713,7 +713,7 @@ async function doSearch(){
     }));
     renderResults();
     setStat(results.length?`${results.length}件`:'結果なし','var(--acc3)');
-  }catch(e){ setStat('⚠ '+e.message,'var(--acc2)'); }
+  }catch(e){ setStat('[!]  '+e.message,'var(--acc2)'); }
   document.getElementById('sgo').disabled = false;
 }
 
@@ -740,7 +740,7 @@ function renderResults(){
             <path d="M12 10.5v5.5l2-1.3 2 1.3v-5.5h-4z"/>
           </svg>
         </div>
-        <div class="ri-ibtn add-btn" data-id="${item.id}">${inQ?'♪':'＋'}</div>
+        <div class="ri-ibtn add-btn" data-id="${item.id}">${inQ?'MUSIC':'+ '}</div>
       </div>`;
     div.querySelector('.add-btn').addEventListener('click', e=>{e.stopPropagation(); addAndPlay(i);});
     div.querySelector('.pl-btn').addEventListener('click', e=>{e.stopPropagation(); showDrop(item, e.currentTarget);});
@@ -820,7 +820,7 @@ function renderQueue(){
   queue.forEach((item,i)=>{
     const d = document.createElement('div');
     d.className = 'qi'+(i===qi?' nq':'');
-    d.innerHTML = `<span class="qi-n">${i+1}</span><span class="qi-t">${esc(item.title)}</span><span class="qi-del" data-i="${i}">✕</span>`;
+    d.innerHTML = `<span class="qi-n">${i+1}</span><span class="qi-t">${esc(item.title)}</span><span class="qi-del" data-i="${i}">X</span>`;
     d.onclick = e=>{
       if(e.target.classList.contains('qi-del')) removeQ(+e.target.dataset.i);
       else playIdx(i);
@@ -845,7 +845,7 @@ function refreshResultHighlights(){
     const isNP = qi>=0 && queue[qi]?.id===item.id;
     el.classList.toggle('np', isNP);
     const btn = el.querySelector('.add-btn');
-    if(btn) btn.textContent = inQ?'♪':'＋';
+    if(btn) btn.textContent = inQ?'MUSIC':'+ ';
   });
 }
 
@@ -857,7 +857,7 @@ function updateBar(){
     const it = queue[qi];
     let plName = '';
     if(playingPlId){ const pl=getPl(playingPlId); if(pl&&pl.songs.some(s=>s.id===it.id)) plName=pl.name; else playingPlId=null; }
-    document.getElementById('npLabel').textContent = plName ? `♪ ${plName}` : 'NOW PLAYING';
+    document.getElementById('npLabel').textContent = plName ? `MUSIC ${plName}` : 'NOW PLAYING';
     document.getElementById('npTitle').textContent = it.title;
     document.getElementById('npSub').textContent   = it.channel;
     try{ localStorage.setItem('yt_nowplaying', JSON.stringify({title:it.title,channel:it.channel,id:it.id,playlist:plName})); }catch(e){}
@@ -871,7 +871,7 @@ function updateBar(){
 }
 
 // ╔══════════════════════════════════╗
-//  PLAYLISTS — CRUD (localStorage first)
+//  PLAYLISTS - CRUD (localStorage first)
 // ╚══════════════════════════════════╝
 function newPlaylist(){
   showModal('新しいプレイリスト名を入力', '', name=>{
@@ -882,9 +882,9 @@ function newPlaylist(){
     };
     const arr = loadPls();
     arr.push(pl);
-    savePls(arr);      // ← localStorage に即保存
-    fbPush(pl);        // ← Firebase にもpush（失敗しても問題なし）
-    renderPlList();    // ← 一覧を更新
+    savePls(arr);      // <- localStorage に即保存
+    fbPush(pl);        // <- Firebase にもpush（失敗しても問題なし）
+    renderPlList();    // <- 一覧を更新
     selPl = pl.id;
     showPlDetail(pl.id);
     swTab('playlists');
@@ -955,7 +955,7 @@ function playFromPl(plId, idx){
 }
 
 // ╔══════════════════════════════════╗
-//  PLAYLISTS — NAVIGATION
+//  PLAYLISTS - NAVIGATION
 // ╚══════════════════════════════════╝
 function goPlList(){
   selPl = null;
@@ -970,7 +970,7 @@ function showPlDetail(id){
 }
 
 // ╔══════════════════════════════════╗
-//  PLAYLISTS — RENDER
+//  PLAYLISTS - RENDER
 // ╚══════════════════════════════════╝
 function renderPlList(){
   const pls = loadPls();
@@ -986,7 +986,7 @@ function renderPlList(){
     const d = document.createElement('div');
     d.className = 'pl-item';
     d.innerHTML = `
-      <span class="pl-item-icon">${isPlaying?'▶':'♫'}</span>
+      <span class="pl-item-icon">${isPlaying?' ':'MUSIC'}</span>
       <div class="pl-item-info">
         <div class="pl-item-name">${esc(pl.name)}</div>
         <div class="pl-item-cnt">${pl.songs.length}曲${isPlaying?' · 再生中':''}</div>
@@ -1012,7 +1012,7 @@ function renderPlDetail(){
     const isNP = playingPlId===pl.id && qi>=0 && queue[qi]?.id===s.id;
     const d = document.createElement('div');
     d.className = 'ps'+(isNP?' np':'');
-    d.innerHTML = `<span class="ps-n">${i+1}</span><span class="ps-t">${esc(s.title)}</span><span class="ps-del">✕</span>`;
+    d.innerHTML = `<span class="ps-n">${i+1}</span><span class="ps-t">${esc(s.title)}</span><span class="ps-del">X</span>`;
     d.querySelector('.ps-del').onclick = e=>{ e.stopPropagation(); removeSongFromPl(pl.id, s.id); };
     d.onclick = e=>{ if(!e.target.classList.contains('ps-del')) playFromPl(pl.id, i); };
     songs.appendChild(d);
@@ -1031,18 +1031,18 @@ function showDrop(song, anchor){
   if(!pls.length){
     items.innerHTML = `
       <div class="pld-row none">プレイリストがありません</div>
-      <div class="pld-row newpl" onclick="closeDrop();newPlaylist();">＋ 新規作成</div>`;
+      <div class="pld-row newpl" onclick="closeDrop();newPlaylist();">+  新規作成</div>`;
   } else {
     pls.forEach(pl=>{
       const done = pl.songs.some(s=>s.id===song.id);
       const d = document.createElement('div');
       d.className = 'pld-row'+(done?' done':'');
-      d.innerHTML = `<span>${done?'✓ ':''}</span><span style="flex:1">${esc(pl.name)}</span><small style="color:var(--dim);font-size:10px;">${pl.songs.length}曲</small>`;
+      d.innerHTML = `<span>${done?'[OK]  ':''}</span><span style="flex:1">${esc(pl.name)}</span><small style="color:var(--dim);font-size:10px;">${pl.songs.length}曲</small>`;
       d.onclick = ()=>{ if(!done){ addSongToPl(pl.id, song); } else { toast('既に追加済みです'); } closeDrop(); };
       items.appendChild(d);
     });
     const sep = document.createElement('div'); sep.style.cssText='height:1px;background:rgba(0,245,255,.08);margin:2px 0;'; items.appendChild(sep);
-    const nd = document.createElement('div'); nd.className='pld-row newpl'; nd.innerHTML='<span>＋ 新規プレイリスト作成</span>';
+    const nd = document.createElement('div'); nd.className='pld-row newpl'; nd.innerHTML='<span>+  新規プレイリスト作成</span>';
     nd.onclick=()=>{ closeDrop(); newPlaylist(); };
     items.appendChild(nd);
   }
@@ -1068,7 +1068,7 @@ function closeDrop(){
 }
 
 // ╔══════════════════════════════════╗
-//  MODAL — シンプルで確実な実装
+//  MODAL - シンプルで確実な実装
 // ╚══════════════════════════════════╝
 function showModal(title, defaultVal, cb){
   modalCb = cb;
@@ -1081,9 +1081,9 @@ function showModal(title, defaultVal, cb){
 
 function modalOK(){
   const v = document.getElementById('modalInput').value.trim();
-  const cb = modalCb;  // ← closeの前に必ず保存
+  const cb = modalCb;  // <- closeの前に必ず保存
   closeModal_();
-  if(cb) cb(v);        // ← cbをcall
+  if(cb) cb(v);        // <- cbをcall
 }
 function modalCancel(){ closeModal_(); }
 function closeModal_(){

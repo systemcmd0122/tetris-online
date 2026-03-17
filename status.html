@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>システムステータス — TETRIS BATTLE</title>
+<title>システムステータス - TETRIS BATTLE</title>
 <meta name="description" content="TETRIS BATTLEのシステム稼働状況。Firebase・YouTube API・Google Fontsなど各サービスのリアルタイム死活監視。">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#04060f">
@@ -407,7 +407,7 @@
   <!-- HEADER -->
   <div class="header">
     <div class="logo-wrap">
-      <div class="logo-sub">▶ SYSTEM MONITOR</div>
+      <div class="logo-sub"> SYSTEM MONITOR</div>
       <div class="logo">STATUS</div>
     </div>
     <div class="overall-badge checking" id="overallBadge">
@@ -418,7 +418,7 @@
 
   <!-- LAST UPDATED -->
   <div class="last-updated">
-    <span id="lastUpdated">—</span>
+    <span id="lastUpdated">-</span>
     <button class="refresh-btn" id="refreshBtn" onclick="runChecks()">↺ 再チェック</button>
   </div>
 
@@ -433,15 +433,15 @@
     </div>
     <div class="info-card">
       <div class="info-card-label">SERVICES</div>
-      <div class="info-card-val green" id="infoServices">—/—</div>
+      <div class="info-card-val green" id="infoServices">-/-</div>
     </div>
     <div class="info-card">
       <div class="info-card-label">LAST CHECK</div>
-      <div class="info-card-val" id="infoTime">—</div>
+      <div class="info-card-val" id="infoTime">-</div>
     </div>
     <div class="info-card">
       <div class="info-card-label">RESPONSE AVG</div>
-      <div class="info-card-val green" id="infoAvgMs">— ms</div>
+      <div class="info-card-val green" id="infoAvgMs">- ms</div>
     </div>
   </div>
 
@@ -468,8 +468,8 @@
 
 <!-- FOOTER -->
 <div class="footer">
-  <span>TETRIS BATTLE ONLINE — SYSTEM STATUS</span>
-  <a href="index.html">← メニューに戻る</a>
+  <span>TETRIS BATTLE ONLINE - SYSTEM STATUS</span>
+  <a href="index.html"><- メニューに戻る</a>
 </div>
 
 <script type="module">
@@ -591,7 +591,7 @@ async function checkFirebaseRTDB() {
     };
 
     const timer = setTimeout(() => {
-      done({ status: 'warn', ms: null, detail: '接続タイムアウト（8秒）—ネットワーク確認を' });
+      done({ status: 'warn', ms: null, detail: '接続タイムアウト（8秒）-ネットワーク確認を' });
     }, 8000);
 
     try {
@@ -637,7 +637,7 @@ async function checkFirebaseFirestore() {
     const ms = Math.round(performance.now() - t0);
     const msg = e.message || '';
     const code = e.code || '';
-    // permission-denied = 接続はできているがルールで拒否 → サービス自体は正常
+    // permission-denied = 接続はできているがルールで拒否 -> サービス自体は正常
     if (code === 'permission-denied' || msg.includes('permission-denied') || msg.includes('PERMISSION_DENIED')) {
       return { status: 'ok', ms, detail: 'Firestore 接続正常（セキュリティルール適用中）' };
     }
@@ -782,7 +782,7 @@ async function checkYouTubeDataAPI() {
       new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 7000))
     ]);
     const ms = Math.round(performance.now() - t0);
-    // no-cors では status=0, type='opaque' → サーバーには届いた
+    // no-cors では status=0, type='opaque' -> サーバーには届いた
     if (res.type === 'opaque' || res.status === 0) {
       return { status: 'ok', ms, detail: 'Data API サーバー 到達確認（APIキー未設定）' };
     }
@@ -816,7 +816,7 @@ function renderService(svc, containerId) {
       <div class="svc-desc">${svc.desc}</div>
       <div class="svc-detail" id="svc-detail-${svc.id}">確認中...</div>
     </div>
-    <div class="svc-latency" id="svc-latency-${svc.id}">—</div>
+    <div class="svc-latency" id="svc-latency-${svc.id}">-</div>
     <div class="svc-status checking" id="svc-status-${svc.id}">CHECKING</div>
   `;
   if (!existing) container.appendChild(el);
@@ -831,7 +831,7 @@ function updateService(svc, result) {
   el.className       = `svc ${result.status}`;
   status.className   = `svc-status ${result.status}`;
   status.textContent = statusLabel(result.status);
-  latency.textContent = result.ms !== null && result.ms !== undefined ? `${result.ms} ms` : '— ms';
+  latency.textContent = result.ms !== null && result.ms !== undefined ? `${result.ms} ms` : '- ms';
   detail.textContent  = result.detail || '';
 }
 
@@ -900,7 +900,7 @@ window.runChecks = async function() {
   const avgMs = validMs.length ? Math.round(validMs.reduce((a,b) => a+b, 0) / validMs.length) : null;
 
   document.getElementById('infoServices').textContent = `${okCount}/${allSvcs.length}`;
-  document.getElementById('infoAvgMs').textContent    = avgMs !== null ? `${avgMs} ms` : '— ms';
+  document.getElementById('infoAvgMs').textContent    = avgMs !== null ? `${avgMs} ms` : '- ms';
 
   const now = new Date();
   const timeStr = now.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
@@ -909,7 +909,7 @@ window.runChecks = async function() {
 
   const notice = document.getElementById('noticeBanner');
   if (overall !== 'ok') {
-    notice.innerHTML = '⚠ ' + results.map((r, i) => r.status !== 'ok' ? `${allSvcs[i].name}: ${r.detail}` : null).filter(Boolean).join('<br>⚠ ');
+    notice.innerHTML = '[!]  ' + results.map((r, i) => r.status !== 'ok' ? `${allSvcs[i].name}: ${r.detail}` : null).filter(Boolean).join('<br>[!]  ');
     notice.classList.add('show');
   } else {
     notice.classList.remove('show');

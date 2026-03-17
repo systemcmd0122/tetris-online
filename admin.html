@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TETRIS BATTLE — Admin Console</title>
+<title>TETRIS BATTLE - Admin Console</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
 :root{
@@ -372,12 +372,12 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
   <div class="login-logo">⬡ TETRIS BATTLE</div>
   <div class="login-tagline">ADMINISTRATOR CONSOLE</div>
   <div class="login-card">
-    <div class="lc-title">🔒 認証が必要です</div>
+    <div class="lc-title">   認証が必要です</div>
     <div class="pw-wrap">
       <label class="pw-label">ADMIN PASSWORD</label>
       <input type="password" class="pw-input" id="pwIn" placeholder="••••••••" autocomplete="off">
     </div>
-    <button class="pw-btn" onclick="doLogin()">→ ログイン</button>
+    <button class="pw-btn" onclick="doLogin()">-> ログイン</button>
     <div class="pw-err" id="pwErr"></div>
   </div>
 </div>
@@ -401,28 +401,28 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
     <nav class="sidebar">
       <div class="sb-section">MONITOR</div>
       <div class="nav-item active" onclick="gotoPanel('dashboard',this)">
-        <span class="nav-icon">📊</span><span>Dashboard</span>
+        <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="7" width="3" height="6"/><rect x="5" y="3" width="3" height="10"/><rect x="9" y="1" width="3" height="12"/></svg></span><span>Dashboard</span>
         <span class="nav-badge" id="navBadge">0</span>
       </div>
       <div class="nav-item" onclick="gotoPanel('rooms',this)">
-        <span class="nav-icon">🎮</span><span>Room List</span>
+        <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M1,4 h12 v8 h-12 z M3,4 v-2 h8 v2"/></svg></span><span>Room List</span>
       </div>
       <div class="nav-item" onclick="gotoPanel('spectate',this)">
-        <span class="nav-icon">👁</span><span>Spectate</span>
+        <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><circle cx="7" cy="7" r="3"/><path d="M1,7 Q7,1 13,7 Q7,13 1,7"/></svg></span><span>Spectate</span>
       </div>
       <div class="sb-section">TOOLS</div>
       <div class="nav-item" onclick="gotoPanel('broadcast',this)">
-        <span class="nav-icon">📢</span><span>Broadcast</span>
+        <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M1,2 h12 v8 h-8 l-3,3 v-3 h-1 z"/></svg></span><span>Broadcast</span>
       </div>
       <div class="nav-item" onclick="gotoPanel('log',this)">
-        <span class="nav-icon">📋</span><span>Event Log</span>
+        <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="3" y="2" width="8" height="10"/><path d="M5,5 h4 M5,8 h4"/></svg></span><span>Event Log</span>
       </div>
       <div class="nav-item" onclick="gotoPanel('feedback',this)" id="nav-feedback">
-        <span class="nav-icon">📝</span><span>Feedback</span>
+        <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M1,2 h12 v8 h-8 l-3,3 v-3 h-1 z"/></svg></span><span>Feedback</span>
         <span class="nav-badge" id="fbNavBadge" style="display:none">0</span>
       </div>
       <div class="nav-item" onclick="gotoPanel('settings',this)">
-        <span class="nav-icon">⚙</span><span>Settings</span>
+        <span class="nav-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><circle cx="7" cy="7" r="2"/><path d="M7,1 v2 M7,11 v2 M1,7 h2 M11,7 h2 M3,3 l1.5,1.5 M9.5,9.5 l1.5,1.5 M3,11 l1.5,-1.5 M9.5,4.5 l1.5,-1.5"/></svg></span><span>Settings</span>
       </div>
     </nav>
 
@@ -434,7 +434,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
         <div class="ph">
           <div class="ph-left">
             <div class="ph-title">DASHBOARD</div>
-            <div class="ph-sub">リアルタイム統計 — 自動更新中</div>
+            <div class="ph-sub">リアルタイム統計 - 自動更新中</div>
           </div>
           <button class="sbtn" onclick="refreshAll()">↻ 更新</button>
         </div>
@@ -494,8 +494,8 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
               <div class="ph-sub" id="specTimer">--:--</div>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="abtn abtn-stop" onclick="openFsModal(currentSpecRoom)">🛑 強制停止</button>
-              <button class="sbtn" onclick="stopSpec()">← 戻る</button>
+              <button class="abtn abtn-stop" onclick="openFsModal(currentSpecRoom)">   強制停止</button>
+              <button class="sbtn" onclick="stopSpec()"><- 戻る</button>
             </div>
           </div>
           <div class="spec-arena">
@@ -539,7 +539,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
               <div style="font-size:7px;color:var(--dim);letter-spacing:2px;margin-bottom:8px">MESSAGE</div>
               <input id="bcMsg" class="wf-input" type="text" placeholder="System message..." style="width:100%;margin-bottom:12px">
               <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="wf-yes" onclick="sendBroadcast()">📢 全ルームに送信</button>
+                <button class="wf-yes" onclick="sendBroadcast()">   全ルームに送信</button>
                 <button class="sbtn" onclick="clearBcMsg()">クリア</button>
               </div>
               <div style="font-size:7px;color:var(--dim);letter-spacing:1px;margin-top:10px" id="bcStatus"></div>
@@ -562,7 +562,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
       <div class="panel" id="panel-log">
         <div class="ph">
           <div class="ph-left"><div class="ph-title">EVENT LOG</div><div class="ph-sub">管理操作・システムイベント履歴 (Firestore)</div></div>
-          <button class="sbtn sbtn-red" onclick="clearAllLogs()">🗑 全削除</button>
+          <button class="sbtn sbtn-red" onclick="clearAllLogs()">DEL 全削除</button>
         </div>
         <div class="log-box" id="logBox"></div>
       </div>
@@ -575,8 +575,8 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
             <div class="ph-sub">ユーザーからのバグ報告・フィードバック一覧</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button class="sbtn" onclick="refreshFeedback()">🔄 更新</button>
-            <button class="sbtn sbtn-red" onclick="deleteResolvedFeedback()">🗑 解決済み削除</button>
+            <button class="sbtn" onclick="refreshFeedback()">   更新</button>
+            <button class="sbtn sbtn-red" onclick="deleteResolvedFeedback()">DEL 解決済み削除</button>
           </div>
         </div>
         <!-- Stats -->
@@ -589,11 +589,11 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
         <!-- Filters -->
         <div class="fb-filter-row">
           <button class="fb-filter-btn on" data-filter="all" onclick="setFbFilter('all',this)">ALL</button>
-          <button class="fb-filter-btn f-bug" data-filter="bug" onclick="setFbFilter('bug',this)">🐛 BUG</button>
-          <button class="fb-filter-btn f-feedback" data-filter="feedback" onclick="setFbFilter('feedback',this)">💬 FEEDBACK</button>
-          <button class="fb-filter-btn f-idea" data-filter="idea" onclick="setFbFilter('idea',this)">💡 IDEA</button>
-          <button class="fb-filter-btn f-other" data-filter="other" onclick="setFbFilter('other',this)">📌 OTHER</button>
-          <button class="fb-filter-btn" data-filter="new" onclick="setFbFilter('new',this)" style="margin-left:auto;border-color:var(--acc2);color:var(--acc2);">⚡ 未読のみ</button>
+          <button class="fb-filter-btn f-bug" data-filter="bug" onclick="setFbFilter('bug',this)">   BUG</button>
+          <button class="fb-filter-btn f-feedback" data-filter="feedback" onclick="setFbFilter('feedback',this)">   FEEDBACK</button>
+          <button class="fb-filter-btn f-idea" data-filter="idea" onclick="setFbFilter('idea',this)">   IDEA</button>
+          <button class="fb-filter-btn f-other" data-filter="other" onclick="setFbFilter('other',this)">   OTHER</button>
+          <button class="fb-filter-btn" data-filter="new" onclick="setFbFilter('new',this)" style="margin-left:auto;border-color:var(--acc2);color:var(--acc2);">   未読のみ</button>
         </div>
         <!-- List -->
         <div id="fb-list"><div class="fb-empty">読み込み中...</div></div>
@@ -601,7 +601,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
 
       <!-- ── SETTINGS ── -->
       <div class="panel" id="panel-settings">
-        <div class="ph"><div class="ph-left"><div class="ph-title">SETTINGS</div><div class="ph-sub">危険な操作 — 慎重に実行してください</div></div></div>
+        <div class="ph"><div class="ph-left"><div class="ph-title">SETTINGS</div><div class="ph-sub">危険な操作 - 慎重に実行してください</div></div></div>
         <div class="settings-grid">
           <!-- Nuke -->
           <div class="setting-item">
@@ -614,7 +614,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
             </div>
             <div class="si-body" id="nukeBody">
               <div class="confirm-box">
-                <div class="cf-msg">⚠ この操作は取り消せません。<br>全プレイヤーは即座に「管理者強制停止」画面に移動します。<br>確認のため <b>NUKE</b> と入力してください。</div>
+                <div class="cf-msg">   この操作は取り消せません。<br>全プレイヤーは即座に「管理者強制停止」画面に移動します。<br>確認のため <b>NUKE</b> と入力してください。</div>
                 <input type="text" class="cf-input" id="nukeConfIn" placeholder="NUKE">
                 <div class="cf-btns">
                   <button class="cf-yes" onclick="nukeAll()">実行</button>
@@ -684,14 +684,14 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
 <!-- Force stop confirmation modal -->
 <div class="fs-confirm-modal" id="fsModal">
   <div class="fs-confirm-box">
-    <div class="fsc-icon">🛑</div>
+    <div class="fsc-icon">  </div>
     <div class="fsc-title">FORCE STOP ROOM</div>
     <div class="fsc-room" id="fsModalCode">----</div>
     <div class="fsc-label">停止メッセージ（プレイヤーに表示）</div>
     <input type="text" class="fsc-input" id="fsModalMsg" placeholder="管理者によってこのルームは強制終了されました">
     <div class="fsc-btns">
       <button class="fsc-cancel" onclick="closeFsModal()">キャンセル</button>
-      <button class="fsc-go" onclick="execFsModal()">🛑 強制停止実行</button>
+      <button class="fsc-go" onclick="execFsModal()">   強制停止実行</button>
     </div>
   </div>
 </div>
@@ -699,7 +699,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
 <!-- Room message modal -->
 <div class="modal-bg" id="msgModal">
   <div class="modal">
-    <div class="modal-title">📢 ルームにメッセージ送信</div>
+    <div class="modal-title">   ルームにメッセージ送信</div>
     <div style="font-size:7px;color:var(--dim);letter-spacing:2px;margin-bottom:14px">ROOM: <span id="msgRoomCode" style="color:var(--acc);font-family:'Press Start 2P',monospace;letter-spacing:6px">----</span></div>
     <input type="text" class="modal-input" id="msgInput" placeholder="メッセージを入力...">
     <div class="modal-btns">
@@ -753,7 +753,7 @@ window.doLogin=()=>{
     initAdmin();
   }else{
     const err=document.getElementById('pwErr');
-    err.textContent='✗ パスワードが違います';
+    err.textContent='   パスワードが違います';
     document.getElementById('pwIn').value='';
     document.getElementById('pwIn').focus();
     setTimeout(()=>err.textContent='',3000);
@@ -848,12 +848,12 @@ function updateStats(){
   document.getElementById('navBadge').textContent=active+waiting;
 }
 
-function fmtTime(ts){if(!ts)return'—';return new Date(ts).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function fmtTime(ts){if(!ts)return'-';return new Date(ts).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
 function statusBadge(s){
-  if(s==='waiting')return'<span class="badge badge-wait">⏳ WAITING</span>';
+  if(s==='waiting')return'<span class="badge badge-wait">WAIT WAITING</span>';
   if(s==='ready')return'<span class="badge badge-live"><div class="live-dot"></div>LIVE</span>';
-  if(s==='force_ended')return'<span class="badge badge-end">🛑 FORCED</span>';
-  return'<span class="badge badge-end">— ENDED</span>';
+  if(s==='force_ended')return'<span class="badge badge-end">   FORCED</span>';
+  return'<span class="badge badge-end">- ENDED</span>';
 }
 
 function renderTables(){
@@ -866,13 +866,13 @@ function renderTables(){
     <tr>
       <td style="font-family:'Press Start 2P',monospace;color:var(--acc);letter-spacing:5px;font-size:11px">${code}</td>
       <td>${statusBadge(r.status)}</td>
-      <td>${r.p1?.name||'—'}</td>
-      <td>${r.p2?.name||'—'}</td>
+      <td>${r.p1?.name||'-'}</td>
+      <td>${r.p2?.name||'-'}</td>
       <td style="color:var(--dim)">${fmtTime(r.ts)}</td>
-      <td>${r.status==='ready'?`<button class="abtn abtn-watch" onclick="startSpec('${code}')">👁 観戦</button>`:''}
-          <button class="abtn abtn-stop" onclick="openFsModal('${code}')">🛑 停止</button>
-          <button class="abtn abtn-msg" onclick="openMsgModal('${code}')">💬 MSG</button>
-          <button class="abtn abtn-del" onclick="deleteRoom('${code}')">🗑</button></td>
+      <td>${r.status==='ready'?`<button class="abtn abtn-watch" onclick="startSpec('${code}')">   観戦</button>`:''}
+          <button class="abtn abtn-stop" onclick="openFsModal('${code}')">   停止</button>
+          <button class="abtn abtn-msg" onclick="openMsgModal('${code}')">   MSG</button>
+          <button class="abtn abtn-del" onclick="deleteRoom('${code}')">DEL</button></td>
     </tr>`).join('');}
 
   // Rooms detail
@@ -882,16 +882,16 @@ function renderTables(){
     <tr>
       <td style="font-family:'Press Start 2P',monospace;color:var(--acc);letter-spacing:5px;font-size:11px">${code}</td>
       <td>${statusBadge(r.status)}</td>
-      <td>${r.p1?.name||'—'}</td>
-      <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p1?.score??'—'}</td>
-      <td>${r.p2?.name||'—'}</td>
-      <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p2?.score??'—'}</td>
-      <td style="color:var(--dim)">${r.game?.p1?.level??'—'}</td>
+      <td>${r.p1?.name||'-'}</td>
+      <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p1?.score??'-'}</td>
+      <td>${r.p2?.name||'-'}</td>
+      <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p2?.score??'-'}</td>
+      <td style="color:var(--dim)">${r.game?.p1?.level??'-'}</td>
       <td style="color:var(--dim)">${fmtTime(r.ts)}</td>
-      <td>${r.status==='ready'?`<button class="abtn abtn-watch" onclick="startSpec('${code}')">👁</button>`:''}
-          <button class="abtn abtn-stop" onclick="openFsModal('${code}')">🛑</button>
-          <button class="abtn abtn-msg" onclick="openMsgModal('${code}')">💬</button>
-          <button class="abtn abtn-del" onclick="deleteRoom('${code}')">🗑</button></td>
+      <td>${r.status==='ready'?`<button class="abtn abtn-watch" onclick="startSpec('${code}')">  </button>`:''}
+          <button class="abtn abtn-stop" onclick="openFsModal('${code}')">  </button>
+          <button class="abtn abtn-msg" onclick="openMsgModal('${code}')">  </button>
+          <button class="abtn abtn-del" onclick="deleteRoom('${code}')">DEL</button></td>
     </tr>`).join('');}
 
   // Spectate list
@@ -901,11 +901,11 @@ function renderTables(){
   else{sp_tbody.innerHTML=active.map(([code,r])=>`
     <tr>
       <td style="font-family:'Press Start 2P',monospace;color:var(--acc);letter-spacing:5px;font-size:11px">${code}</td>
-      <td>${r.p1?.name||'—'}</td>
+      <td>${r.p1?.name||'-'}</td>
       <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p1?.score??0}</td>
-      <td>${r.p2?.name||'—'}</td>
+      <td>${r.p2?.name||'-'}</td>
       <td style="color:var(--acc2);font-family:'Press Start 2P',monospace;font-size:9px">${r.game?.p2?.score??0}</td>
-      <td><button class="abtn abtn-watch" onclick="startSpec('${code}')">👁 観戦開始</button></td>
+      <td><button class="abtn abtn-watch" onclick="startSpec('${code}')">   観戦開始</button></td>
     </tr>`).join('');}
 }
 
@@ -939,7 +939,7 @@ document.getElementById('fsModalMsg').addEventListener('keydown', e => {
 
 // ══ FORCE STOP (core) ══
 // Steps:
-//   1. Write status:'force_ended' + forceMsg → players detect this and show their screen
+//   1. Write status:'force_ended' + forceMsg -> players detect this and show their screen
 //   2. Wait 10s so players can read the message
 //   3. Delete the room (cleanup)
 window.forceStop = async (code, customMsg) => {
@@ -1049,7 +1049,7 @@ window.sendBroadcast=async()=>{
   addLog(`ブロードキャスト (${n}ルーム): "${msg}"`,"warn");
   persistLog(`Broadcast to ${n} rooms: "${msg}"`, 'admin', {n, msg});
   showToast(`${n}件のルームに送信`,'ok');
-  document.getElementById('bcStatus').textContent=`✓ ${n}件に送信 — ${new Date().toLocaleTimeString('ja-JP')}`;
+  document.getElementById('bcStatus').textContent=`[OK]  ${n}件に送信 - ${new Date().toLocaleTimeString('ja-JP')}`;
 };
 window.clearBcMsg=()=>{document.getElementById('bcMsg').value='';document.getElementById('bcStatus').textContent='';};
 window.saveDefMsg=()=>{defaultForceMsg=document.getElementById('defMsg').value||defaultForceMsg;showToast('デフォルトメッセージ保存','ok');};
@@ -1093,7 +1093,7 @@ window.nukeAll = async () => {
 
     // Step 3: delete everything
     await remove(ref(db, 'multi'));
-    addLog('⚠ 全ルームNUKE完了', 'error');
+    addLog('   全ルームNUKE完了', 'error');
     persistLog('Nuke all rooms executed', 'error');
     showToast('全ルームを削除しました', 'warn');
     document.getElementById('nukeConfIn').value = '';
@@ -1315,16 +1315,16 @@ function renderFbList(){
   }
 
   const TYPE_META = {
-    bug:      {label:'🐛 BUG',      cls:'fb-type-bug'},
-    feedback: {label:'💬 FEEDBACK', cls:'fb-type-feedback'},
-    idea:     {label:'💡 IDEA',     cls:'fb-type-idea'},
-    other:    {label:'📌 OTHER',    cls:'fb-type-other'},
+    bug:      {label:'   BUG',      cls:'fb-type-bug'},
+    feedback: {label:'   FEEDBACK', cls:'fb-type-feedback'},
+    idea:     {label:'   IDEA',     cls:'fb-type-idea'},
+    other:    {label:'   OTHER',    cls:'fb-type-other'},
   };
-  const STATUS_LABEL = {new:'⚡ NEW', read:'READ', resolved:'✓ RESOLVED'};
+  const STATUS_LABEL = {new:'   NEW', read:'READ', resolved:'[OK]  RESOLVED'};
 
   list.innerHTML = entries.map(([id, r]) => {
     const tm = TYPE_META[r.type] || {label:'?', cls:'fb-type-other'};
-    const ts = r.ts ? new Date(r.ts).toLocaleString('ja-JP') : '—';
+    const ts = r.ts ? new Date(r.ts).toLocaleString('ja-JP') : '-';
     const statusLbl = STATUS_LABEL[r.status] || r.status;
     const escapedMsg = r.message
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -1342,14 +1342,14 @@ function renderFbList(){
       <div class="fb-message">${escapedMsg}</div>
       <div class="fb-meta">
         VER ${esc(r.version||'?')} &nbsp;|&nbsp; ${esc(r.gameMode||'?')} &nbsp;|&nbsp;
-        ${ua ? esc(ua)+'...' : '—'}
+        ${ua ? esc(ua)+'...' : '-'}
       </div>
       <div class="fb-actions">
         ${r.status!=='read'&&r.status!=='resolved'?
           `<button class="fb-act-btn mark-read" onclick="setFbStatus('${id}','read')">既読にする</button>`:''}
         ${r.status!=='resolved'?
-          `<button class="fb-act-btn mark-resolved" onclick="setFbStatus('${id}','resolved')">✓ 解決済み</button>`:''}
-        <button class="fb-act-btn delete-fb" onclick="deleteFb('${id}')">🗑 削除</button>
+          `<button class="fb-act-btn mark-resolved" onclick="setFbStatus('${id}','resolved')">[OK]  解決済み</button>`:''}
+        <button class="fb-act-btn delete-fb" onclick="deleteFb('${id}')">DEL 削除</button>
       </div>
     </div>`;
   }).join('');
@@ -1358,7 +1358,7 @@ function renderFbList(){
 window.setFbStatus = async (id, status) => {
   try{
     await update(ref(db,'reports/'+id), {status});
-    addLog(`フィードバック #${id.slice(-6)} → ${status}`, 'info');
+    addLog(`フィードバック #${id.slice(-6)} -> ${status}`, 'info');
     persistLog(`Feedback ${id.slice(-6)} marked as ${status}`, 'admin', {id, status});
   }catch(e){ showToast('更新失敗: '+e.message,'err'); }
 };
