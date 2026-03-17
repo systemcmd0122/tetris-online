@@ -1616,6 +1616,164 @@ document.getElementById('playerName').addEventListener('input',e=>{e.target.valu
 // ── FALLING BG ──
 (function(){const cv=document.getElementById('bgCanvas');if(!cv)return;const ctx=cv.getContext('2d');const C={I:'#00f5ff',O:'#ffff00',T:'#cc00ff',S:'#aaff00',Z:'#ff0040',J:'#0066ff',L:'#ff8800'};const N=Object.keys(C);const SZ=28;const PM={I:[[[1,1,1,1]]],O:[[[1,1],[1,1]]],T:[[[0,1,0],[1,1,1]]],S:[[[0,1,1],[1,1,0]]],Z:[[[1,1,0],[0,1,1]]],J:[[[1,0,0],[1,1,1]]],L:[[[0,0,1],[1,1,1]]]};let W,H;const ps=[];function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}resize();window.addEventListener('resize',resize);function spawn(){const nm=N[Math.random()*N.length|0];return{mat:PM[nm][0],color:C[nm],x:Math.random()*W,y:-SZ*4,vy:.4+Math.random()*1.2,rot:Math.random()*360,vr:(Math.random()-.5)*.7,sc:.5+Math.random()*.9,alpha:.1+Math.random()*.4};}for(let i=0;i<18;i++){const p=spawn();p.y=Math.random()*H;ps.push(p);}function db2(bx,by,color){ctx.fillStyle=color+'aa';ctx.fillRect(bx+1,by+1,SZ-2,SZ-2);ctx.fillStyle='rgba(255,255,255,.2)';ctx.fillRect(bx+1,by+1,SZ-2,5);ctx.fillRect(bx+1,by+1,5,SZ-2);ctx.strokeStyle=color;ctx.lineWidth=.7;ctx.strokeRect(bx+.5,by+.5,SZ-1,SZ-1);}function frame(){ctx.clearRect(0,0,W,H);ps.forEach((p,i)=>{p.y+=p.vy;p.rot+=p.vr;if(p.y>H+SZ*p.sc*4)ps[i]=spawn();ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.scale(p.sc,p.sc);ctx.globalAlpha=p.alpha;const mw=p.mat[0].length,mh=p.mat.length,ox=-mw*SZ/2,oy=-mh*SZ/2;p.mat.forEach((row,r)=>row.forEach((cell,c)=>{if(cell)db2(ox+c*SZ,oy+r*SZ,p.color);}));ctx.restore();});if(Math.random()<.012&&ps.length<22)ps.push(spawn());requestAnimationFrame(frame);}frame();})();
 
+
+// ═══ FEEDBACK WIDGET ═════════════════════════════════════
+(function(){
+  const FEEDBACK_TYPES = {
+    bug:      {label:'🐛 バグ',    cls:'sel-bug'},
+    feedback: {label:'💬 感想',    cls:'sel-feedback'},
+    idea:     {label:'💡 アイデア',cls:'sel-idea'},
+    other:    {label:'📌 その他',  cls:'sel-other'},
+  };
+  let _fbType=null;
+
+  // Inject CSS
+  const s=document.createElement('style');
+  s.textContent=`
+    #fb-btn{position:fixed;bottom:48px;right:14px;z-index:9000;width:44px;height:44px;border-radius:50%;
+      background:linear-gradient(135deg,#7700ff,#cc00ff);border:2px solid rgba(204,0,255,.5);
+      box-shadow:0 4px 16px rgba(204,0,255,.4);cursor:pointer;display:flex;align-items:center;
+      justify-content:center;transition:transform .2s,box-shadow .2s;color:#fff;user-select:none;padding:0;}
+    #fb-btn:hover{transform:scale(1.12);box-shadow:0 6px 24px rgba(204,0,255,.7);}
+    #fb-unread{position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;
+      background:#ff0080;font-family:'Press Start 2P',monospace;font-size:7px;color:#fff;
+      display:none;align-items:center;justify-content:center;border:2px solid #020408;}
+    #fb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9001;display:none;
+      align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+    #fb-overlay.show{display:flex;}
+    #fb-modal{background:#080d18;border:1px solid rgba(204,0,255,.4);border-radius:6px;
+      padding:28px 26px;width:min(420px,92vw);position:relative;
+      box-shadow:0 0 40px rgba(204,0,255,.2);font-family:'Orbitron',monospace;}
+    #fb-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+      background:linear-gradient(90deg,#7700ff,#cc00ff,#00f5ff);border-radius:6px 6px 0 0;}
+    #fb-modal h2{font-family:'Press Start 2P',monospace;font-size:11px;color:#cc00ff;
+      letter-spacing:2px;margin-bottom:20px;}
+    .fb-x{position:absolute;top:12px;right:16px;background:none;border:none;color:#4a6080;
+      font-size:22px;cursor:pointer;line-height:1;padding:0;transition:color .2s;}
+    .fb-x:hover{color:#cc00ff;}
+    .fb-lbl{font-size:10px;color:#4a6080;letter-spacing:2px;margin-bottom:8px;display:block;}
+    .fb-types{display:flex;gap:7px;margin-bottom:18px;}
+    .fb-t{flex:1;padding:9px 2px;border-radius:4px;cursor:pointer;
+      font-family:'Orbitron',monospace;font-size:8px;font-weight:700;letter-spacing:1px;
+      text-align:center;transition:all .15s;border:1px solid #1a2540;color:#4a6080;background:transparent;}
+    .fb-t:hover{border-color:#cc00ff;color:#cc00ff;}
+    .fb-t.sel-bug{border-color:#ff3355;color:#ff3355;background:rgba(255,51,85,.08);}
+    .fb-t.sel-feedback{border-color:#00f5ff;color:#00f5ff;background:rgba(0,245,255,.08);}
+    .fb-t.sel-idea{border-color:#aaff00;color:#aaff00;background:rgba(170,255,0,.08);}
+    .fb-t.sel-other{border-color:#ff8800;color:#ff8800;background:rgba(255,136,0,.08);}
+    .fb-ta{width:100%;min-height:100px;background:rgba(0,0,0,.4);border:1px solid #1a2540;
+      border-radius:4px;color:#e0f0ff;font-family:'Orbitron',monospace;font-size:12px;
+      padding:11px;resize:vertical;outline:none;transition:border-color .2s;margin-bottom:14px;box-sizing:border-box;}
+    .fb-ta:focus{border-color:#cc00ff;}
+    .fb-ta::placeholder{color:#2a3a55;}
+    .fb-sub{width:100%;padding:12px;border:none;border-radius:4px;
+      background:linear-gradient(135deg,#7700ff,#cc00ff);color:#fff;
+      font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+      letter-spacing:2px;cursor:pointer;transition:all .2s;box-sizing:border-box;}
+    .fb-sub:hover{transform:translateY(-1px);box-shadow:0 0 20px rgba(204,0,255,.5);}
+    .fb-sub:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+    .fb-err{font-size:10px;color:#ff3355;letter-spacing:1px;margin-bottom:10px;min-height:14px;}
+    .fb-ok{text-align:center;padding:24px 0;font-family:'Press Start 2P',monospace;
+      font-size:10px;color:#aaff00;letter-spacing:2px;line-height:2.4;}
+  `;
+  document.head.appendChild(s);
+
+  // Inject HTML
+  const w=document.createElement('div');
+  w.innerHTML=`
+    <button id="fb-btn" title="バグ報告・フィードバック">
+      <div id="fb-unread"></div>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M17 13a1 1 0 01-1 1H6l-4 4V4a1 1 0 011-1h13a1 1 0 011 1v9z"
+              stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+        <circle cx="7" cy="8.5" r="1" fill="currentColor"/>
+        <circle cx="10" cy="8.5" r="1" fill="currentColor"/>
+        <circle cx="13" cy="8.5" r="1" fill="currentColor"/>
+      </svg>
+    </button>
+    <div id="fb-overlay">
+      <div id="fb-modal">
+        <button class="fb-x" id="fb-close">×</button>
+        <h2>📝 FEEDBACK</h2>
+        <div id="fb-body">
+          <span class="fb-lbl">CATEGORY</span>
+          <div class="fb-types">
+            <button class="fb-t" data-t="bug">🐛 バグ</button>
+            <button class="fb-t" data-t="feedback">💬 感想</button>
+            <button class="fb-t" data-t="idea">💡 アイデア</button>
+            <button class="fb-t" data-t="other">📌 その他</button>
+          </div>
+          <span class="fb-lbl">MESSAGE</span>
+          <textarea class="fb-ta" id="fb-text" placeholder="例: ○○の操作をすると△△が起きます..." maxlength="1000"></textarea>
+          <div class="fb-err" id="fb-err"></div>
+          <button class="fb-sub" id="fb-send">送信する ▶</button>
+        </div>
+        <div id="fb-done" style="display:none">
+          <div class="fb-ok">✓ 送信完了！<br>ありがとうございます</div>
+          <button class="fb-sub" id="fb-done-close">閉じる</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(w);
+
+  const overlay=document.getElementById('fb-overlay');
+  const btnOpen=document.getElementById('fb-btn');
+  const btnClose=document.getElementById('fb-close');
+  const btnSend=document.getElementById('fb-send');
+  const btnDone=document.getElementById('fb-done-close');
+  const fbBody=document.getElementById('fb-body');
+  const fbDone=document.getElementById('fb-done');
+  const fbErr=document.getElementById('fb-err');
+  const fbText=document.getElementById('fb-text');
+
+  function openFb(){
+    overlay.classList.add('show');
+    fbBody.style.display='';fbDone.style.display='none';
+    fbText.value='';fbErr.textContent='';_fbType=null;
+    document.querySelectorAll('.fb-t').forEach(b=>b.className='fb-t');
+    setTimeout(()=>fbText.focus(),80);
+  }
+  function closeFb(){ overlay.classList.remove('show'); }
+
+  btnOpen.onclick=openFb;
+  btnClose.onclick=closeFb;
+  btnDone.onclick=closeFb;
+  overlay.onclick=e=>{ if(e.target===overlay) closeFb(); };
+
+  document.querySelectorAll('.fb-t').forEach(btn=>{
+    btn.onclick=()=>{
+      document.querySelectorAll('.fb-t').forEach(b=>b.className='fb-t');
+      _fbType=btn.dataset.t;
+      btn.className='fb-t sel-'+_fbType;
+      fbErr.textContent='';
+    };
+  });
+
+  fbText.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey)btnSend.click();});
+
+  btnSend.onclick=async()=>{
+    const text=fbText.value.trim();
+    if(!_fbType){fbErr.textContent='⚠ カテゴリを選択してください';return;}
+    if(text.length<5){fbErr.textContent='⚠ もう少し詳しく教えてください';return;}
+    btnSend.disabled=true;btnSend.textContent='送信中...';fbErr.textContent='';
+    try{
+      const report={
+        type:_fbType, message:text,
+        page:'マルチ対戦', version:APP_VERSION,
+        ua:navigator.userAgent.slice(0,200),
+        ts:Date.now(), status:'new',
+        roomCode:roomCode||null,
+        gameMode:'multi',
+      };
+      await push(ref(db,'reports'),report);
+      fbBody.style.display='none';fbDone.style.display='';
+    }catch(e){
+      fbErr.textContent='⚠ 送信失敗: '+(e.message||'エラー');
+      btnSend.disabled=false;btnSend.textContent='送信する ▶';
+    }
+  };
+})();
+// ═════════════════════════════════════════════════════════
 // ── PAGE LOADER ──
 (function(){const loader=document.getElementById('pageLoader'),bar=document.getElementById('plBar'),txt=document.getElementById('plText');if(!loader||!bar)return;const bc=['#00f5ff','#ffff00','#cc00ff','#aaff00','#ff0040','#0066ff','#ff8800','#00f5ff','#ffff00','#cc00ff'];const N=10;for(let i=0;i<N;i++){const b=document.createElement('div');b.className='pl-b';bar.appendChild(b);}let f=0;const next=()=>{if(f>=N){Array.from(bar.children).forEach(b=>{b.style.background='rgba(255,255,255,.9)';b.style.boxShadow='0 0 20px #fff';});setTimeout(()=>{loader.classList.add('hide');setTimeout(()=>{try{loader.remove();}catch(e){}},500);},150);return;}const b=bar.children[f];b.classList.add('lit');b.style.background=bc[f];b.style.boxShadow='0 0 14px '+bc[f];b.style.borderColor=bc[f];f++;if(f===4)txt.textContent='CONNECTING...';if(f===8)txt.textContent='READY!';setTimeout(next,55+Math.random()*75);};setTimeout(next,200);})();
 </script>

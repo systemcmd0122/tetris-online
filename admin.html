@@ -21,6 +21,54 @@ body::before{content:'';position:fixed;inset:0;
     linear-gradient(90deg,rgba(0,245,255,.015) 1px,transparent 1px);
   background-size:40px 40px;pointer-events:none;z-index:0}
 
+/* ══ FEEDBACK PANEL ══ */
+.fb-filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.fb-filter-btn{font-family:'Press Start 2P',monospace;font-size:7px;padding:7px 12px;
+  border-radius:3px;cursor:pointer;border:1px solid var(--b1);color:var(--dim);
+  background:transparent;transition:all .15s;letter-spacing:1px;}
+.fb-filter-btn:hover{color:var(--acc);border-color:var(--acc);}
+.fb-filter-btn.on{background:rgba(0,245,255,.1);border-color:var(--acc);color:var(--acc);}
+.fb-filter-btn.f-bug.on{background:rgba(255,51,85,.1);border-color:var(--red);color:var(--red);}
+.fb-filter-btn.f-feedback.on{background:rgba(0,245,255,.1);border-color:var(--acc);color:var(--acc);}
+.fb-filter-btn.f-idea.on{background:rgba(170,255,0,.1);border-color:var(--acc3);color:var(--acc3);}
+.fb-filter-btn.f-other.on{background:rgba(255,136,0,.1);border-color:var(--warn);color:var(--warn);}
+.fb-card{background:var(--s1);border:1px solid var(--b0);border-radius:4px;padding:16px;
+  margin-bottom:10px;transition:border-color .2s;position:relative;}
+.fb-card:hover{border-color:var(--b2);}
+.fb-card.status-new{border-left:3px solid var(--acc2);}
+.fb-card.status-read{border-left:3px solid var(--dim);}
+.fb-card.status-resolved{border-left:3px solid var(--acc3);opacity:.6;}
+.fb-card-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.fb-type-badge{font-family:'Press Start 2P',monospace;font-size:7px;padding:4px 8px;
+  border-radius:3px;letter-spacing:1px;flex-shrink:0;}
+.fb-type-bug{background:rgba(255,51,85,.15);border:1px solid var(--red);color:var(--red);}
+.fb-type-feedback{background:rgba(0,245,255,.1);border:1px solid var(--acc);color:var(--acc);}
+.fb-type-idea{background:rgba(170,255,0,.1);border:1px solid var(--acc3);color:var(--acc3);}
+.fb-type-other{background:rgba(255,136,0,.1);border:1px solid var(--warn);color:var(--warn);}
+.fb-page-tag{font-size:10px;color:var(--dim);letter-spacing:1px;}
+.fb-ts{font-size:10px;color:var(--dim2);margin-left:auto;}
+.fb-message{font-size:13px;color:var(--tx);line-height:1.7;white-space:pre-wrap;
+  word-break:break-all;margin-bottom:12px;}
+.fb-meta{font-size:9px;color:var(--dim2);letter-spacing:1px;margin-bottom:10px;}
+.fb-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.fb-act-btn{font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 10px;
+  border-radius:3px;cursor:pointer;border:1px solid var(--b1);
+  color:var(--dim);background:transparent;transition:all .15s;letter-spacing:1px;}
+.fb-act-btn:hover{color:var(--acc);border-color:var(--acc);}
+.fb-act-btn.mark-read:hover{color:var(--acc3);border-color:var(--acc3);}
+.fb-act-btn.mark-resolved:hover{color:var(--acc3);border-color:var(--acc3);}
+.fb-act-btn.delete-fb:hover{color:var(--red);border-color:var(--red);}
+.fb-empty{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--dim);
+  text-align:center;padding:40px;letter-spacing:2px;line-height:2.4;}
+#fb-list{max-height:calc(100vh - 220px);overflow-y:auto;}
+#fb-list::-webkit-scrollbar{width:4px;}
+#fb-list::-webkit-scrollbar-thumb{background:rgba(0,245,255,.3);border-radius:2px;}
+.fb-stats-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.fb-stat{background:var(--s1);border:1px solid var(--b0);border-radius:4px;
+  padding:12px 16px;flex:1;min-width:80px;text-align:center;}
+.fb-stat-n{font-family:'Press Start 2P',monospace;font-size:18px;color:var(--acc3);}
+.fb-stat-l{font-size:9px;color:var(--dim);letter-spacing:2px;margin-top:4px;}
+/* ══ END FEEDBACK ══ */
 /* ══ LOGIN ══ */
 #loginWrap{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
   justify-content:center;z-index:200;background:var(--bg)}
@@ -369,6 +417,10 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
       <div class="nav-item" onclick="gotoPanel('log',this)">
         <span class="nav-icon">📋</span><span>Event Log</span>
       </div>
+      <div class="nav-item" onclick="gotoPanel('feedback',this)" id="nav-feedback">
+        <span class="nav-icon">📝</span><span>Feedback</span>
+        <span class="nav-badge" id="fbNavBadge" style="display:none">0</span>
+      </div>
       <div class="nav-item" onclick="gotoPanel('settings',this)">
         <span class="nav-icon">⚙</span><span>Settings</span>
       </div>
@@ -513,6 +565,38 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
           <button class="sbtn sbtn-red" onclick="clearAllLogs()">🗑 全削除</button>
         </div>
         <div class="log-box" id="logBox"></div>
+      </div>
+
+      <!-- ── FEEDBACK ── -->
+      <div class="panel" id="panel-feedback">
+        <div class="ph">
+          <div class="ph-left">
+            <div class="ph-title">FEEDBACK & BUG REPORTS</div>
+            <div class="ph-sub">ユーザーからのバグ報告・フィードバック一覧</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="sbtn" onclick="refreshFeedback()">🔄 更新</button>
+            <button class="sbtn sbtn-red" onclick="deleteResolvedFeedback()">🗑 解決済み削除</button>
+          </div>
+        </div>
+        <!-- Stats -->
+        <div class="fb-stats-row">
+          <div class="fb-stat"><div class="fb-stat-n" id="fb-st-all">0</div><div class="fb-stat-l">ALL</div></div>
+          <div class="fb-stat"><div class="fb-stat-n" id="fb-st-new" style="color:var(--acc2)">0</div><div class="fb-stat-l">NEW</div></div>
+          <div class="fb-stat"><div class="fb-stat-n" id="fb-st-bug" style="color:var(--red)">0</div><div class="fb-stat-l">BUG</div></div>
+          <div class="fb-stat"><div class="fb-stat-n" id="fb-st-idea" style="color:var(--acc3)">0</div><div class="fb-stat-l">IDEA</div></div>
+        </div>
+        <!-- Filters -->
+        <div class="fb-filter-row">
+          <button class="fb-filter-btn on" data-filter="all" onclick="setFbFilter('all',this)">ALL</button>
+          <button class="fb-filter-btn f-bug" data-filter="bug" onclick="setFbFilter('bug',this)">🐛 BUG</button>
+          <button class="fb-filter-btn f-feedback" data-filter="feedback" onclick="setFbFilter('feedback',this)">💬 FEEDBACK</button>
+          <button class="fb-filter-btn f-idea" data-filter="idea" onclick="setFbFilter('idea',this)">💡 IDEA</button>
+          <button class="fb-filter-btn f-other" data-filter="other" onclick="setFbFilter('other',this)">📌 OTHER</button>
+          <button class="fb-filter-btn" data-filter="new" onclick="setFbFilter('new',this)" style="margin-left:auto;border-color:var(--acc2);color:var(--acc2);">⚡ 未読のみ</button>
+        </div>
+        <!-- List -->
+        <div id="fb-list"><div class="fb-empty">読み込み中...</div></div>
       </div>
 
       <!-- ── SETTINGS ── -->
@@ -725,6 +809,7 @@ function initAdmin(){
   startRoomsListener();
   startLogsListener();
   startBotConfigListener();
+  startFeedbackListener();
   startClock();
 }
 
@@ -1162,6 +1247,149 @@ function showToast(msg,type=''){
 
 // Expose for inline use
 
+
+// ══════════════════════════════════════════════════════
+// FEEDBACK PANEL
+// ══════════════════════════════════════════════════════
+let _fbData = {};       // id -> report object
+let _fbFilter = 'all';
+let _fbListener = null;
+
+function startFeedbackListener(){
+  if(_fbListener){ try{_fbListener();}catch(e){} }
+  _fbListener = onValue(ref(db,'reports'), snap => {
+    _fbData = snap.val() || {};
+    updateFbStats();
+    renderFbList();
+    updateFbNavBadge();
+  });
+}
+
+function updateFbNavBadge(){
+  const newCount = Object.values(_fbData).filter(r=>r&&r.status==='new').length;
+  const badge = document.getElementById('fbNavBadge');
+  if(!badge) return;
+  if(newCount > 0){
+    badge.textContent = newCount > 99 ? '99+' : newCount;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function updateFbStats(){
+  const all = Object.values(_fbData).filter(Boolean);
+  const setN = (id, n) => { const el=document.getElementById(id); if(el) el.textContent=n; };
+  setN('fb-st-all',  all.length);
+  setN('fb-st-new',  all.filter(r=>r.status==='new').length);
+  setN('fb-st-bug',  all.filter(r=>r.type==='bug').length);
+  setN('fb-st-idea', all.filter(r=>r.type==='idea').length);
+}
+
+window.setFbFilter = (filter, el) => {
+  _fbFilter = filter;
+  document.querySelectorAll('.fb-filter-btn').forEach(b=>{
+    b.classList.toggle('on', b.dataset.filter===filter);
+  });
+  renderFbList();
+};
+
+function renderFbList(){
+  const list = document.getElementById('fb-list');
+  if(!list) return;
+
+  let entries = Object.entries(_fbData)
+    .filter(([,r])=>r && r.message)
+    .sort(([,a],[,b])=>(b.ts||0)-(a.ts||0)); // newest first
+
+  // Apply filter
+  if(_fbFilter === 'new'){
+    entries = entries.filter(([,r])=>r.status==='new');
+  } else if(_fbFilter !== 'all'){
+    entries = entries.filter(([,r])=>r.type===_fbFilter);
+  }
+
+  if(!entries.length){
+    list.innerHTML = '<div class="fb-empty">該当するフィードバックがありません</div>';
+    return;
+  }
+
+  const TYPE_META = {
+    bug:      {label:'🐛 BUG',      cls:'fb-type-bug'},
+    feedback: {label:'💬 FEEDBACK', cls:'fb-type-feedback'},
+    idea:     {label:'💡 IDEA',     cls:'fb-type-idea'},
+    other:    {label:'📌 OTHER',    cls:'fb-type-other'},
+  };
+  const STATUS_LABEL = {new:'⚡ NEW', read:'READ', resolved:'✓ RESOLVED'};
+
+  list.innerHTML = entries.map(([id, r]) => {
+    const tm = TYPE_META[r.type] || {label:'?', cls:'fb-type-other'};
+    const ts = r.ts ? new Date(r.ts).toLocaleString('ja-JP') : '—';
+    const statusLbl = STATUS_LABEL[r.status] || r.status;
+    const escapedMsg = r.message
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const ua = (r.ua||'').slice(0,80);
+    return `<div class="fb-card status-${r.status||'new'}" id="fbc-${id}">
+      <div class="fb-card-header">
+        <span class="fb-type-badge ${tm.cls}">${tm.label}</span>
+        <span class="fb-page-tag">${esc(r.page||'?')}</span>
+        <span style="font-size:9px;padding:3px 7px;border-radius:2px;border:1px solid;
+          color:${r.status==='new'?'var(--acc2)':r.status==='resolved'?'var(--acc3)':'var(--dim)'};
+          border-color:${r.status==='new'?'var(--acc2)':r.status==='resolved'?'var(--acc3)':'var(--dim)'};">
+          ${statusLbl}</span>
+        <span class="fb-ts">${ts}</span>
+      </div>
+      <div class="fb-message">${escapedMsg}</div>
+      <div class="fb-meta">
+        VER ${esc(r.version||'?')} &nbsp;|&nbsp; ${esc(r.gameMode||'?')} &nbsp;|&nbsp;
+        ${ua ? esc(ua)+'...' : '—'}
+      </div>
+      <div class="fb-actions">
+        ${r.status!=='read'&&r.status!=='resolved'?
+          `<button class="fb-act-btn mark-read" onclick="setFbStatus('${id}','read')">既読にする</button>`:''}
+        ${r.status!=='resolved'?
+          `<button class="fb-act-btn mark-resolved" onclick="setFbStatus('${id}','resolved')">✓ 解決済み</button>`:''}
+        <button class="fb-act-btn delete-fb" onclick="deleteFb('${id}')">🗑 削除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.setFbStatus = async (id, status) => {
+  try{
+    await update(ref(db,'reports/'+id), {status});
+    addLog(`フィードバック #${id.slice(-6)} → ${status}`, 'info');
+    persistLog(`Feedback ${id.slice(-6)} marked as ${status}`, 'admin', {id, status});
+  }catch(e){ showToast('更新失敗: '+e.message,'err'); }
+};
+
+window.deleteFb = async (id) => {
+  if(!confirm('このフィードバックを削除しますか？')) return;
+  try{
+    await remove(ref(db,'reports/'+id));
+    addLog(`フィードバック #${id.slice(-6)} 削除`, 'warn');
+  }catch(e){ showToast('削除失敗: '+e.message,'err'); }
+};
+
+window.deleteResolvedFeedback = async () => {
+  const resolved = Object.entries(_fbData).filter(([,r])=>r&&r.status==='resolved');
+  if(!resolved.length){ showToast('解決済みのフィードバックがありません','ok'); return; }
+  if(!confirm(`解決済み ${resolved.length} 件を削除しますか？`)) return;
+  await Promise.all(resolved.map(([id])=>remove(ref(db,'reports/'+id)).catch(()=>{})));
+  addLog(`解決済みフィードバック ${resolved.length} 件一括削除`, 'warn');
+  showToast(`${resolved.length} 件削除しました`, 'ok');
+};
+
+window.refreshFeedback = () => {
+  get(ref(db,'reports')).then(snap=>{
+    _fbData=snap.val()||{};
+    updateFbStats();renderFbList();updateFbNavBadge();
+    showToast('更新しました','ok');
+  });
+};
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// ══════════════════════════════════════════════════════
 // ═══ TETRIS FALLING BG ═══
 (function(){
   const canvas=document.getElementById('bgCanvas');
