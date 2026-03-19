@@ -1526,6 +1526,8 @@
       <div class="px-corner bl"></div>
       <div class="px-corner br"></div>
       <div class="card-title">▶ PLAYER SETUP</div>
+      <!-- AUTH WIDGET -->
+      <div id="authWidget"></div>
       <div class="input-group">
         <label>PLAYER NAME</label>
         <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
@@ -1802,6 +1804,10 @@
     import { getDatabase, ref, set, get, onValue, off, update, remove, onDisconnect, runTransaction }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     import { APP_VERSION } from './config.js';
+    import { mountAuthWidget, getCurrentUser } from './auth.js';
+
+    // ── 認証ウィジェット（プレイヤー名入力欄に連携） ──
+    mountAuthWidget('authWidget', { nameInputId: 'playerName' });
 
     const fbApp = initializeApp({ apiKey: "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw", authDomain: "tetris-online-9c827.firebaseapp.com", databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com", projectId: "tetris-online-9c827", storageBucket: "tetris-online-9c827.firebasestorage.app", messagingSenderId: "1045054992314", appId: "1:1045054992314:web:7fea20b9be543d7cab3783" });
     const db = getDatabase(fbApp);
@@ -2088,6 +2094,10 @@
     window.quickMatch = async () => {
       if (_qmState) return;
       const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
+      // ランキング参加にはログインが必要（クイックマッチは続行可）
+      if (!getCurrentUser()) {
+        showToast('ゲスト参加中：ランキングは記録されません', 'warn');
+      }
       _qmState = 'searching';
       _qmIsBot = false;
       showScreen('matchingScreen');
@@ -2511,6 +2521,10 @@
 
     // ── CREATE ROOM ──
     window.createRoom = async () => {
+      if (!getCurrentUser()) {
+        showToast('ルーム作成にはGoogleアカウントでのログインが必要です', 'warn');
+        return;
+      }
       const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
       mySlot = 'p1'; roomCode = genCode(); endedOnce = false;
       const rRef = ref(db, 'multi/' + roomCode);
@@ -2551,6 +2565,10 @@
 
     // ── JOIN ROOM ──
     window.joinRoom = async () => {
+      if (!getCurrentUser()) {
+        showToast('ルーム参加にはGoogleアカウントでのログインが必要です', 'warn');
+        return;
+      }
       const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
       if (code.length !== 4 || !/^[0-9]{4}$/.test(code)) { showToast('4桁の数字コードを入力してください', 'warn'); return; }
       const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();

@@ -1004,6 +1004,8 @@
     <div class="subtitle">40 LINES ATTACK</div>
     <div class="card">
       <div class="card-title">▶ PLAYER SETUP</div>
+      <!-- AUTH WIDGET -->
+      <div id="authWidget"></div>
       <div class="input-group">
         <label>PLAYER NAME</label>
         <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
@@ -1482,15 +1484,19 @@
           setPB(finalMs);
           pbNew.innerHTML = '<div class="pb-badge">🏅 NEW PERSONAL BEST!</div>';
         }
-        // Upload to Firebase
-        try {
-          const rank = await uploadScore(_playerName, finalMs);
-          let cls = 'ranked', txt = `GLOBAL #${rank}`;
-          if (rank === 1) cls = 'gold', txt = '🥇 WORLD #1';
-          else if (rank === 2) cls = 'silver', txt = '🥈 WORLD #2';
-          else if (rank === 3) cls = 'bronze', txt = '🥉 WORLD #3';
-          rankBadge.innerHTML = `<div class="result-rank-badge ${cls}">${txt}</div>`;
-        } catch (e) { rankBadge.innerHTML = '<div style="font-size:9px;color:var(--dim)">オフライン — スコア未保存</div>'; }
+        // Upload to Firebase (ログイン済みユーザーのみ)
+        if (!window._authUser) {
+          rankBadge.innerHTML = '<div style="font-size:9px;color:var(--warn);letter-spacing:1px;line-height:1.7;">⚠ ランキングに参加するには<br>Googleアカウントでログインしてください</div>';
+        } else {
+          try {
+            const rank = await uploadScore(_playerName, finalMs);
+            let cls = 'ranked', txt = `GLOBAL #${rank}`;
+            if (rank === 1) cls = 'gold', txt = '🥇 WORLD #1';
+            else if (rank === 2) cls = 'silver', txt = '🥈 WORLD #2';
+            else if (rank === 3) cls = 'bronze', txt = '🥉 WORLD #3';
+            rankBadge.innerHTML = `<div class="result-rank-badge ${cls}">${txt}</div>`;
+          } catch (e) { rankBadge.innerHTML = '<div style="font-size:9px;color:var(--dim)">オフライン — スコア未保存</div>'; }
+        }
       }
 
       document.getElementById('resultOverlay').classList.add('show');
@@ -1660,6 +1666,12 @@
         setTimeout(next, 55 + Math.random() * 75);
       }; setTimeout(next, 200);
     })();
+
+    // ── Auth ウィジェット初期化（dynamic import でモジュールを読み込み） ──
+    import('./auth.js').then(function(auth) {
+      auth.mountAuthWidget('authWidget', { nameInputId: 'playerName' });
+      auth.onAuthReady(function(user) { window._authUser = user || null; });
+    });
   </script>
 </body>
 

@@ -710,6 +710,8 @@
       <div class="card-corner tr"></div>
       <div class="card-corner bl"></div>
       <div class="card-corner br"></div>
+      <!-- AUTH WIDGET -->
+      <div id="authWidget" style="margin-bottom:4px;"></div>
       <div class="menu">
         <a href="sprint.html" class="menu-btn primary"
           style="background:linear-gradient(135deg,#44aa00,#aaff00);color:#000;box-shadow:0 5px 0 rgba(20,60,0,.9);"
@@ -865,6 +867,10 @@
 
   <script type="module">
     import { APP_VERSION, UPDATE_LOG } from './config.js';
+    import { mountAuthWidget } from './auth.js';
+
+    // マウント auth ウィジェット（ログイン/ログアウトのみ。名前連携なし）
+    mountAuthWidget('authWidget');
 
     const COLORS = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800' };
     const CNAMES = Object.keys(COLORS);
