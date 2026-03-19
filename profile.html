@@ -233,6 +233,44 @@
     }
     .wr-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--acc3), var(--acc)); transition: width 1s ease; }
 
+    /* ── USERNAME EDIT ── */
+    .prof-name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .edit-name-btn {
+      background: transparent; border: 1px solid rgba(0,245,255,.3);
+      color: var(--dim); border-radius: 3px; padding: 3px 8px;
+      font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 1px;
+      cursor: pointer; transition: all .2s; flex-shrink: 0;
+    }
+    .edit-name-btn:hover { border-color: var(--acc); color: var(--acc); }
+    .name-edit-row {
+      display: none; align-items: center; gap: 8px; margin-bottom: 6px;
+    }
+    .name-edit-row.show { display: flex; }
+    .name-input {
+      background: rgba(0,245,255,.05); border: 1px solid rgba(0,245,255,.3);
+      color: var(--tx); font-family: 'Orbitron', monospace; font-size: 13px;
+      font-weight: 700; letter-spacing: 1px; padding: 6px 10px; border-radius: 3px;
+      outline: none; width: 180px; transition: border-color .2s;
+    }
+    .name-input:focus { border-color: var(--acc); }
+    .name-save-btn {
+      background: var(--acc); color: #000; border: none; border-radius: 3px;
+      font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+      letter-spacing: 1px; padding: 7px 12px; cursor: pointer;
+      transition: opacity .15s, transform .12s; flex-shrink: 0;
+    }
+    .name-save-btn:hover { opacity: .85; transform: translateY(-1px); }
+    .name-save-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+    .name-cancel-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--dim);
+      font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 1px;
+      padding: 7px 10px; border-radius: 3px; cursor: pointer; transition: all .2s; flex-shrink: 0;
+    }
+    .name-cancel-btn:hover { border-color: var(--acc2); color: var(--acc2); }
+    .name-msg { font-size: 9px; letter-spacing: 1px; margin-top: 4px; min-height: 14px; }
+    .name-msg.ok  { color: var(--acc3); }
+    .name-msg.err { color: var(--acc2); }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 600px) {
       .profile-header { flex-direction: column; align-items: flex-start; gap: 14px; }
@@ -364,12 +402,21 @@
       const createdAt = profile?.createdAt ? fmtDateFull(profile.createdAt) : '---';
       const lastSeen  = profile?.lastSeen  ? fmtDateFull(profile.lastSeen)  : '---';
       const avatarHtml = photo
-        ? `<img class="prof-avatar" src="${photo}" alt="">`
-        : `<div class="prof-initials">${name.slice(0,2).toUpperCase()}</div>`;
+        ? `<img class="prof-avatar" src="${photo}" alt="" id="profAvatarImg">`
+        : `<div class="prof-initials" id="profInitials">${name.slice(0,2).toUpperCase()}</div>`;
       el.innerHTML = `
         ${avatarHtml}
         <div class="prof-info">
-          <div class="prof-name">${name}</div>
+          <div class="prof-name-row">
+            <div class="prof-name" id="profNameDisplay">${name}</div>
+            <button class="edit-name-btn" id="editNameBtn" title="ユーザー名を変更">✎ 編集</button>
+          </div>
+          <div class="name-edit-row" id="nameEditRow">
+            <input class="name-input" id="nameInput" maxlength="20" value="${name}" autocomplete="off" spellcheck="false">
+            <button class="name-save-btn" id="nameSaveBtn">保存</button>
+            <button class="name-cancel-btn" id="nameCancelBtn">×</button>
+          </div>
+          <div class="name-msg" id="nameMsg"></div>
           <div class="prof-email">${email}</div>
           <div class="prof-meta">
             <div class="prof-meta-item">登録日 <span>${createdAt}</span></div>
@@ -532,6 +579,81 @@
       });
     }
 
+    function wireNameEdit(user) {
+      const editBtn    = document.getElementById('editNameBtn');
+      const editRow    = document.getElementById('nameEditRow');
+      const nameInput  = document.getElementById('nameInput');
+      const saveBtn    = document.getElementById('nameSaveBtn');
+      const cancelBtn  = document.getElementById('nameCancelBtn');
+      const nameDisp   = document.getElementById('profNameDisplay');
+      const initials   = document.getElementById('profInitials');
+      const msg        = document.getElementById('nameMsg');
+      if (!editBtn) return;
+
+      // 編集モードを開く
+      editBtn.addEventListener('click', () => {
+        editRow.classList.add('show');
+        editBtn.style.display = 'none';
+        nameInput.focus();
+        nameInput.select();
+        msg.textContent = '';
+        msg.className = 'name-msg';
+      });
+
+      // キャンセル
+      cancelBtn.addEventListener('click', () => {
+        editRow.classList.remove('show');
+        editBtn.style.display = '';
+        nameInput.value = nameDisp.textContent;
+        msg.textContent = '';
+        msg.className = 'name-msg';
+      });
+
+      // Enterキーで保存
+      nameInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') saveBtn.click();
+        if (e.key === 'Escape') cancelBtn.click();
+      });
+
+      // 保存
+      saveBtn.addEventListener('click', async () => {
+        const raw = nameInput.value.trim();
+        if (!raw) { msg.textContent = '⚠ 名前を入力してください'; msg.className = 'name-msg err'; return; }
+        if (raw.length > 20) { msg.textContent = '⚠ 20文字以内で入力してください'; msg.className = 'name-msg err'; return; }
+        if (raw === nameDisp.textContent) { cancelBtn.click(); return; }
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = '保存中...';
+        msg.textContent = '';
+        msg.className = 'name-msg';
+
+        try {
+          // Firestoreのプロフィールを更新
+          const { getFirestore, doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+          const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+          const fbCfg = { apiKey:"AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw", authDomain:"tetris-online-9c827.firebaseapp.com", projectId:"tetris-online-9c827" };
+          const app = getApps().length ? getApps()[0] : initializeApp(fbCfg);
+          const fs = getFirestore(app);
+          await updateDoc(doc(fs, 'users', user.uid), { displayName: raw });
+
+          // 表示を更新
+          nameDisp.textContent = raw;
+          if (initials) initials.textContent = raw.slice(0, 2).toUpperCase();
+          editRow.classList.remove('show');
+          editBtn.style.display = '';
+          msg.textContent = '✓ ユーザー名を更新しました';
+          msg.className = 'name-msg ok';
+          setTimeout(() => { msg.textContent = ''; msg.className = 'name-msg'; }, 3000);
+        } catch(e) {
+          msg.textContent = '⚠ 更新に失敗しました: ' + (e.message || 'エラー');
+          msg.className = 'name-msg err';
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.textContent = '保存';
+        }
+      });
+    }
+
     async function loadProfile(user) {
       mainContent.style.display = 'block';
       stateMsg.innerHTML = '';
@@ -549,6 +671,9 @@
       renderStats(profile, multiHistory, sprintHistory);
       renderMultiHistory(multiHistory);
       renderSprintHistory(sprintHistory);
+
+      // ユーザー名編集ロジックをセット
+      wireNameEdit(user);
 
       document.getElementById('logoutBtnProf')?.addEventListener('click', async () => {
         await signOut();
