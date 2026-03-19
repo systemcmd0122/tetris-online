@@ -872,7 +872,7 @@
 
   <script type="module">
     import { APP_VERSION, UPDATE_LOG } from './config.js';
-    import { mountAuthWidget, onAuthReady } from './auth.js';
+    import { mountAuthWidget, onAuthReady, getCachedProfile } from './auth.js';
 
     // マウント auth ウィジェット（ログイン/ログアウトのみ。名前連携なし）
     mountAuthWidget('authWidget');
@@ -884,7 +884,7 @@
       if (!btn) return;
       if (user) {
         btn.style.display = '';
-        const label = (user.displayName || 'PLAYER').slice(0, 12);
+        const label = (getCachedProfile()?.displayName || user.displayName || 'PLAYER').slice(0, 12);
         name.textContent = label + ' のプロフィール';
       } else {
         btn.style.display = 'none';
