@@ -1525,7 +1525,22 @@
         for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++) { const cell = this.board[r + 2][c]; if (cell) this._dc(ctx, c, r, cell === 'G' ? '#888888' : COLORS[cell]); }
         if (!this.waiting) {
           const gy = this.ghostY();
-          this.mat().forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = gy + r; if (py >= 0) { ctx.fillStyle = COLORS.GHOST; ctx.fillRect(c * CELL + this.current.x * CELL + 1, py * CELL + 1, CELL - 2, CELL - 2); } } }));
+          const pColor = COLORS[this.current.name];
+          this.mat().forEach((row, r) => row.forEach((cell, c) => {
+            if (cell) {
+              const py = gy + r;
+              if (py >= 0) {
+                const bx = (this.current.x + c) * CELL, by = py * CELL;
+                ctx.fillStyle = pColor + '59';
+                ctx.fillRect(bx + 1, by + 1, CELL - 2, CELL - 2);
+                ctx.strokeStyle = pColor + 'd9';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(bx + 1.5, by + 1.5, CELL - 3, CELL - 3);
+                ctx.fillStyle = 'rgba(255,255,255,0.18)';
+                ctx.fillRect(bx + 2, by + 2, CELL - 4, 2);
+              }
+            }
+          }));
           if (this.onGnd && this.lockTm !== null) { const pct = 1 - Math.min(1, (performance.now() - this.lockTm) / LOCK_DELAY); const cells = this.cells(); const maxY = Math.max(...cells.map(c => c[1])); cells.filter(([, cy]) => cy === maxY && cy >= 0).forEach(([cx, cy]) => { ctx.fillStyle = `rgba(255,255,255,${0.4 * pct})`; ctx.fillRect(cx * CELL + 1, cy * CELL + CELL - 3, Math.floor((CELL - 2) * pct), 2); }); }
           this.mat().forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = this.current.y + r; if (py >= 0) this._dc(ctx, this.current.x + c, py, COLORS[this.current.name]); } }));
         }
@@ -1979,11 +1994,12 @@
           const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
           const { getDatabase, ref, push } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
           const app = getApps().length ? getApps()[0] : initializeApp({ apiKey: "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw", authDomain: "tetris-online-9c827.firebaseapp.com", databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com", projectId: "tetris-online-9c827", storageBucket: "tetris-online-9c827.firebasestorage.app", messagingSenderId: "1045054992314", appId: "1:1045054992314:web:7fea20b9be543d7cab3783" });
-          const fdb = getDatabase(app);
-          await push(ref(fdb, 'reports'), {
+          const { getFirestore, collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+          const fs = getFirestore(app);
+          await addDoc(collection(fs, 'reports'), {
             type: _fbType, message: text, page: 'ボット対戦',
             version: APP_VERSION, ua: navigator.userAgent.slice(0, 200),
-            ts: Date.now(), status: 'new', gameMode: 'battle',
+            ts: serverTimestamp(), status: 'new', gameMode: 'battle',
           });
           document.getElementById('fb-body').style.display = 'none';
           document.getElementById('fb-done').style.display = '';

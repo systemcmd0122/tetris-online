@@ -1004,8 +1004,6 @@
     <div class="subtitle">40 LINES ATTACK</div>
     <div class="card">
       <div class="card-title">▶ PLAYER SETUP</div>
-      <!-- AUTH WIDGET -->
-      <div id="authWidget"></div>
       <div class="input-group">
         <label>PLAYER NAME</label>
         <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
@@ -1347,7 +1345,22 @@
         for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++) { const cell = this.board[r + 2][c]; if (cell) this._dc(ctx, c, r, COLORS[cell] || '#888'); }
         if (!this.waiting) {
           const gy = this.ghostY();
-          this.mat().forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = gy + r; if (py >= 0) { ctx.fillStyle = COLORS.GHOST; ctx.fillRect(c * CELL + this.current.x * CELL + 1, py * CELL + 1, CELL - 2, CELL - 2); } } }));
+          const pColor = COLORS[this.current.name];
+          this.mat().forEach((row, r) => row.forEach((cell, c) => {
+            if (cell) {
+              const py = gy + r;
+              if (py >= 0) {
+                const bx = (this.current.x + c) * CELL, by = py * CELL;
+                ctx.fillStyle = pColor + '59';
+                ctx.fillRect(bx + 1, by + 1, CELL - 2, CELL - 2);
+                ctx.strokeStyle = pColor + 'd9';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(bx + 1.5, by + 1.5, CELL - 3, CELL - 3);
+                ctx.fillStyle = 'rgba(255,255,255,0.18)';
+                ctx.fillRect(bx + 2, by + 2, CELL - 4, 2);
+              }
+            }
+          }));
           if (this.onGnd && this.lockTm !== null) {
             const pct = 1 - Math.min(1, (performance.now() - this.lockTm) / LOCK_DELAY);
             const cells = this.cells(), maxY = Math.max(...cells.map(c => c[1]));
@@ -1484,28 +1497,15 @@
           setPB(finalMs);
           pbNew.innerHTML = '<div class="pb-badge">🏅 NEW PERSONAL BEST!</div>';
         }
-        // Upload to Firebase (ログイン済みユーザーのみ)
-        if (!window._authUser) {
-          rankBadge.innerHTML = '<div style="font-size:9px;color:var(--warn);letter-spacing:1px;line-height:1.7;">⚠ ランキングに参加するには<br>Googleアカウントでログインしてください</div>';
-        } else {
-          try {
-            const rank = await uploadScore(_playerName, finalMs);
-            let cls = 'ranked', txt = `GLOBAL #${rank}`;
-            if (rank === 1) cls = 'gold', txt = '🥇 WORLD #1';
-            else if (rank === 2) cls = 'silver', txt = '🥈 WORLD #2';
-            else if (rank === 3) cls = 'bronze', txt = '🥉 WORLD #3';
-            rankBadge.innerHTML = `<div class="result-rank-badge ${cls}">${txt}</div>`;
-            // ── プロフィール履歴に保存 ──
-            import('./db.js').then(function(db) {
-              db.saveSprintResult(window._authUser.uid, {
-                ms: finalMs,
-                lines: game ? game.lines : 40,
-                score: game ? game.score : 0,
-                globalRank: rank <= 50 ? rank : null,
-              }).catch(function() {});
-            }).catch(function() {});
-          } catch (e) { rankBadge.innerHTML = '<div style="font-size:9px;color:var(--dim)">オフライン — スコア未保存</div>'; }
-        }
+        // Upload to Firebase
+        try {
+          const rank = await uploadScore(_playerName, finalMs);
+          let cls = 'ranked', txt = `GLOBAL #${rank}`;
+          if (rank === 1) cls = 'gold', txt = '🥇 WORLD #1';
+          else if (rank === 2) cls = 'silver', txt = '🥈 WORLD #2';
+          else if (rank === 3) cls = 'bronze', txt = '🥉 WORLD #3';
+          rankBadge.innerHTML = `<div class="result-rank-badge ${cls}">${txt}</div>`;
+        } catch (e) { rankBadge.innerHTML = '<div style="font-size:9px;color:var(--dim)">オフライン — スコア未保存</div>'; }
       }
 
       document.getElementById('resultOverlay').classList.add('show');
@@ -1675,20 +1675,6 @@
         setTimeout(next, 55 + Math.random() * 75);
       }; setTimeout(next, 200);
     })();
-
-    // ── Auth ウィジェット初期化（dynamic import でモジュールを読み込み） ──
-    import('./auth.js').then(function(auth) {
-      auth.mountAuthWidget('authWidget', { nameInputId: 'playerName' });
-      auth.onAuthReady(function(user) {
-        window._authUser = user || null;
-        // 初回ログイン時にプロフィールを作成
-        if (user) {
-          import('./db.js').then(function(db) {
-            db.upsertUserProfile(user).catch(function() {});
-          }).catch(function() {});
-        }
-      });
-    });
   </script>
 </body>
 

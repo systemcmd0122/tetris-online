@@ -1526,8 +1526,6 @@
       <div class="px-corner bl"></div>
       <div class="px-corner br"></div>
       <div class="card-title">▶ PLAYER SETUP</div>
-      <!-- AUTH WIDGET -->
-      <div id="authWidget"></div>
       <div class="input-group">
         <label>PLAYER NAME</label>
         <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
@@ -1804,22 +1802,6 @@
     import { getDatabase, ref, set, get, onValue, off, update, remove, onDisconnect, runTransaction }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     import { APP_VERSION } from './config.js';
-    import { mountAuthWidget, getCurrentUser, onAuthReady } from './auth.js';
-
-    // ── 認証ウィジェット（プレイヤー名入力欄に連携） ──
-    mountAuthWidget('authWidget', { nameInputId: 'playerName' });
-
-    // 通常スクリプトから参照できるよう window に認証ユーザーを公開
-    onAuthReady(function(user) { window._multiAuthUser = user || null; });
-
-    // ── upsertUserProfile: 初回ログイン時にプロフィールを作成 ──
-    onAuthReady(function(user) {
-      if (user) {
-        import('./db.js').then(function(db) {
-          db.upsertUserProfile(user).catch(function() {});
-        }).catch(function() {});
-      }
-    });
 
     const fbApp = initializeApp({ apiKey: "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw", authDomain: "tetris-online-9c827.firebaseapp.com", databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com", projectId: "tetris-online-9c827", storageBucket: "tetris-online-9c827.firebasestorage.app", messagingSenderId: "1045054992314", appId: "1:1045054992314:web:7fea20b9be543d7cab3783" });
     const db = getDatabase(fbApp);
@@ -1969,7 +1951,25 @@
         for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++) { const cell = this.board[r + 2][c]; if (cell) this._dc(ctx, c, r, cell === 'G' ? '#888888' : COLORS[cell]); }
         if (!this.waiting) {
           const gy = this.ghostY();
-          this.mat().forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = gy + r; if (py >= 0) { ctx.fillStyle = COLORS.GHOST; ctx.fillRect(c * CELL + this.current.x * CELL + 1, py * CELL + 1, CELL - 2, CELL - 2); } } }));
+          const pColor = COLORS[this.current.name];
+          this.mat().forEach((row, r) => row.forEach((cell, c) => {
+            if (cell) {
+              const py = gy + r;
+              if (py >= 0) {
+                const bx = (this.current.x + c) * CELL, by = py * CELL;
+                // 塗りつぶし（ピース色 35%）
+                ctx.fillStyle = pColor + '59';
+                ctx.fillRect(bx + 1, by + 1, CELL - 2, CELL - 2);
+                // 枠線（ピース色 85%）
+                ctx.strokeStyle = pColor + 'd9';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(bx + 1.5, by + 1.5, CELL - 3, CELL - 3);
+                // 上辺ハイライト
+                ctx.fillStyle = 'rgba(255,255,255,0.18)';
+                ctx.fillRect(bx + 2, by + 2, CELL - 4, 2);
+              }
+            }
+          }));
           this.mat().forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = this.current.y + r; if (py >= 0) this._dc(ctx, this.current.x + c, py, COLORS[this.current.name]); } }));
         }
         if (this.over) { ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(0, 0, this.cvs.width, this.cvs.height); ctx.fillStyle = '#ff0080'; ctx.font = 'bold 13px "Press Start 2P"'; ctx.textAlign = 'center'; ctx.fillText('GAME', this.cvs.width / 2, this.cvs.height / 2 - 14); ctx.fillText('OVER', this.cvs.width / 2, this.cvs.height / 2 + 10); }
@@ -1994,7 +1994,6 @@
     let roomCode = null, mySlot = null, game = null, gameRunning = false, animId = null;
     let _rematchActive = false; // 非ホストのリマッチ待機中フラグ
     let endedOnce = false, _maxPlayers = 3, totalPlayers = 0, myFinalRank = null, statAtkSent = 0;
-    let _activeSlots = []; // 対戦履歴用にスロット情報を保持
     const oppInfo = {};
     // ─── Firebase v10 リスナー管理 (unsubscribe関数を保持) ───────────────────
     const _subs = {};
@@ -2107,10 +2106,6 @@
     window.quickMatch = async () => {
       if (_qmState) return;
       const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
-      // ランキング参加にはログインが必要（クイックマッチは続行可）
-      if (!getCurrentUser()) {
-        showToast('ゲスト参加中：ランキングは記録されません', 'warn');
-      }
       _qmState = 'searching';
       _qmIsBot = false;
       showScreen('matchingScreen');
@@ -2466,7 +2461,6 @@
       const rs = document.getElementById('rematchStatus'); if (rs) rs.textContent = '';
     }
     function buildOppArea(activeSlots) {
-      _activeSlots = activeSlots; // 対戦履歴保存用に保持
       const area = document.getElementById('opponentsArea');
       area.innerHTML = '';
       Object.keys(oppInfo).forEach(k => delete oppInfo[k]);
@@ -2535,10 +2529,6 @@
 
     // ── CREATE ROOM ──
     window.createRoom = async () => {
-      if (!getCurrentUser()) {
-        showToast('ルーム作成にはGoogleアカウントでのログインが必要です', 'warn');
-        return;
-      }
       const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
       mySlot = 'p1'; roomCode = genCode(); endedOnce = false;
       const rRef = ref(db, 'multi/' + roomCode);
@@ -2579,10 +2569,6 @@
 
     // ── JOIN ROOM ──
     window.joinRoom = async () => {
-      if (!getCurrentUser()) {
-        showToast('ルーム参加にはGoogleアカウントでのログインが必要です', 'warn');
-        return;
-      }
       const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
       if (code.length !== 4 || !/^[0-9]{4}$/.test(code)) { showToast('4桁の数字コードを入力してください', 'warn'); return; }
       const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
@@ -2924,29 +2910,6 @@
       const rematchBtn = document.getElementById('rematchBtn');
       if (rematchBtn) rematchBtn.style.display = _qmIsBot ? 'none' : '';
       document.getElementById('resultOverlay').classList.add('show');
-
-      // ── 対戦履歴をFirestoreに保存（ログイン済みのみ） ──
-      const authUser = window._multiAuthUser;
-      if (authUser) {
-        const mode = _qmIsBot ? 'bot' : (roomCode ? 'room' : 'qm');
-        // 対戦相手の名前を DOM から収集
-        const oppNames = [];
-        if (_activeSlots.length) {
-          _activeSlots.filter(s => s !== mySlot).forEach(s => {
-            const el = document.getElementById('oppName_' + s);
-            if (el) {
-              const raw = el.textContent.replace(/\s*\(.*\)$/, '').trim();
-              if (raw && raw !== '...') oppNames.push(raw);
-            }
-          });
-        }
-        import('./db.js').then(function(db) {
-          db.saveMultiResult(authUser.uid, {
-            rank, totalPlayers, score, lines, level: lvl,
-            attackSent: statAtkSent, mode, opponentNames: oppNames,
-          }).catch(function() {});
-        }).catch(function() {});
-      }
     }
 
     // ── COUNTDOWN ──
@@ -3170,15 +3133,16 @@
         if (text.length < 5) { fbErr.textContent = '⚠ もう少し詳しく教えてください'; return; }
         btnSend.disabled = true; btnSend.textContent = '送信中...'; fbErr.textContent = '';
         try {
-          const report = {
+          const { getFirestore, collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+          const fs = getFirestore(fbApp);
+          await addDoc(collection(fs, 'reports'), {
             type: _fbType, message: text,
             page: 'マルチ対戦', version: APP_VERSION,
             ua: navigator.userAgent.slice(0, 200),
-            ts: Date.now(), status: 'new',
+            ts: serverTimestamp(), status: 'new',
             roomCode: roomCode || null,
             gameMode: 'multi',
-          };
-          await push(ref(db, 'reports'), report);
+          });
           fbBody.style.display = 'none'; fbDone.style.display = '';
         } catch (e) {
           fbErr.textContent = '⚠ 送信失敗: ' + (e.message || 'エラー');
