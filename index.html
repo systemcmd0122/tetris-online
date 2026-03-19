@@ -751,6 +751,11 @@
               <rect x="1" y="5.5" width="11" height="1.5" rx=".5" />
               <rect x="1" y="9" width="7" height="1.5" rx=".5" />
             </svg>更新履歴</span></a>
+        <a href="profile.html" id="profileMenuBtn" class="menu-btn secondary" style="display:none;background:rgba(0,245,255,0.05);color:var(--acc);border-color:var(--acc);" onclick="playSE('click')"><span class="btn-icon-wrap"><svg
+              width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="flex-shrink:0">
+              <circle cx="6.5" cy="4" r="2.5"/>
+              <path d="M1 12c0-3 2.5-5 5.5-5s5.5 2 5.5 5H1z"/>
+            </svg><span id="profileMenuName">マイプロフィール</span></span></a>
       </div>
       <!-- SOUND TOGGLE -->
       <div style="margin-top:18px;display:flex;align-items:center;justify-content:center;gap:10px;">
@@ -867,10 +872,24 @@
 
   <script type="module">
     import { APP_VERSION, UPDATE_LOG } from './config.js';
-    import { mountAuthWidget } from './auth.js';
+    import { mountAuthWidget, onAuthReady } from './auth.js';
 
     // マウント auth ウィジェット（ログイン/ログアウトのみ。名前連携なし）
     mountAuthWidget('authWidget');
+
+    // ログイン状態に応じてプロフィールボタンを表示
+    onAuthReady(user => {
+      const btn  = document.getElementById('profileMenuBtn');
+      const name = document.getElementById('profileMenuName');
+      if (!btn) return;
+      if (user) {
+        btn.style.display = '';
+        const label = (user.displayName || 'PLAYER').slice(0, 12);
+        name.textContent = label + ' のプロフィール';
+      } else {
+        btn.style.display = 'none';
+      }
+    });
 
     const COLORS = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800' };
     const CNAMES = Object.keys(COLORS);

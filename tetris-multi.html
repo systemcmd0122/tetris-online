@@ -1804,10 +1804,22 @@
     import { getDatabase, ref, set, get, onValue, off, update, remove, onDisconnect, runTransaction }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     import { APP_VERSION } from './config.js';
-    import { mountAuthWidget, getCurrentUser } from './auth.js';
+    import { mountAuthWidget, getCurrentUser, onAuthReady } from './auth.js';
 
     // ── 認証ウィジェット（プレイヤー名入力欄に連携） ──
     mountAuthWidget('authWidget', { nameInputId: 'playerName' });
+
+    // 通常スクリプトから参照できるよう window に認証ユーザーを公開
+    onAuthReady(function(user) { window._multiAuthUser = user || null; });
+
+    // ── upsertUserProfile: 初回ログイン時にプロフィールを作成 ──
+    onAuthReady(function(user) {
+      if (user) {
+        import('./db.js').then(function(db) {
+          db.upsertUserProfile(user).catch(function() {});
+        }).catch(function() {});
+      }
+    });
 
     const fbApp = initializeApp({ apiKey: "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw", authDomain: "tetris-online-9c827.firebaseapp.com", databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com", projectId: "tetris-online-9c827", storageBucket: "tetris-online-9c827.firebasestorage.app", messagingSenderId: "1045054992314", appId: "1:1045054992314:web:7fea20b9be543d7cab3783" });
     const db = getDatabase(fbApp);
@@ -1982,6 +1994,7 @@
     let roomCode = null, mySlot = null, game = null, gameRunning = false, animId = null;
     let _rematchActive = false; // 非ホストのリマッチ待機中フラグ
     let endedOnce = false, _maxPlayers = 3, totalPlayers = 0, myFinalRank = null, statAtkSent = 0;
+    let _activeSlots = []; // 対戦履歴用にスロット情報を保持
     const oppInfo = {};
     // ─── Firebase v10 リスナー管理 (unsubscribe関数を保持) ───────────────────
     const _subs = {};
@@ -2453,6 +2466,7 @@
       const rs = document.getElementById('rematchStatus'); if (rs) rs.textContent = '';
     }
     function buildOppArea(activeSlots) {
+      _activeSlots = activeSlots; // 対戦履歴保存用に保持
       const area = document.getElementById('opponentsArea');
       area.innerHTML = '';
       Object.keys(oppInfo).forEach(k => delete oppInfo[k]);
@@ -2910,6 +2924,29 @@
       const rematchBtn = document.getElementById('rematchBtn');
       if (rematchBtn) rematchBtn.style.display = _qmIsBot ? 'none' : '';
       document.getElementById('resultOverlay').classList.add('show');
+
+      // ── 対戦履歴をFirestoreに保存（ログイン済みのみ） ──
+      const authUser = window._multiAuthUser;
+      if (authUser) {
+        const mode = _qmIsBot ? 'bot' : (roomCode ? 'room' : 'qm');
+        // 対戦相手の名前を DOM から収集
+        const oppNames = [];
+        if (_activeSlots.length) {
+          _activeSlots.filter(s => s !== mySlot).forEach(s => {
+            const el = document.getElementById('oppName_' + s);
+            if (el) {
+              const raw = el.textContent.replace(/\s*\(.*\)$/, '').trim();
+              if (raw && raw !== '...') oppNames.push(raw);
+            }
+          });
+        }
+        import('./db.js').then(function(db) {
+          db.saveMultiResult(authUser.uid, {
+            rank, totalPlayers, score, lines, level: lvl,
+            attackSent: statAtkSent, mode, opponentNames: oppNames,
+          }).catch(function() {});
+        }).catch(function() {});
+      }
     }
 
     // ── COUNTDOWN ──

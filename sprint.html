@@ -1495,6 +1495,15 @@
             else if (rank === 2) cls = 'silver', txt = '🥈 WORLD #2';
             else if (rank === 3) cls = 'bronze', txt = '🥉 WORLD #3';
             rankBadge.innerHTML = `<div class="result-rank-badge ${cls}">${txt}</div>`;
+            // ── プロフィール履歴に保存 ──
+            import('./db.js').then(function(db) {
+              db.saveSprintResult(window._authUser.uid, {
+                ms: finalMs,
+                lines: game ? game.lines : 40,
+                score: game ? game.score : 0,
+                globalRank: rank <= 50 ? rank : null,
+              }).catch(function() {});
+            }).catch(function() {});
           } catch (e) { rankBadge.innerHTML = '<div style="font-size:9px;color:var(--dim)">オフライン — スコア未保存</div>'; }
         }
       }
@@ -1670,7 +1679,15 @@
     // ── Auth ウィジェット初期化（dynamic import でモジュールを読み込み） ──
     import('./auth.js').then(function(auth) {
       auth.mountAuthWidget('authWidget', { nameInputId: 'playerName' });
-      auth.onAuthReady(function(user) { window._authUser = user || null; });
+      auth.onAuthReady(function(user) {
+        window._authUser = user || null;
+        // 初回ログイン時にプロフィールを作成
+        if (user) {
+          import('./db.js').then(function(db) {
+            db.upsertUserProfile(user).catch(function() {});
+          }).catch(function() {});
+        }
+      });
     });
   </script>
 </body>
