@@ -104,7 +104,7 @@
     .stat-card.c-purple::before{background:#cc00ff} .stat-card.c-purple:hover{border-color:rgba(204,0,255,.4);box-shadow:0 4px 20px rgba(204,0,255,.1)} .stat-card.c-purple::after{background:radial-gradient(ellipse at 50% 100%,rgba(204,0,255,.06),transparent 70%)}
     .stat-val{font-family:'Press Start 2P',monospace;font-size:clamp(12px,3vw,20px);font-weight:900;letter-spacing:1px;margin-bottom:8px;position:relative;z-index:1}
     .stat-card.c-acc .stat-val{color:var(--acc)} .stat-card.c-acc2 .stat-val{color:var(--acc2)} .stat-card.c-acc3 .stat-val{color:var(--acc3)} .stat-card.c-acc4 .stat-val{color:var(--acc4)} .stat-card.c-gold .stat-val{color:var(--gold)} .stat-card.c-purple .stat-val{color:#cc00ff}
-    .stat-label{font-size:7px;color:var(--dim);letter-spacing:2px;position:relative;z-index:1;line-height:1.6}
+    .stat-label{font-size:7px;color:var(--dim);letter-spacing:1.5px;position:relative;z-index:1;line-height:1.6;word-break:keep-all;overflow-wrap:normal}
     .wr-bar-wrap{background:rgba(0,0,0,.4);border-radius:2px;height:4px;margin-top:8px;overflow:hidden;position:relative;z-index:1}
     .wr-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--acc3),var(--acc));transition:width 1.2s cubic-bezier(.34,1.56,.64,1)}
     .streak-flame{font-size:18px;display:block;margin-bottom:2px;filter:drop-shadow(0 0 6px #ff8800)}
@@ -337,7 +337,7 @@
       document.getElementById('statsGrid').innerHTML=`
         <div class="stat-card c-acc"><div class="stat-val" id="sc-games">0</div><div class="stat-label">MULTI GAMES</div></div>
         <div class="stat-card c-acc3"><div class="stat-val" id="sc-wr">0<span style="font-size:.5em">%</span></div><div class="stat-label">WIN RATE</div><div class="wr-bar-wrap"><div class="wr-bar" id="wrBar" style="width:0%"></div></div></div>
-        <div class="stat-card c-gold"><div class="stat-val" style="font-size:clamp(10px,2.2vw,16px)">${bs!=null?fmtTime(bs):'---'}</div><div class="stat-label">BEST SPRINT</div></div>
+        <div class="stat-card c-gold" style="display:flex;flex-direction:column;align-items:center;justify-content:center"><div class="stat-val" style="font-size:clamp(9px,2vw,15px);letter-spacing:0;white-space:nowrap">${bs!=null?fmtTime(bs):'--:--.--'}</div><div class="stat-label" style="white-space:nowrap;letter-spacing:1px">BEST SPRINT</div></div>
         <div class="stat-card c-acc2"><div class="stat-val" id="sc-lines">0</div><div class="stat-label">TOTAL LINES</div></div>
         <div class="stat-card c-acc4"><div class="stat-val" id="sc-sprint">0</div><div class="stat-label">SPRINT RUNS</div></div>
         <div class="stat-card c-purple">${flameHtml}<div class="stat-val" id="sc-streak">0</div><div class="stat-label">WIN STREAK</div></div>`;

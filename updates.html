@@ -149,6 +149,12 @@
 
   <script type="module">
     import { UPDATE_LOG } from './config.js';
+    import { mountAuthWidget } from './auth.js';
+    const wrap = document.createElement('div');
+    wrap.id = 'updAuthWidget';
+    wrap.style.cssText = 'position:fixed;top:10px;right:12px;z-index:100;min-width:160px;max-width:220px;';
+    document.body.appendChild(wrap);
+    mountAuthWidget('updAuthWidget');
 
     const container = document.getElementById('updateContainer');
     UPDATE_LOG.forEach(item => {
