@@ -90,7 +90,7 @@
     .logout-btn-sm:hover{border-color:var(--acc2);color:var(--acc2);background:rgba(255,0,128,.07)}
 
     /* STATS GRID */
-    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:24px}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:24px}
     .stat-card{background:var(--s0);border:1px solid var(--border);border-radius:6px;padding:18px 14px;text-align:center;position:relative;overflow:hidden;transition:border-color .25s,transform .2s,box-shadow .25s;cursor:default}
     .stat-card:hover{transform:translateY(-3px)}
     .stat-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;border-radius:0 0 6px 6px}
@@ -337,7 +337,7 @@
       document.getElementById('statsGrid').innerHTML=`
         <div class="stat-card c-acc"><div class="stat-val" id="sc-games">0</div><div class="stat-label">MULTI GAMES</div></div>
         <div class="stat-card c-acc3"><div class="stat-val" id="sc-wr">0<span style="font-size:.5em">%</span></div><div class="stat-label">WIN RATE</div><div class="wr-bar-wrap"><div class="wr-bar" id="wrBar" style="width:0%"></div></div></div>
-        <div class="stat-card c-gold" style="display:flex;flex-direction:column;align-items:center;justify-content:center"><div class="stat-val" style="font-size:clamp(9px,2vw,15px);letter-spacing:0;white-space:nowrap">${bs!=null?fmtTime(bs):'--:--.--'}</div><div class="stat-label" style="white-space:nowrap;letter-spacing:1px">BEST SPRINT</div></div>
+        <div class="stat-card c-gold" style="display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:14px 8px"><div class="stat-val" style="font-size:clamp(8px,1.4vw,12px);letter-spacing:-0.5px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:clip">${bs!=null?fmtTime(bs):'--:--.--'}</div><div class="stat-label" style="white-space:nowrap;letter-spacing:1px">BEST SPRINT</div></div>
         <div class="stat-card c-acc2"><div class="stat-val" id="sc-lines">0</div><div class="stat-label">TOTAL LINES</div></div>
         <div class="stat-card c-acc4"><div class="stat-val" id="sc-sprint">0</div><div class="stat-label">SPRINT RUNS</div></div>
         <div class="stat-card c-purple">${flameHtml}<div class="stat-val" id="sc-streak">0</div><div class="stat-label">WIN STREAK</div></div>`;

@@ -1381,7 +1381,33 @@
 
   <script type="module">
     import { APP_VERSION } from './config.js';
+    import { onAuthReady, getCachedProfile, mountAuthWidget } from './auth.js';
+    import { upsertUserProfile } from './db.js';
     document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
+
+    // ── AUTH WIDGET & NAME LOCK ──
+    mountAuthWidget('battleAuthWidget');
+    onAuthReady(async user => {
+      const inp = document.getElementById('playerName');
+      if (!inp) return;
+      if (user) {
+        await upsertUserProfile(user).catch(() => {});
+        const p = getCachedProfile();
+        const name = ((p?.displayName || user.displayName || user.email || 'PLAYER')
+          .trim().replace(/\//g, '_').slice(0, 12).toUpperCase() || 'PLAYER');
+        inp.value = name; inp.readOnly = true;
+        inp.style.opacity = '0.6'; inp.style.cursor = 'not-allowed';
+        inp.title = 'ログイン中はアカウント名が使用されます';
+      } else {
+        inp.readOnly = false; inp.style.opacity = ''; inp.style.cursor = ''; inp.title = '';
+      }
+    });
+
+    function _getBattlePlayerName() {
+      const inp = document.getElementById('playerName');
+      if (inp?.readOnly) return inp.value || 'PLAYER';
+      return (inp?.value.trim() || 'PLAYER').toUpperCase().slice(0, 12);
+    }
 
     // ═══ SOUND ENGINE ═══
     let audioCtx = null, soundEnabled = true;
@@ -1672,7 +1698,7 @@
 
     window.startBotGame = async (difficulty) => {
       document.activeElement?.blur();
-      const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
+      const name = _getBattlePlayerName();
       endedOnce = false;
       document.getElementById('botDifficulty').classList.remove('show');
       const botName = BOT_NAMES[difficulty - 1];

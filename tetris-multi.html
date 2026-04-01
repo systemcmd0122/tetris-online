@@ -1803,6 +1803,8 @@
     import { getDatabase, ref, set, get, onValue, off, update, remove, onDisconnect, runTransaction }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     import { APP_VERSION } from './config.js';
+    import { onAuthReady, getCachedProfile, mountAuthWidget, getCurrentUser } from './auth.js';
+    import { saveMultiResult, upsertUserProfile } from './db.js';
 
     const fbApp = initializeApp({ apiKey: "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw", authDomain: "tetris-online-9c827.firebaseapp.com", databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com", projectId: "tetris-online-9c827", storageBucket: "tetris-online-9c827.firebasestorage.app", messagingSenderId: "1045054992314", appId: "1:1045054992314:web:7fea20b9be543d7cab3783" });
     const db = getDatabase(fbApp);
@@ -1812,6 +1814,32 @@
     document.getElementById('statusText').textContent = 'ONLINE';
     document.getElementById('statusText').className = 'status-online';
     document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
+
+    // ── AUTH WIDGET & NAME LOCK ──
+    mountAuthWidget('multiAuthWidget');
+    let _authUser = null;
+    function _getPlayerName() {
+      if (_authUser) {
+        const p = getCachedProfile();
+        return ((p?.displayName || _authUser.displayName || _authUser.email || 'PLAYER')
+          .trim().replace(/\//g, '_').slice(0, 12).toUpperCase() || 'PLAYER');
+      }
+      return (document.getElementById('playerName')?.value.trim() || 'PLAYER').toUpperCase().slice(0, 12);
+    }
+    onAuthReady(async user => {
+      _authUser = user;
+      const inp = document.getElementById('playerName');
+      if (!inp) return;
+      if (user) {
+        await upsertUserProfile(user).catch(() => {});
+        const name = _getPlayerName();
+        inp.value = name; inp.readOnly = true;
+        inp.style.opacity = '0.6'; inp.style.cursor = 'not-allowed';
+        inp.title = 'ログイン中はアカウント名が使用されます';
+      } else {
+        inp.readOnly = false; inp.style.opacity = ''; inp.style.cursor = ''; inp.title = '';
+      }
+    });
 
     // マッチングキューの古いエントリ（5分以上）をページ読み込み時に清掃
     (async () => {
@@ -2106,7 +2134,7 @@
     // クイックマッチ開始
     window.quickMatch = async () => {
       if (_qmState) return;
-      const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
+      const name = _getPlayerName();
       _qmState = 'searching';
       _qmIsBot = false;
       showScreen('matchingScreen');
@@ -2325,7 +2353,7 @@
     }
 
     function _startQmBotGame() {
-      const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
+      const name = _getPlayerName();
       endedOnce = false;
       mySlot = 'p1'; roomCode = null; totalPlayers = 2;
       showScreen('gameScreen');
@@ -2530,7 +2558,7 @@
 
     // ── CREATE ROOM ──
     window.createRoom = async () => {
-      const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
+      const name = _getPlayerName();
       mySlot = 'p1'; roomCode = genCode(); endedOnce = false;
       const rRef = ref(db, 'multi/' + roomCode);
       await set(rRef, { p1: { name, alive: true }, status: 'waiting', maxPlayers: _maxPlayers, ts: getServerTime() });
@@ -2572,7 +2600,7 @@
     window.joinRoom = async () => {
       const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
       if (code.length !== 4 || !/^[0-9]{4}$/.test(code)) { showToast('4桁の数字コードを入力してください', 'warn'); return; }
-      const name = (document.getElementById('playerName').value.trim() || 'PLAYER').toUpperCase();
+      const name = _getPlayerName();
       const rRef = ref(db, 'multi/' + code);
       let snap; try { snap = await get(rRef); } catch (e) { showToast('接続エラー: ' + e.message, 'warn'); return; }
       if (!snap.exists()) { showToast('ルームが見つかりません', 'warn'); return; }
@@ -2911,6 +2939,21 @@
       const rematchBtn = document.getElementById('rematchBtn');
       if (rematchBtn) rematchBtn.style.display = _qmIsBot ? 'none' : '';
       document.getElementById('resultOverlay').classList.add('show');
+
+      // ログイン中ユーザーの対戦履歴を Firestore に保存
+      const _u = getCurrentUser();
+      if (_u) {
+        const _oppNames = [];
+        document.querySelectorAll('[id^="oppName_"]').forEach(el => {
+          const n = el.textContent.replace(/\s*\(.*\)$/, '').trim();
+          if (n && n !== '...') _oppNames.push(n);
+        });
+        saveMultiResult(_u.uid, {
+          rank, totalPlayers, score, lines, level: game?.level || 1,
+          attackSent: statAtkSent, mode: _qmIsBot ? 'qm' : (roomCode ? 'room' : 'qm'),
+          opponentNames: _oppNames,
+        }).catch(() => {});
+      }
     }
 
     // ── COUNTDOWN ──
