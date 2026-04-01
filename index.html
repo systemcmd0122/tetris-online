@@ -14,7 +14,15 @@
   <meta name="robots" content="index, follow">
   <meta name="author" content="TETRIS BATTLE ONLINE">
   <meta name="theme-color" content="#04060f">
+  <!-- PWA / iOS Safari -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TETRIS BATTLE">
+  <meta name="mobile-web-app-capable" content="yes">
   <link rel="canonical" href="https://systemcmd0122.github.io/tetris-online/">
+  <!-- Font preconnect for faster loading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
   <!-- OGP (Open Graph) -->
   <meta property="og:type" content="website">
@@ -52,7 +60,7 @@
   }
   </script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap&display=swap');
 
     :root {
       --bg: #04060f;
@@ -73,7 +81,6 @@
     html,
     body {
       height: 100%;
-      overflow: hidden;
     }
 
     body {
@@ -715,12 +722,14 @@
       <div class="menu">
         <a href="sprint.html" class="menu-btn primary"
           style="background:linear-gradient(135deg,#44aa00,#aaff00);color:#000;box-shadow:0 5px 0 rgba(20,60,0,.9);"
+          aria-label="スプリント 40ライン消去タイムアタック"
           onclick="playSE('select')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13"
               fill="currentColor" style="flex-shrink:0">
               <path d="M2 10L6 2l2 4 2-2 1 6z" />
             </svg>スプリント 40LINES</span></a>
         <a href="tetris-battle.html" class="menu-btn primary"
           style="background:linear-gradient(135deg,#7700ff,#cc00ff);box-shadow:0 5px 0 rgba(40,0,80,.9);"
+          aria-label="ボット対戦モード"
           onclick="playSE('select')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13"
               fill="currentColor" style="flex-shrink:0">
               <rect x="2" y="4" width="9" height="7" rx="1" />
@@ -732,6 +741,7 @@
             </svg>ボット対戦</span></a>
         <a href="tetris-multi.html" class="menu-btn primary"
           style="background:linear-gradient(135deg,#cc00ff,#ff0080);box-shadow:0 5px 0 rgba(80,0,60,.9);"
+          aria-label="マルチ対戦 2〜4人リアルタイム対戦"
           onclick="playSE('select')"><span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 13 13"
               fill="currentColor" style="flex-shrink:0">
               <circle cx="4" cy="4" r="2.2" />
@@ -821,7 +831,8 @@
   <script>
     // ═══ SE ENGINE ═══
     let _actx = null;
-    let _seOn = true;
+    // localStorage からSE状態を復元（デフォルトON）
+    let _seOn = localStorage.getItem('tetris_se') !== 'off';
     function _getCtx() { if (!_actx) _actx = new (window.AudioContext || window.webkitAudioContext)(); return _actx; }
 
     const SE = {
@@ -863,15 +874,25 @@
 
     window.toggleSE = () => {
       _seOn = !_seOn;
+      localStorage.setItem('tetris_se', _seOn ? 'on' : 'off');
       const btn = document.getElementById('seToggle');
       btn.textContent = _seOn ? 'SE ON' : 'SE OFF';
       btn.style.color = _seOn ? 'var(--acc)' : 'var(--dim)';
       btn.style.borderColor = _seOn ? 'rgba(0,245,255,0.3)' : 'rgba(74,96,128,0.3)';
     };
+    // 初期状態をボタンに反映
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('seToggle');
+      if (btn) {
+        btn.textContent = _seOn ? 'SE ON' : 'SE OFF';
+        btn.style.color = _seOn ? 'var(--acc)' : 'var(--dim)';
+        btn.style.borderColor = _seOn ? 'rgba(0,245,255,0.3)' : 'rgba(74,96,128,0.3)';
+      }
+    });
   </script>
 
   <script type="module">
-    import { APP_VERSION, UPDATE_LOG } from './config.js';
+    import { APP_VERSION, UPDATE_LOG, FB_CONFIG } from './config.js';
     import { mountAuthWidget, onAuthReady, getCachedProfile } from './auth.js';
 
     // マウント auth ウィジェット（ログイン/ログアウトのみ。名前連携なし）
@@ -1200,7 +1221,7 @@
         try {
           const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
           const { getFirestore, collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-          const app = getApps().length ? getApps()[0] : initializeApp({ apiKey: "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw", authDomain: "tetris-online-9c827.firebaseapp.com", databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com", projectId: "tetris-online-9c827", storageBucket: "tetris-online-9c827.firebasestorage.app", messagingSenderId: "1045054992314", appId: "1:1045054992314:web:7fea20b9be543d7cab3783" });
+          const app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
           const fs = getFirestore(app);
           await addDoc(collection(fs, 'reports'), {
             type: _fbType, message: text, page: 'メニュー',

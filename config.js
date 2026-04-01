@@ -1,6 +1,29 @@
-export const APP_VERSION = "3.0.0";
+export const APP_VERSION = "3.0.1";
+
+/** Firebase設定 — auth.js / db.js / フィードバックウィジェットで共有 */
+export const FB_CONFIG = {
+  apiKey:            'AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw',
+  authDomain:        'tetris-online-9c827.firebaseapp.com',
+  databaseURL:       'https://tetris-online-9c827-default-rtdb.firebaseio.com',
+  projectId:         'tetris-online-9c827',
+  storageBucket:     'tetris-online-9c827.firebasestorage.app',
+  messagingSenderId: '1045054992314',
+  appId:             '1:1045054992314:web:7fea20b9be543d7cab3783',
+};
 
 export const UPDATE_LOG = [
+  {
+    version: "3.0.1",
+    title: "パフォーマンス・UX改善",
+    changes: [
+      "Firebase設定をconfig.jsに一元化し、コードの重複を解消しました（auth.js・db.js・フィードバックウィジェット）。",
+      "SE（効果音）のON/OFF状態をlocalStorageに保存するようにしました。ページを再読み込みしても設定が引き継がれます。",
+      "Googleフォントにpreconnectヒントとdisplayオプションを追加し、フォント読み込み速度を改善しました。",
+      "iOS Safari向けのPWAメタタグ（apple-mobile-web-app-capable など）を追加しました。",
+      "how-to・更新履歴ページにOGP画像・Twitterカード画像メタタグを追加しました。",
+      "主要ボタンにaria-labelを付与し、スクリーンリーダー対応を改善しました。",
+    ]
+  },
   {
     version: "3.0.0",
     title: "Googleアカウント連携・プロフィール機能追加",

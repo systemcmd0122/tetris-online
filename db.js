@@ -8,15 +8,7 @@
  *  - updateUserName / updateUserAvatar: 明示的な更新関数のみが変更する。
  */
 
-const FB_CONFIG = {
-  apiKey: 'AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw',
-  authDomain: 'tetris-online-9c827.firebaseapp.com',
-  databaseURL: 'https://tetris-online-9c827-default-rtdb.firebaseio.com',
-  projectId: 'tetris-online-9c827',
-  storageBucket: 'tetris-online-9c827.firebasestorage.app',
-  messagingSenderId: '1045054992314',
-  appId: '1:1045054992314:web:7fea20b9be543d7cab3783',
-};
+import { FB_CONFIG } from './config.js';
 
 let _app = null, _fs = null;
 
