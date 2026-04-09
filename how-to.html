@@ -176,6 +176,8 @@
   <a href="index.html" class="back-btn">◀ メニューに戻る</a>
 
   <script type="module">
+    import { mountNav } from './nav.js';
+    mountNav();
     import { APP_VERSION } from './config.js';
     import { mountAuthWidget } from './auth.js';
     document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;

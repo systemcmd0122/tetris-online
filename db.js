@@ -165,6 +165,57 @@ export async function getMultiHistory(uid, n = 50) {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+// ── テトリス検定 ──────────────────────────────────────────
+
+/**
+ * 検定結果を保存する。合格した場合のみ users/{uid}/exam_badges に記録。
+ * 同じレベルの最高スコアのみ保存する。
+ * @param {string} uid
+ * @param {{ levelId: string, score: number, passed: boolean }} data
+ */
+export async function saveExamResult(uid, data) {
+  const fs = await _getFS();
+  const { doc, setDoc, getDoc, serverTimestamp } =
+    await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+  // 全結果ログに追記
+  const { addDoc, collection } =
+    await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  await addDoc(collection(fs, 'users', uid, 'exam_history'), {
+    levelId:  data.levelId,
+    score:    data.score,
+    passed:   data.passed,
+    ts:       serverTimestamp(),
+  }).catch(() => {});
+
+  // 合格の場合はバッジドキュメントを upsert
+  if (data.passed) {
+    const badgeRef = doc(fs, 'users', uid, 'exam_badges', data.levelId);
+    const snap = await getDoc(badgeRef);
+    const prev = snap.exists() ? snap.data().score : -1;
+    if (data.score > prev) {
+      await setDoc(badgeRef, {
+        levelId:  data.levelId,
+        score:    data.score,
+        earnedAt: serverTimestamp(),
+      });
+    }
+  }
+}
+
+/**
+ * ユーザーの取得済みバッジ一覧を返す。
+ * @param {string} uid
+ * @returns {Promise<Array<{levelId:string, score:number, earnedAt:*}>>}
+ */
+export async function getExamBadges(uid) {
+  const fs = await _getFS();
+  const { collection, getDocs } =
+    await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const snap = await getDocs(collection(fs, 'users', uid, 'exam_badges'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
 export async function getSprintHistory(uid, n = 50) {
   const fs = await _getFS();
   const { collection, getDocs, query, orderBy, limit } =

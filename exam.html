@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>テトリス検定 — TETRIS BATTLE</title>
+  <meta name="description" content="テトリス検定：テトリスの知識をテストする5段階の認定試験。合格するとプロフィールにバッジが表示されます。">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://systemcmd0122.github.io/tetris-online/exam.html">
+  <meta name="theme-color" content="#04060f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="テトリス検定 — TETRIS BATTLE">
+  <meta property="og:description" content="テトリスの知識をテストする5段階の認定試験。合格でプロフィールにバッジが表示されます。">
+  <meta property="og:url" content="https://systemcmd0122.github.io/tetris-online/exam.html">
+  <meta property="og:image" content="https://systemcmd0122.github.io/tetris-online/ogp.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+    :root {
+      --bg:#04060f; --s0:#080d18; --s1:#0d1525;
+      --acc:#00f5ff; --acc2:#ff0080; --acc3:#aaff00;
+      --tx:#e0f0ff; --dim:#4a6080; --border:#1a2540;
+      --gold:#ffd700; --silver:#c0c0c0; --bronze:#cd7f32;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--tx);font-family:'Orbitron',monospace;min-height:100vh;padding-bottom:60px}
+    .scanlines{position:fixed;inset:0;z-index:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.1) 2px,rgba(0,0,0,.1) 4px)}
+
+    .page{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:28px 16px}
+
+    /* ──── LEVEL SELECT ──── */
+    .exam-hero{text-align:center;padding:20px 0 32px}
+    .exam-title{font-family:'Press Start 2P',monospace;font-size:clamp(16px,4vw,28px);color:var(--acc);text-shadow:0 0 20px rgba(0,245,255,.5);letter-spacing:3px;margin-bottom:8px}
+    .exam-sub{font-size:10px;color:var(--dim);letter-spacing:2px;margin-bottom:6px}
+    .exam-desc{font-size:12px;color:var(--tx);line-height:2;max-width:500px;margin:0 auto 0}
+
+    .level-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:32px}
+    .level-card{background:var(--s0);border:1px solid var(--border);border-radius:6px;padding:20px 16px;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;position:relative;overflow:hidden;text-align:center}
+    .level-card:hover{transform:translateY(-4px)}
+    .level-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+    .level-card.lv1::before{background:var(--bronze)}
+    .level-card.lv2::before{background:var(--silver)}
+    .level-card.lv3::before{background:var(--gold)}
+    .level-card.lv4::before{background:#00f5ff}
+    .level-card.lv5::before{background:linear-gradient(90deg,#ff0080,#cc00ff,#00f5ff,#aaff00,#ff8800)}
+    .level-card:hover.lv1{border-color:var(--bronze);box-shadow:0 4px 20px rgba(205,127,50,.2)}
+    .level-card:hover.lv2{border-color:var(--silver);box-shadow:0 4px 20px rgba(192,192,192,.2)}
+    .level-card:hover.lv3{border-color:var(--gold);box-shadow:0 4px 20px rgba(255,215,0,.2)}
+    .level-card:hover.lv4{border-color:var(--acc);box-shadow:0 4px 20px rgba(0,245,255,.2)}
+    .level-card:hover.lv5{border-color:#cc00ff;box-shadow:0 4px 20px rgba(204,0,255,.2)}
+    .lv-badge-icon{font-size:28px;margin-bottom:10px;display:block;filter:drop-shadow(0 0 6px currentColor)}
+    .lv1 .lv-badge-icon{color:var(--bronze)}
+    .lv2 .lv-badge-icon{color:var(--silver)}
+    .lv3 .lv-badge-icon{color:var(--gold)}
+    .lv4 .lv-badge-icon{color:var(--acc)}
+    .lv5 .lv-badge-icon{color:#cc00ff}
+    .lv-name{font-family:'Press Start 2P',monospace;font-size:11px;margin-bottom:4px}
+    .lv1 .lv-name{color:var(--bronze)} .lv2 .lv-name{color:var(--silver)}
+    .lv3 .lv-name{color:var(--gold)} .lv4 .lv-name{color:var(--acc)} .lv5 .lv-name{color:#cc00ff}
+    .lv-subtitle{font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:12px}
+    .lv-info{font-size:8px;color:var(--dim);letter-spacing:1px;line-height:2}
+    .lv-info span{color:var(--tx)}
+    .lv-passed{display:inline-flex;align-items:center;gap:4px;margin-top:10px;background:rgba(170,255,0,.1);border:1px solid rgba(170,255,0,.35);color:var(--acc3);border-radius:2px;font-size:7px;padding:3px 8px;letter-spacing:1px;font-family:'Press Start 2P',monospace}
+    .lv-locked{display:inline-flex;align-items:center;gap:4px;margin-top:10px;background:rgba(74,96,128,.1);border:1px solid rgba(74,96,128,.3);color:var(--dim);border-radius:2px;font-size:7px;padding:3px 8px;letter-spacing:1px}
+
+    /* ──── QUIZ SCREEN ──── */
+    #quizScreen{display:none}
+    .quiz-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+    .quiz-level-label{font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:2px}
+    .lv1-c{color:var(--bronze)} .lv2-c{color:var(--silver)} .lv3-c{color:var(--gold)} .lv4-c{color:var(--acc)} .lv5-c{color:#cc00ff}
+    .quiz-progress-bar{height:4px;background:var(--border);border-radius:4px;margin-bottom:4px;overflow:hidden}
+    .quiz-progress-fill{height:100%;border-radius:4px;transition:width .4s ease;background:var(--acc)}
+    .quiz-progress-text{font-size:8px;color:var(--dim);letter-spacing:1px;text-align:right}
+    .quiz-timer{font-family:'Press Start 2P',monospace;font-size:14px;color:var(--acc);background:rgba(0,245,255,.07);border:1px solid rgba(0,245,255,.2);border-radius:4px;padding:6px 12px;min-width:64px;text-align:center;transition:color .3s,background .3s}
+    .quiz-timer.warn{color:var(--acc2);background:rgba(255,0,128,.1);border-color:rgba(255,0,128,.3);animation:timerPulse .5s ease-in-out infinite alternate}
+    @keyframes timerPulse{from{transform:scale(1)}to{transform:scale(1.06)}}
+
+    .question-card{background:var(--s0);border:1px solid var(--border);border-radius:6px;padding:24px 20px;margin-bottom:16px;position:relative;overflow:hidden}
+    .question-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+    .q-num{font-size:8px;color:var(--dim);letter-spacing:2px;margin-bottom:10px;font-family:'Press Start 2P',monospace}
+    .q-text{font-size:clamp(12px,2.5vw,15px);line-height:1.8;font-weight:700;letter-spacing:1px}
+
+    .options-grid{display:grid;gap:10px}
+    .opt-btn{background:var(--s1);border:1px solid var(--border);border-radius:4px;padding:14px 16px;text-align:left;cursor:pointer;font-family:'Orbitron',monospace;font-size:12px;color:var(--tx);letter-spacing:1px;transition:all .15s;display:flex;align-items:center;gap:12px;width:100%}
+    .opt-btn:hover:not(:disabled){border-color:rgba(0,245,255,.4);background:rgba(0,245,255,.05);transform:translateX(3px)}
+    .opt-btn:disabled{cursor:not-allowed}
+    .opt-btn.correct{border-color:var(--acc3);background:rgba(170,255,0,.1);color:var(--acc3)}
+    .opt-btn.wrong{border-color:var(--acc2);background:rgba(255,0,128,.08);color:var(--acc2)}
+    .opt-btn.reveal{border-color:rgba(170,255,0,.3);background:rgba(170,255,0,.04);color:var(--acc3)}
+    .opt-key{font-family:'Press Start 2P',monospace;font-size:8px;min-width:20px;color:var(--dim);flex-shrink:0}
+    .opt-btn.correct .opt-key{color:var(--acc3)}
+    .opt-btn.wrong .opt-key{color:var(--acc2)}
+
+    .expl-box{background:rgba(0,245,255,.04);border:1px solid rgba(0,245,255,.15);border-radius:4px;padding:12px 14px;margin-top:10px;font-size:11px;line-height:1.8;color:#a0c8e8;display:none}
+    .expl-box.show{display:block}
+
+    .quiz-next-btn{margin-top:16px;display:flex;justify-content:flex-end}
+    .next-btn{background:var(--acc);color:#000;border:none;border-radius:3px;font-family:'Press Start 2P',monospace;font-size:9px;padding:12px 20px;cursor:pointer;letter-spacing:1px;transition:opacity .15s,transform .12s;display:none}
+    .next-btn.show{display:block}
+    .next-btn:hover{opacity:.85;transform:translateY(-1px)}
+
+    /* ──── RESULT SCREEN ──── */
+    #resultScreen{display:none;text-align:center}
+    .result-badge{font-size:64px;margin:20px 0;filter:drop-shadow(0 0 20px currentColor);animation:badgePop .5s cubic-bezier(.3,1.4,.5,1) forwards}
+    @keyframes badgePop{from{transform:scale(0) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+    .result-title{font-family:'Press Start 2P',monospace;font-size:clamp(14px,3vw,20px);letter-spacing:3px;margin-bottom:8px}
+    .result-score{font-family:'Press Start 2P',monospace;font-size:13px;color:var(--dim);letter-spacing:2px;margin-bottom:20px}
+    .result-score span{color:var(--acc);font-size:20px}
+    .result-msg{font-size:12px;line-height:2;color:var(--tx);max-width:440px;margin:0 auto 24px}
+    .result-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .res-btn{padding:12px 20px;border-radius:3px;font-family:'Press Start 2P',monospace;font-size:9px;cursor:pointer;letter-spacing:1px;transition:all .15s;text-decoration:none;display:inline-block}
+    .res-btn.primary{background:var(--acc);color:#000;border:none}
+    .res-btn.primary:hover{opacity:.85;transform:translateY(-1px)}
+    .res-btn.secondary{background:transparent;color:var(--acc);border:1px solid rgba(0,245,255,.4)}
+    .res-btn.secondary:hover{background:rgba(0,245,255,.06);transform:translateY(-1px)}
+    .res-btn.danger{background:transparent;color:var(--acc2);border:1px solid rgba(255,0,128,.3)}
+    .res-btn.danger:hover{background:rgba(255,0,128,.06);transform:translateY(-1px)}
+    .result-save-msg{font-size:9px;color:var(--acc3);letter-spacing:1px;margin-top:12px;min-height:16px;font-family:'Press Start 2P',monospace}
+
+    /* ──── SCORE BREAKDOWN ──── */
+    .score-breakdown{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:16px 0}
+    .sc-dot{width:14px;height:14px;border-radius:2px;flex-shrink:0}
+    .sc-dot.c{background:var(--acc3);box-shadow:0 0 4px var(--acc3)}
+    .sc-dot.w{background:var(--acc2);opacity:.5}
+    .sc-dot.s{background:var(--dim);opacity:.5}
+
+    /* ──── RULES ──── */
+    .rules-box{background:var(--s0);border:1px solid var(--border);border-radius:6px;padding:18px 16px;margin-bottom:24px}
+    .rules-title{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--acc2);letter-spacing:2px;margin-bottom:10px}
+    .rules-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+    .rules-list li{font-size:11px;color:var(--dim);letter-spacing:1px;padding-left:16px;position:relative;line-height:1.7}
+    .rules-list li::before{content:'▶';position:absolute;left:0;color:var(--acc3);font-size:8px;top:3px}
+    .rules-list li span{color:var(--tx)}
+  </style>
+</head>
+<body>
+<div class="scanlines" aria-hidden="true"></div>
+
+<!-- Nav will be injected here -->
+
+<div class="page">
+
+  <!-- ══ LEVEL SELECT ══ -->
+  <section id="levelSelect">
+    <div class="exam-hero">
+      <div class="exam-title">テトリス検定</div>
+      <div class="exam-sub">TETRIS CERTIFICATION EXAM</div>
+      <div class="exam-desc" style="margin-top:10px">テトリスの知識を試す5段階の認定試験。<br>合格するとプロフィールにバッジが授与されます。</div>
+    </div>
+
+    <div class="rules-box">
+      <div class="rules-title">▶ 受験ルール</div>
+      <ul class="rules-list">
+        <li>各レベル <span>10問</span>、制限時間 <span>問題ごとに30秒</span></li>
+        <li><span>7問以上（70%）</span> 正解で合格</li>
+        <li>合格するとプロフィールに <span>バッジが表示</span> されます</li>
+        <li>ログインしていない場合、結果は <span>保存されません</span></li>
+        <li>何度でも <span>再受験</span> できます（最高成績が保存されます）</li>
+      </ul>
+    </div>
+
+    <div class="level-grid" id="levelGrid"></div>
+
+    <a href="index.html" style="display:inline-block;padding:12px 24px;background:var(--acc);color:#000;text-decoration:none;font-family:'Press Start 2P',monospace;font-size:9px;border-radius:2px;transition:transform .2s;letter-spacing:1px" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">◀ メニューへ</a>
+  </section>
+
+  <!-- ══ QUIZ SCREEN ══ -->
+  <section id="quizScreen">
+    <div class="quiz-header">
+      <div>
+        <div class="quiz-level-label" id="quizLevelLabel">入門</div>
+        <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="quiz-progress-text" id="progressText">0 / 10</div>
+      </div>
+      <div class="quiz-timer" id="quizTimer">30</div>
+    </div>
+
+    <div class="question-card">
+      <div class="q-num" id="qNum">Q 01</div>
+      <div class="q-text" id="qText"></div>
+    </div>
+
+    <div class="options-grid" id="optionsGrid"></div>
+    <div class="expl-box" id="explBox"></div>
+
+    <div class="quiz-next-btn">
+      <button class="next-btn" id="nextBtn">次の問題 ▶</button>
+    </div>
+  </section>
+
+  <!-- ══ RESULT SCREEN ══ -->
+  <section id="resultScreen">
+    <div class="result-badge" id="resultBadge">🏅</div>
+    <div class="result-title" id="resultTitle">合格！</div>
+    <div class="result-score" id="resultScore"><span>8</span> / 10</div>
+    <div class="score-breakdown" id="scoreBreakdown"></div>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="result-save-msg" id="resultSaveMsg"></div>
+    <div class="result-btns">
+      <button class="res-btn danger" id="retryBtn">もう一度挑戦</button>
+      <button class="res-btn secondary" id="changeBtn">レベル選択へ</button>
+      <a href="profile.html" class="res-btn primary">プロフィールへ ▶</a>
+    </div>
+  </section>
+
+</div><!-- /page -->
+
+<script type="module">
+import { mountNav } from './nav.js';
+mountNav();
+
+// ── Exam data ──────────────────────────────────────────
+const LEVELS = [
+  {
+    id: 'lv1', cls: 'lv1', name: '入門', subtitle: 'Entry Level', icon: '🟫',
+    color: 'var(--bronze)', colorCls: 'lv1-c', passMark: 7,
+    desc: 'テトリスの基本操作・ルールの確認',
+    badge: { icon: '🟫', label: 'ENTRY', color: '#cd7f32' },
+    questions: [
+      { q:'テトリスで使われるミノの種類は全部で何種類か？', opts:['5種類','6種類','7種類','8種類'], ans:2, expl:'I・O・T・S・Z・L・Jの7種類のミノが使用されます。' },
+      { q:'4ライン同時消しを英語で何という？', opts:['Perfect','Triple','Tetris','Super'], ans:2, expl:'4ライン消しは「テトリス(Tetris)」と呼ばれ、ゲーム名の由来にもなっています。' },
+      { q:'ミノを瞬時に一番下まで落として固定する操作を何という？', opts:['ソフトドロップ','ハードドロップ','クイックフォール','ロックダウン'], ans:1, expl:'スペースキーで行うハードドロップです。ミノが即座に固定されます。' },
+      { q:'ゲームオーバーになるのはどんな時か？', opts:['100ライン消した時','5分経過した時','ミノが最上段を超えた時','コンボが切れた時'], ans:2, expl:'ミノが積み上がりフィールドの最上段を超えた時にゲームオーバーとなります。' },
+      { q:'ミノを1つ手元に保存しておく機能を何という？', opts:['ストック','ホールド','バンク','セーブ'], ans:1, expl:'ShiftキーまたはCキーでホールドできます。保存したミノはいつでも取り出せます。' },
+      { q:'Iミノ（細長いミノ）の色は何色か？', opts:['黄色','赤色','シアン（水色）','緑色'], ans:2, expl:'Iミノはシアン（水色）です。4マス直線のミノで、テトリスを狙うのに最適です。' },
+      { q:'標準的なテトリスのフィールドの横幅は何マスか？', opts:['8マス','10マス','12マス','16マス'], ans:1, expl:'テトリスのフィールドは横10マス、縦20マスが標準です。' },
+      { q:'3ライン同時消しを英語で何という？', opts:['Single','Double','Triple','Quadruple'], ans:2, expl:'1=Single、2=Double、3=Triple、4=Tetrisです。' },
+      { q:'ゴーストピースとは何か？', opts:['透明になるミノ','ミノの落下位置を示す半透明の表示','ホールドされたミノ','消えかけのライン'], ans:1, expl:'ゴーストピースは現在のミノが落ちる位置を示すガイドです。配置の予測に役立ちます。' },
+      { q:'Oミノ（正方形のミノ）の色は何色か？', opts:['青色','黄色','赤色','紫色'], ans:1, expl:'Oミノは黄色です。2×2の正方形で、回転させても形が変わりません。' },
+    ]
+  },
+  {
+    id: 'lv2', cls: 'lv2', name: '初級', subtitle: 'Beginner Level', icon: '⬜',
+    color: 'var(--silver)', colorCls: 'lv2-c', passMark: 7,
+    desc: '対戦ルール・スコアシステムの理解',
+    badge: { icon: '⬜', label: 'BEGINNER', color: '#c0c0c0' },
+    questions: [
+      { q:'対戦テトリスで2ライン消しの時、相手に送るガベージは何ライン？', opts:['0ライン','1ライン','2ライン','4ライン'], ans:1, expl:'2ライン消し(Double)で相手に1ライン送ります。3ライン→2ライン、4ライン(テトリス)→4ラインです。' },
+      { q:'Back-to-Back (B2B) が発動する条件は？', opts:['コンボが5回以上続いた時','テトリスまたはT-Spinを連続して行った時','ホールドを使わずプレイした時','パーフェクトクリア後'], ans:1, expl:'テトリスまたはT-Spinを連続して行うとB2Bが発動し、攻撃力が1.5倍になります。' },
+      { q:'Back-to-Backボーナスによって攻撃力は何倍になるか？', opts:['1.2倍','1.3倍','1.5倍','2倍'], ans:2, expl:'B2Bが発動すると攻撃力が1.5倍に増加します。連続でテトリスやT-Spinを決めましょう。' },
+      { q:'T-Spinとは何か？', opts:['Tミノで4ラインを消す技','Tミノを回転させて隙間にはめ込んでラインを消す技','Tミノを3回連続で使う技','Tミノでコンボを繋げる技'], ans:1, expl:'T-SpinはTミノをスピンさせて隙間に潜り込ませることでラインを消す上級テクニックです。' },
+      { q:'コンボとは何か？', opts:['一度に複数のラインを消すこと','連続でライン消しを行うこと','T-Spinを連続して決めること','攻撃を受けて反撃すること'], ans:1, expl:'コンボは毎ターン途切れずにライン消しを続けることです。コンボ数が増えるほど攻撃力が上がります。' },
+      { q:'対戦で4ライン消し(テトリス)の時、相手に送るライン数は？', opts:['2ライン','3ライン','4ライン','6ライン'], ans:2, expl:'テトリス(4ライン消し)は相手に4ライン送ります。B2B中なら×1.5=6ラインになります。' },
+      { q:'7-Bag（7袋）方式のランダム生成とは？', opts:['完全にランダムでミノが出現する','7種のミノが必ず1つずつ入った袋から引く方式','前の7ミノと同じミノは出ない方式','7コンボを続けるとレアミノが出る方式'], ans:1, expl:'7-Bag方式では全7種が必ず1回ずつ出現します。同じミノが連続して12回出ることはありません。' },
+      { q:'ロックディレイとは何か？', opts:['攻撃が相手に届くまでの遅延','ミノが接地してから固定されるまでの猶予時間','ゲーム開始前のカウントダウン','ホールドができない待機時間'], ans:1, expl:'ロックディレイは地面に接触してから固定されるまでの猶予時間です。この間に移動・回転できます。' },
+      { q:'SRS (Super Rotation System) とは何か？', opts:['スコア計算システム','ミノの回転とキック（壁蹴り）の仕組み','ガベージの計算方法','オンライン同期の仕組み'], ans:1, expl:'SRSはガイドライン標準の回転システムで、壁や他ミノに当たった時のキック（位置調整）のルールを定めています。' },
+      { q:'T-Spin Doubleで相手に送るライン数は？', opts:['2ライン','3ライン','4ライン','5ライン'], ans:2, expl:'T-Spin Doubleは4ライン送ります。T-Spin Single=2ライン、T-Spin Triple=6ラインです。' },
+    ]
+  },
+  {
+    id: 'lv3', cls: 'lv3', name: '中級', subtitle: 'Intermediate Level', icon: '🥇',
+    color: 'var(--gold)', colorCls: 'lv3-c', passMark: 7,
+    desc: 'T-Spin・上級テクニックの知識',
+    badge: { icon: '🥇', label: 'INTERMEDIATE', color: '#ffd700' },
+    questions: [
+      { q:'T-Spin Tripleで相手に送るライン数は？', opts:['4ライン','5ライン','6ライン','8ライン'], ans:2, expl:'T-Spin Tripleは最大の攻撃力6ラインを誇ります。B2B時はさらに×1.5=9ラインになります。' },
+      { q:'パーフェクトクリア（フィールド全消し）の攻撃力は？', opts:['4ライン','6ライン','8ライン','10ライン'], ans:3, expl:'パーフェクトクリアはガイドラインで10ライン送れる最強の攻撃手段です。' },
+      { q:'T-Spinの判定基準「3コーナーT」とは？', opts:['Tミノの3辺が壁に接している','Tミノの4つの角のうち3つ以上が埋まっている','Tミノが3回回転した','3×3の空間にTミノが入っている'], ans:1, expl:'現代テトリスではTミノの4隅(コーナー)のうち3つ以上が埋まっている状態でT-Spinと判定されます。' },
+      { q:'DAS（Delayed Auto Shift）とは？', opts:['ガベージ遅延の仕組み','キーを押し続けた時にミノ移動が加速するまでの遅延時間','ロックディレイの別名','T-Spin判定の遅延'], ans:1, expl:'DASはキー長押し時に移動が連続し始めるまでの遅延です。短い方が連続移動が早く始まります。' },
+      { q:'T-Spin Tripleが成立するには一般的に何が必要か？', opts:['Iミノで穴を作る','TNTスロット（3×3のT字空間）にTミノをスピンインさせる','フィールドを半分以下に保つ','Tミノを5回以上回転させる'], ans:1, expl:'TNT(TST)スロットと呼ばれる特定の3×3形状に、Tミノを回転させて潜り込ませることで達成できます。' },
+      { q:'「Immobile」T-Spinとは？', opts:['Tミノが動けない=ゲームオーバーの状態','回転も平行移動もできない位置でのT-Spinとして認定','ゲーム内でのTミノの固定速度','ソフトドロップ中のT-Spin'], ans:1, expl:'Immobile判定はTミノが回転後に動けない状態で成立するT-Spinです。一部の実装で使用されます。' },
+      { q:'フィンesse（フィネス）とは？', opts:['T-Spinの一種','最小の操作数でミノを目的の場所に置くテクニック','コンボを繋げるための戦略','ミノをホールドに置くタイミング'], ans:1, expl:'フィネスは無駄な動作を省き、最少の入力でミノを配置するテクニックです。上達の重要な要素です。' },
+      { q:'T-Spin後にB2Bが継続しない操作はどれか？', opts:['テトリス','T-Spin Single','T-Spin Double','ダブル（通常の2ライン消し）'], ans:3, expl:'B2BはテトリスかT-Spinの連続が条件です。通常のライン消し（シングル/ダブル/トリプル）はB2Bを切ります。' },
+      { q:'ARE（エントリーディレイ）とは？', opts:['攻撃のエラー判定','ライン消去後に次のミノが出現するまでの待機時間','アベレージスコアの算出方法','相手の攻撃が届くまでの時間'], ans:1, expl:'AREはライン消去後に次のミノがスポーンするまでの短い待機時間です。この間に戦略を考えられます。' },
+      { q:'「フラットスタッキング」が重要な理由は？', opts:['スコアが高くなるから','テトリスやT-Spinを打ちやすく攻撃効率が上がるから','ミノが早く落ちるから','ランキングに有利だから'], ans:1, expl:'積み重ねを平らに保つことで、Iミノが入りやすくなりテトリスを狙いやすくなります。高さの管理も容易になります。' },
+    ]
+  },
+  {
+    id: 'lv4', cls: 'lv4', name: '上級', subtitle: 'Advanced Level', icon: '💎',
+    color: 'var(--acc)', colorCls: 'lv4-c', passMark: 8,
+    desc: '上級戦術・詳細な仕様の理解',
+    badge: { icon: '💎', label: 'ADVANCED', color: '#00f5ff' },
+    questions: [
+      { q:'「Opener（オープナー）」とは何か？', opts:['ゲームの最初の1ミノ','ゲーム序盤に有利な状態を作るための定石的なミノ配置パターン','相手の攻撃を受け止める技術','最初のコンボルーティン'], ans:1, expl:'PC（パーフェクトクリア）オープナーや様々なT-Spinオープナーなど、有利なスタートを切るための定石です。' },
+      { q:'「C4W（Cheese 4-Wide）」戦術の特徴は？', opts:['4列幅を使ったT-Spin連打戦術','フィールド中央に4列分の縦穴を空けてガベージを消化する戦術','4ライン消しだけで攻撃する戦術','コンボ4回でゲームを終わらせる戦術'], ans:1, expl:'4-Wideは中央に縦穴を作り受けたガベージを効率よく消化する防御戦術です。カウンター攻撃にも使えます。' },
+      { q:'「STK（ST Stacking）」とは？', opts:['スタンダードなスタッキング技法','SミノとTミノを使ってT-Spin Doubleを量産するループ構造','スプリントモードの戦術','単一ライン消しのループ'], ans:1, expl:'ST Stackingは特定のミノ配置でT-Spin Doubleを連続して打ち続けられる高効率の攻撃ループです。' },
+      { q:'G（重力）の値が20Gの時、ミノはどう動くか？', opts:['20秒かけてゆっくり落ちる','スポーンした瞬間に最下段まで落ちる','毎秒20マス落ちる','20倍速で落ちる'], ans:1, expl:'20Gでは重力が最大となり、ミノは出現した瞬間に即床に接地します。左右移動のみで操作します。' },
+      { q:'「Downstack（ダウンスタック）」とは？', opts:['高い積みを素早く削り低くすること','下段のラインだけを消すこと','相手より低い積みを維持すること','スタックを崩すこと'], ans:0, expl:'ダウンスタックは攻撃で高くなった積みをなるべく早くライン消去で下げる技術です。生存に不可欠です。' },
+      { q:'「Spike（スパイク）」攻撃とは？', opts:['Tミノでの奇襲攻撃','短時間に大量のガベージを一気に送る攻撃','相手の積みの穴を狙う戦術','コンボで連続してガベージを送ること'], ans:1, expl:'スパイクはテトリスやT-SpinなどをB2Bで連打し、一瞬で大量ガベージを相手に送る攻撃戦術です。' },
+      { q:'「Garbage Canceling（ガベージキャンセル）」とは？', opts:['ガベージラインを取り消すチート','受けたガベージを攻撃で相殺すること','ガベージの色が消えること','ガベージを受け取らない設定'], ans:1, expl:'多くのマルチプレイヤーテトリスでは送られてきたガベージを、自分の攻撃で相殺(キャンセル)できます。' },
+      { q:'TSM（T-Spin Mini）とは？', opts:['小さなTスロットでのT-Spin','Wall kick（壁蹴り）を使ったT-Spin','T-Spin判定だが威力が通常より低い特殊判定','T-Spinの練習モード'], ans:2, expl:'TSMはT-Spinとして認識されますが攻撃力が低い（Single=1ライン、Double=2ライン）特殊なケースです。' },
+      { q:'「Independence（独立）」なミノの配置とは？', opts:['ミノを一個ずつ孤立させること','受け取ったガベージの穴の位置に依存しないスタック','フィールドから独立した宙に浮くミノ','ホールドを使わない配置'], ans:1, expl:'どの列に穴が来ても対応できる汎用的な積み方をIndependentなスタックと言います。安定した防御に繋がります。' },
+      { q:'「Tetra」と「Tera」の違いは？', opts:['同じ意味','Tetraは4を意味するギリシャ語、Teraは1兆を表すSI接頭語','Tetraが正しいスペルでTeraは誤り','ゲーム内の難易度の違い'], ans:1, expl:'テトリスの「Tetra」はギリシャ語で4（4面体）を意味します。ゲーム名は「テトラ」と「テニス」の造語と言われています。' },
+    ]
+  },
+  {
+    id: 'lv5', cls: 'lv5', name: '名人', subtitle: 'Master Level', icon: '👑',
+    color: '#cc00ff', colorCls: 'lv5-c', passMark: 8,
+    desc: '最上位：テトリスの深い知識と歴史',
+    badge: { icon: '👑', label: 'MASTER', color: '#cc00ff' },
+    questions: [
+      { q:'テトリスを開発したのは誰で、いつ発表されたか？', opts:['宮本茂、1980年','アレクセイ・パジトノフ、1984年','坂本龍一、1986年','ビル・ゲイツ、1985年'], ans:1, expl:'テトリスはソビエト連邦の科学者アレクセイ・パジトノフが1984年に開発しました。当初はソビエトの研究機関のコンピューターで動いていました。' },
+      { q:'ゲームボーイ版テトリスが世界的ヒットになった理由として最も重要だったのは？', opts:['カラー画面の美しさ','ゲームボーイとセット販売され手軽に楽しめたこと','インターネット対戦が可能だったこと','アーケードゲームからの移植だったこと'], ans:1, expl:'1989年発売のゲームボーイ版テトリスは本体とセット販売され、3500万本以上売れた大ヒット作です。' },
+      { q:'「ガイドライン（Tetris Guideline）」で定められていないものはどれか？', opts:['7-Bag方式のランダム生成','SRS（スーパーローテーションシステム）','ミノの色','プレイヤーの必須スコア達成条件'], ans:3, expl:'テトリスガイドラインはミノの色・形・回転・ホールド・7-Bag・ゴーストピースなどを標準化していますが、スコア条件は実装次第です。' },
+      { q:'「Tetris Effect（テトリス効果）」とは？', opts:['テトリスのVRゲーム','テトリスを長時間プレイ後に現実世界でテトリスのイメージが見える現象','テトリスのBGMが頭から離れない症状','テトリスの最高スコア達成時のエフェクト'], ans:1, expl:'テトリス効果は心理学用語で、テトリスを繰り返しプレイした後に日常の物体がテトリスのピースに見える認知現象です。' },
+      { q:'古典的なテトリス（NES版等）に7-Bagがない場合の主なリスクは？', opts:['ミノが落ちる速度が上がらない','同じミノが連続して多数出現し積みが崩壊する可能性','ゴーストピースが表示されない','ホールドが使えない'], ans:1, expl:'古典テトリスは完全ランダムのため、Sミノが何度も連続する「S/Z-drought」など、最悪のケースが起こりえます。' },
+      { q:'「TGM（テトリスグランドマスター）」シリーズで有名な「グランドマスター（GM）称号」の取得に必要なのは？', opts:['スコア100万点達成','秒間20G以上の速度でプレイしてクリア','全モード制覇','オンライン対戦で100連勝'], ans:1, expl:'TGMシリーズのGM称号は高速（20G）のカオスな状況下でプレイし、時間・スコア・ロールの条件を全て満たして初めて与えられる最高の称号です。' },
+      { q:'「sprint（40 lines）」の世界レベルのトッププレイヤーが達成しているタイムの目安は？', opts:['約1分','約4〜5分','約2分','約20秒以内'], ans:3, expl:'世界トップクラスのプレイヤーは40ライン消去を20秒前後で達成します。一般プレイヤーは1〜3分程度です。' },
+      { q:'「cheese（チーズ）」攻撃とは？', opts:['ガベージを2ラインずつ送る攻撃','穴が毎回ランダムな位置に変わるガベージを送ること','Sミノを多用した攻撃','ゆっくりとコンボを繋げる攻撃'], ans:1, expl:'チーズは穴の位置がランダムに変化するガベージで、消化が難しく積みを乱す効果があります。' },
+      { q:'「ミノ」という呼び名の由来は？', opts:['発明者のニックネーム','テトロミノ（Tetromino）の後半部分から','日本語の「み（実）」から','ゲーム機メーカーの名前から'], ans:1, expl:'「ミノ」はtetroMINO（テトロミノ）の後半から来ています。テトロミノは「4つのブロックからなる形」を意味します。' },
+      { q:'「finesse faults」とは？', opts:['T-Spinの失敗','最適な操作より多くの動作をしてしまったミスの回数','フィールドの穴の数','ガベージを受け取り失敗した回数'], ans:1, expl:'finesse faultsはfinesseから外れた無駄な操作の回数です。上級者はこれを0に近づけることで速度を上げます。' },
+    ]
+  },
+];
+
+// ── State ─────────────────────────────────────────────
+let _currentLevel = null;
+let _qIndex = 0;
+let _answers = []; // null | 'correct' | 'wrong'
+let _timerInterval = null;
+let _timeLeft = 30;
+let _answered = false;
+let _passedLevels = {}; // { lv1: { score, ts } }
+
+// ── DOM helpers ───────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function showScreen(name) {
+  ['levelSelect','quizScreen','resultScreen'].forEach(id => {
+    $(id).style.display = id === name ? '' : 'none';
+  });
+}
+
+// ── Load/Save from localStorage (fallback without auth) ──
+function _loadLocal() {
+  try { return JSON.parse(localStorage.getItem('tetris_exam') || '{}'); } catch { return {}; }
+}
+function _saveLocal(data) {
+  try { localStorage.setItem('tetris_exam', JSON.stringify(data)); } catch {}
+}
+
+function loadPassed() {
+  _passedLevels = _loadLocal();
+}
+
+function markPassed(levelId, score) {
+  const prev = _passedLevels[levelId];
+  if (!prev || score > prev.score) {
+    _passedLevels[levelId] = { score, ts: Date.now() };
+    _saveLocal(_passedLevels);
+  }
+}
+
+// ── Render level grid ─────────────────────────────────
+function renderLevelGrid() {
+  const grid = $('levelGrid');
+  grid.innerHTML = '';
+  LEVELS.forEach(lv => {
+    const passed = _passedLevels[lv.id];
+    const card = document.createElement('div');
+    card.className = `level-card ${lv.cls}`;
+    card.setAttribute('role','button');
+    card.setAttribute('tabindex','0');
+    card.innerHTML = `
+      <span class="lv-badge-icon" aria-hidden="true">${lv.icon}</span>
+      <div class="lv-name ${lv.colorCls}">${lv.name}</div>
+      <div class="lv-subtitle">${lv.subtitle}</div>
+      <div class="lv-info">問題数 <span>10問</span>&nbsp; 合格ライン <span>${lv.passMark}/10</span><br>難易度 <span>${lv.desc}</span></div>
+      ${passed
+        ? `<div class="lv-passed">✓ 合格 ${passed.score}/10</div>`
+        : `<div class="lv-locked" style="opacity:.6">未挑戦</div>`}
+    `;
+    card.addEventListener('click', () => startExam(lv));
+    card.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') startExam(lv); });
+    grid.appendChild(card);
+  });
+}
+
+// ── Start exam ────────────────────────────────────────
+function startExam(lv) {
+  _currentLevel = lv;
+  _qIndex = 0;
+  _answers = [];
+  showScreen('quizScreen');
+  const label = $('quizLevelLabel');
+  label.textContent = `${lv.icon} ${lv.name}`;
+  label.className = `quiz-level-label ${lv.colorCls}`;
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const lv = _currentLevel;
+  const q = lv.questions[_qIndex];
+  _answered = false;
+
+  $('qNum').textContent = `Q ${String(_qIndex + 1).padStart(2,'0')} / 10`;
+  $('qText').textContent = q.q;
+  $('explBox').textContent = '';
+  $('explBox').classList.remove('show');
+  $('nextBtn').classList.remove('show');
+
+  const pct = (_qIndex / 10) * 100;
+  $('progressFill').style.width = pct + '%';
+  $('progressText').textContent = `${_qIndex} / 10`;
+
+  const grid = $('optionsGrid');
+  grid.innerHTML = '';
+  const KEYS = ['A','B','C','D'];
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.innerHTML = `<span class="opt-key">${KEYS[i]}</span>${opt}`;
+    btn.addEventListener('click', () => answerQ(i));
+    grid.appendChild(btn);
+  });
+
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(_timerInterval);
+  _timeLeft = 30;
+  const el = $('quizTimer');
+  el.textContent = _timeLeft;
+  el.classList.remove('warn');
+  _timerInterval = setInterval(() => {
+    _timeLeft--;
+    el.textContent = _timeLeft;
+    if (_timeLeft <= 10) el.classList.add('warn');
+    if (_timeLeft <= 0) {
+      clearInterval(_timerInterval);
+      if (!_answered) answerQ(-1); // time out
+    }
+  }, 1000);
+}
+
+function answerQ(chosen) {
+  if (_answered) return;
+  _answered = true;
+  clearInterval(_timerInterval);
+  $('quizTimer').classList.remove('warn');
+  $('quizTimer').textContent = '–';
+
+  const q = _currentLevel.questions[_qIndex];
+  const isCorrect = chosen === q.ans;
+  _answers.push(isCorrect ? 'correct' : 'wrong');
+
+  const btns = $('optionsGrid').querySelectorAll('.opt-btn');
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.ans) btn.classList.add('correct');
+    else if (i === chosen) btn.classList.add('wrong');
+  });
+
+  const expl = $('explBox');
+  expl.textContent = (isCorrect ? '✓ 正解！ ' : '✗ 不正解。') + q.expl;
+  expl.classList.add('show');
+
+  $('nextBtn').classList.add('show');
+  $('nextBtn').textContent = _qIndex < 9 ? '次の問題 ▶' : '結果を見る ▶';
+}
+
+$('nextBtn').addEventListener('click', () => {
+  _qIndex++;
+  if (_qIndex >= 10) showResult();
+  else renderQuestion();
+});
+
+// ── Result ────────────────────────────────────────────
+function showResult() {
+  showScreen('resultScreen');
+  const lv = _currentLevel;
+  const score = _answers.filter(a => a === 'correct').length;
+  const passed = score >= lv.passMark;
+
+  $('resultBadge').textContent = passed ? lv.badge.icon : '💔';
+  $('resultBadge').style.color = passed ? lv.badge.color : '#ff0080';
+
+  $('resultTitle').textContent = passed ? `${lv.name} 合格！` : '不合格…';
+  $('resultTitle').style.color = passed ? lv.badge.color : '#ff0080';
+
+  $('resultScore').innerHTML = `<span style="color:${passed ? lv.badge.color : '#ff0080'}">${score}</span> / 10`;
+
+  // dots
+  const bd = $('scoreBreakdown');
+  bd.innerHTML = _answers.map(a => `<span class="sc-dot ${a==='correct'?'c':'w'}"></span>`).join('') +
+    Array(10 - _answers.length).fill('<span class="sc-dot s"></span>').join('');
+
+  $('resultMsg').textContent = passed
+    ? `おめでとうございます！${lv.name}認定バッジがプロフィールに追加されます。ログイン中の場合は自動的に保存されます。`
+    : `合格ライン${lv.passMark}問のところ${score}問でした。もう一度挑戦してみましょう！`;
+
+  if (passed) markPassed(lv.id, score);
+
+  // Save to Firestore
+  $('resultSaveMsg').textContent = '';
+  _saveToFirestore(lv.id, score, passed);
+}
+
+async function _saveToFirestore(levelId, score, passed) {
+  try {
+    const { getCurrentUser } = await import('./auth.js');
+    const user = getCurrentUser();
+    if (!user) { $('resultSaveMsg').textContent = '※ログインすると結果が保存されます'; return; }
+    const { saveExamResult } = await import('./db.js');
+    await saveExamResult(user.uid, { levelId, score, passed });
+    if (passed) $('resultSaveMsg').textContent = '✓ バッジをプロフィールに保存しました';
+    else $('resultSaveMsg').textContent = '';
+  } catch (e) {
+    console.warn('exam save error', e);
+  }
+}
+
+$('retryBtn').addEventListener('click', () => { if (_currentLevel) startExam(_currentLevel); });
+$('changeBtn').addEventListener('click', () => { loadPassed(); renderLevelGrid(); showScreen('levelSelect'); });
+
+// ── Init ──────────────────────────────────────────────
+loadPassed();
+renderLevelGrid();
+showScreen('levelSelect');
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-export const APP_VERSION = "3.2.0";
+export const APP_VERSION = "3.3.0";
 
 /** Firebase設定 — auth.js / db.js / フィードバックウィジェットで共有 */
 export const FB_CONFIG = {
@@ -12,6 +12,17 @@ export const FB_CONFIG = {
 };
 
 export const UPDATE_LOG = [
+  {
+    version: "3.3.0",
+    title: "テトリス検定モード追加",
+    changes: [
+      "新機能「テトリス検定」（exam.html）を追加しました。ブロンズ・シルバー・ゴールド・プラチナ・マスターの5段階レベルで、テトリスの知識を測る認定試験を受けられます。",
+      "合格するとプロフィールページにバッジが表示されます。同じレベルで複数回受験した場合は最高スコアのみ記録されます。",
+      "検定の受験履歴はFirestoreの users/{uid}/exam_history に、合格バッジは users/{uid}/exam_badges に保存されます。",
+      "ナビゲーションバーに「検定」リンクを追加し、NEWバッジで新機能を告知しています。",
+      "プロフィールページで取得バッジ一覧を確認できます。"
+    ]
+  },
   {
     version: "3.2.0",
     title: "ボット難易度調整・システム安定性向上",

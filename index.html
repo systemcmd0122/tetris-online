@@ -761,6 +761,10 @@
               <rect x="1" y="5.5" width="11" height="1.5" rx=".5" />
               <rect x="1" y="9" width="7" height="1.5" rx=".5" />
             </svg>更新履歴</span></a>
+        <a href="exam.html" class="menu-btn secondary" onclick="playSE('click')" style="border-color:rgba(255,215,0,.35);color:#ffd700;background:rgba(255,215,0,.05)"><span class="btn-icon-wrap"><svg
+              width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="flex-shrink:0">
+              <polygon points="6.5,1 8,5 12,5 9,8 10,12 6.5,9.5 3,12 4,8 1,5 5,5"/>
+            </svg>テトリス検定<span style="font-family:'Press Start 2P',monospace;font-size:5px;background:#ff0080;color:#fff;padding:1px 4px;border-radius:2px;margin-left:4px;letter-spacing:0">NEW</span></span></a>
         <a href="profile.html" id="profileMenuBtn" class="menu-btn secondary" style="display:none;background:rgba(0,245,255,0.05);color:var(--acc);border-color:var(--acc);" onclick="playSE('click')"><span class="btn-icon-wrap"><svg
               width="13" height="13" viewBox="0 0 13 13" fill="currentColor" style="flex-shrink:0">
               <circle cx="6.5" cy="4" r="2.5"/>
@@ -892,6 +896,8 @@
   </script>
 
   <script type="module">
+    import { mountNav } from './nav.js';
+    mountNav();
     import { APP_VERSION, UPDATE_LOG, FB_CONFIG } from './config.js';
     import { mountAuthWidget, onAuthReady, getCachedProfile } from './auth.js';
 
@@ -1220,9 +1226,8 @@
         btn.disabled = true; btn.textContent = '送信中...'; errEl.textContent = '';
         try {
           const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-          const { FB_CONFIG } = await import('./config.js');
-          const app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
           const { getFirestore, collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+          const app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
           const fs = getFirestore(app);
           await addDoc(collection(fs, 'reports'), {
             type: _fbType, message: text, page: 'メニュー',

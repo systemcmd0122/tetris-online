@@ -142,17 +142,16 @@
 
 <body>
   <div class="logo">UPDATE LOG</div>
-  <div style="text-align:center;font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:20px;" id="versionDisp">
-  </div>
 
   <div id="updateContainer"></div>
 
   <a href="index.html" class="back-btn">◀ メニューに戻る</a>
 
   <script type="module">
-    import { APP_VERSION, UPDATE_LOG } from './config.js';
+    import { mountNav } from './nav.js';
+    mountNav();
+    import { UPDATE_LOG } from './config.js';
     import { mountAuthWidget } from './auth.js';
-    document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
     const wrap = document.createElement('div');
     wrap.id = 'updAuthWidget';
     wrap.style.cssText = 'position:fixed;top:10px;right:12px;z-index:100;min-width:160px;max-width:220px;';

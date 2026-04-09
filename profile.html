@@ -101,6 +101,29 @@
     .stat-card.c-acc3::before{background:var(--acc3)} .stat-card.c-acc3:hover{border-color:rgba(170,255,0,.4);box-shadow:0 4px 20px rgba(170,255,0,.1)} .stat-card.c-acc3::after{background:radial-gradient(ellipse at 50% 100%,rgba(170,255,0,.06),transparent 70%)}
     .stat-card.c-acc4::before{background:var(--acc4)} .stat-card.c-acc4:hover{border-color:rgba(255,136,0,.4);box-shadow:0 4px 20px rgba(255,136,0,.1)} .stat-card.c-acc4::after{background:radial-gradient(ellipse at 50% 100%,rgba(255,136,0,.06),transparent 70%)}
     .stat-card.c-gold::before{background:var(--gold)} .stat-card.c-gold:hover{border-color:rgba(255,215,0,.5);box-shadow:0 4px 20px rgba(255,215,0,.12)} .stat-card.c-gold::after{background:radial-gradient(ellipse at 50% 100%,rgba(255,215,0,.07),transparent 70%)}
+    /* EXAM BADGES */
+    .badges-section{margin-bottom:24px}
+    .badges-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);position:relative}
+    .badges-header::after{content:'';position:absolute;bottom:-1px;left:0;width:48px;height:2px;background:#ffd700;border-radius:2px}
+    .badges-title{font-family:'Press Start 2P',monospace;font-size:10px;color:#ffd700;letter-spacing:2px}
+    .badges-grid{display:flex;flex-wrap:wrap;gap:10px}
+    .badge-chip{display:flex;align-items:center;gap:8px;background:var(--s0);border:1px solid var(--border);border-radius:6px;padding:10px 14px;transition:transform .2s,border-color .2s,box-shadow .2s;cursor:default;position:relative;overflow:hidden}
+    .badge-chip::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+    .badge-chip:hover{transform:translateY(-2px)}
+    .badge-chip.bc-lv1::before{background:#cd7f32} .badge-chip.bc-lv1:hover{border-color:rgba(205,127,50,.5);box-shadow:0 4px 14px rgba(205,127,50,.15)}
+    .badge-chip.bc-lv2::before{background:#c0c0c0} .badge-chip.bc-lv2:hover{border-color:rgba(192,192,192,.5);box-shadow:0 4px 14px rgba(192,192,192,.12)}
+    .badge-chip.bc-lv3::before{background:#ffd700} .badge-chip.bc-lv3:hover{border-color:rgba(255,215,0,.5);box-shadow:0 4px 14px rgba(255,215,0,.15)}
+    .badge-chip.bc-lv4::before{background:#00f5ff} .badge-chip.bc-lv4:hover{border-color:rgba(0,245,255,.5);box-shadow:0 4px 14px rgba(0,245,255,.15)}
+    .badge-chip.bc-lv5::before{background:linear-gradient(90deg,#ff0080,#cc00ff,#00f5ff);animation:rainbowShift 3s linear infinite;background-size:300% 100%} .badge-chip.bc-lv5:hover{border-color:rgba(204,0,255,.5);box-shadow:0 4px 20px rgba(204,0,255,.2)}
+    .badge-icon{font-size:22px;flex-shrink:0;filter:drop-shadow(0 0 5px currentColor)}
+    .badge-info{display:flex;flex-direction:column;gap:2px}
+    .badge-name{font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px}
+    .bc-lv1 .badge-name{color:#cd7f32} .bc-lv2 .badge-name{color:#c0c0c0} .bc-lv3 .badge-name{color:#ffd700} .bc-lv4 .badge-name{color:#00f5ff} .bc-lv5 .badge-name{color:#cc00ff}
+    .badge-score{font-size:8px;color:var(--dim);letter-spacing:1px}
+    .badge-date{font-size:7px;color:var(--dim);letter-spacing:.5px}
+    .badge-empty{font-size:10px;color:var(--dim);letter-spacing:1px;display:flex;align-items:center;gap:8px}
+    .badge-empty a{color:var(--acc);text-decoration:none;font-size:9px;letter-spacing:1px;padding:6px 12px;border:1px solid rgba(0,245,255,.3);border-radius:3px;transition:all .15s}
+    .badge-empty a:hover{background:rgba(0,245,255,.07)}
     .stat-card.c-purple::before{background:#cc00ff} .stat-card.c-purple:hover{border-color:rgba(204,0,255,.4);box-shadow:0 4px 20px rgba(204,0,255,.1)} .stat-card.c-purple::after{background:radial-gradient(ellipse at 50% 100%,rgba(204,0,255,.06),transparent 70%)}
     .stat-val{font-family:'Press Start 2P',monospace;font-size:clamp(12px,3vw,20px);font-weight:900;letter-spacing:1px;margin-bottom:8px;position:relative;z-index:1}
     .stat-card.c-acc .stat-val{color:var(--acc)} .stat-card.c-acc2 .stat-val{color:var(--acc2)} .stat-card.c-acc3 .stat-val{color:var(--acc3)} .stat-card.c-acc4 .stat-val{color:var(--acc4)} .stat-card.c-gold .stat-val{color:var(--gold)} .stat-card.c-purple .stat-val{color:#cc00ff}
@@ -217,7 +240,6 @@
 
   <nav class="nav">
     <a href="index.html" class="nav-logo">TETRIS BATTLE</a>
-    <div id="versionDisp" style="font-size:8px;color:var(--acc2);font-weight:bold;margin-left:10px">VER ---</div>
     <a href="index.html" class="nav-back">
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 1L3 5l4 4"/></svg>
       メニューに戻る
@@ -253,6 +275,15 @@
     <div id="mainContent" style="display:none">
       <div class="profile-header" id="profileHeader"></div>
       <div class="stats-grid" id="statsGrid"></div>
+
+      <!-- EXAM BADGES -->
+      <div class="badges-section" id="badgesSection" style="display:none">
+        <div class="badges-header">
+          <div class="badges-title">▶ 検定バッジ</div>
+          <a href="exam.html" style="font-size:8px;color:var(--dim);text-decoration:none;letter-spacing:1px;transition:color .2s" onmouseover="this.style.color='#ffd700'" onmouseout="this.style.color=''">検定を受ける ▶</a>
+        </div>
+        <div class="badges-grid" id="badgesGrid"></div>
+      </div>
 
       <div class="tab-bar">
         <button class="tab-btn active" id="tabBtnMulti" onclick="switchTab('multi')" aria-label="マルチ対戦履歴">
@@ -395,11 +426,10 @@
   </script>
 
   <script type="module">
-    import { APP_VERSION } from './config.js';
+    import { mountNav } from './nav.js';
+    mountNav();
     import { onAuthReady, signIn, signOut, refreshProfile } from './auth.js';
-    import { upsertUserProfile, getUserProfile, getMultiHistory, getSprintHistory, updateUserName, updateUserAvatar } from './db.js';
-
-    document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
+    import { upsertUserProfile, getUserProfile, getMultiHistory, getSprintHistory, updateUserName, updateUserAvatar, getExamBadges } from './db.js';
 
     const stateMsg=document.getElementById('stateMsg'),mainContent=document.getElementById('mainContent'),loader=document.getElementById('pageLoader');
     function hideLoader(){loader.classList.add('hide');setTimeout(()=>loader.remove(),500);}
@@ -553,13 +583,49 @@
     async function loadProfile(user) {
       mainContent.style.display='block';stateMsg.innerHTML='';
       await upsertUserProfile(user).catch(()=>{});
-      const [profile,multiHistory,sprintHistory]=await Promise.all([
+      const [profile,multiHistory,sprintHistory,examBadges]=await Promise.all([
         getUserProfile(user.uid),getMultiHistory(user.uid,50),getSprintHistory(user.uid,50),
+        getExamBadges(user.uid).catch(()=>[]),
       ]);
       renderHeader(user,profile);renderStats(profile,multiHistory);
+      renderBadges(examBadges);
       renderMultiHistory(multiHistory);renderSprintHistory(sprintHistory);
       wireNameEdit(user);wireAvatarEdit(user);
       document.getElementById('logoutBtnProf')?.addEventListener('click',async()=>await signOut());
+    }
+
+    function renderBadges(badges) {
+      const BADGE_META = {
+        lv1:{ cls:'bc-lv1', icon:'🟫', name:'入門合格',    color:'#cd7f32' },
+        lv2:{ cls:'bc-lv2', icon:'⬜', name:'初級合格',    color:'#c0c0c0' },
+        lv3:{ cls:'bc-lv3', icon:'🥇', name:'中級合格',    color:'#ffd700' },
+        lv4:{ cls:'bc-lv4', icon:'💎', name:'上級合格',    color:'#00f5ff' },
+        lv5:{ cls:'bc-lv5', icon:'👑', name:'名人合格',    color:'#cc00ff' },
+      };
+      const section = document.getElementById('badgesSection');
+      const grid    = document.getElementById('badgesGrid');
+      if (!section || !grid) return;
+      section.style.display = '';
+
+      if (!badges || badges.length === 0) {
+        grid.innerHTML = `<div class="badge-empty">まだバッジなし&nbsp; <a href="exam.html">検定を受ける ▶</a></div>`;
+        return;
+      }
+      const ORDER = ['lv1','lv2','lv3','lv4','lv5'];
+      const map = {};
+      badges.forEach(b => map[b.levelId||b.id] = b);
+      grid.innerHTML = ORDER.filter(id => map[id]).map(id => {
+        const b = map[id], m = BADGE_META[id] || {};
+        const earned = b.earnedAt ? fmtDateFull(b.earnedAt) : '---';
+        return `<div class="badge-chip ${m.cls||''}" title="${m.name}">
+          <span class="badge-icon" aria-hidden="true">${m.icon||'🏅'}</span>
+          <div class="badge-info">
+            <div class="badge-name">${m.name}</div>
+            <div class="badge-score">${b.score||'?'}/10点</div>
+            <div class="badge-date">${earned}</div>
+          </div>
+        </div>`;
+      }).join('');
     }
 
     onAuthReady(async user=>{
