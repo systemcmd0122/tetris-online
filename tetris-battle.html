@@ -1385,6 +1385,23 @@
     import { upsertUserProfile } from './db.js';
     document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
 
+    // ── BOT CONFIG SYNC ──
+    let BOT_DELAYS = [750, 400, 80];
+    let BOT_NOISE = [0.4, 0.15, 0.0];
+    try {
+      const { getDatabase, ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+      const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const { FB_CONFIG } = await import('./config.js');
+      const app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
+      const db = getDatabase(app);
+      const snap = await get(ref(db, 'config/bot'));
+      if (snap.exists()) {
+        const d = snap.val();
+        if (d.delays) BOT_DELAYS = d.delays;
+        if (d.noise) BOT_NOISE = d.noise;
+      }
+    } catch (e) { console.warn('Bot config sync failed, using defaults'); }
+
     // ── AUTH WIDGET & NAME LOCK ──
     mountAuthWidget('battleAuthWidget');
     onAuthReady(async user => {
@@ -1590,8 +1607,6 @@
 
     // ═══ BOT AI ═══
     const BOT_NAMES = ['BOT-EASY', 'BOT-NORMAL', 'BOT-HARD'];
-    const BOT_DELAYS = [250, 120, 40];
-    const BOT_NOISE = [0.12, 0.04, 0.0];
 
     class BotController {
       constructor(game, difficulty = 2) {
@@ -2019,8 +2034,8 @@
         btn.disabled = true; btn.textContent = '送信中...'; errEl.textContent = '';
         try {
           const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-          const { getDatabase, ref, push } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-          const app = getApps().length ? getApps()[0] : initializeApp({ apiKey: "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw", authDomain: "tetris-online-9c827.firebaseapp.com", databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com", projectId: "tetris-online-9c827", storageBucket: "tetris-online-9c827.firebasestorage.app", messagingSenderId: "1045054992314", appId: "1:1045054992314:web:7fea20b9be543d7cab3783" });
+          const { FB_CONFIG } = await import('./config.js');
+          const app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
           const { getFirestore, collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
           const fs = getFirestore(app);
           await addDoc(collection(fs, 'reports'), {

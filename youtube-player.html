@@ -242,6 +242,7 @@
 
 <div class="header">
   <span class="header-logo">🎵 MUSIC PLAYER</span>
+  <div id="versionDisp" style="font-size:8px;color:var(--acc2);font-weight:bold;margin-right:10px">VER ---</div>
   <button class="hdr-btn" onclick="window.close()">✕</button>
 </div>
 
@@ -556,6 +557,10 @@ function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 
 // ── VOLUME INIT ──
 (function(){
+  import('./config.js').then(cfg => {
+    const vd = document.getElementById('versionDisp');
+    if(vd) vd.textContent = `VER ${cfg.APP_VERSION}`;
+  });
   const saved = localStorage.getItem('yt_vol');
   if (saved !== null) {
     document.getElementById('volSlider').value = saved;

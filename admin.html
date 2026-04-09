@@ -498,28 +498,8 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
               <button class="sbtn" onclick="stopSpec()">← 戻る</button>
             </div>
           </div>
-          <div class="spec-arena">
-            <div class="spec-col">
-              <div class="spec-badge p1">P1</div>
-              <div class="spec-name" id="specP1N">PLAYER 1</div>
-              <canvas id="specCv1" class="spec-cv p1" width="200" height="400"></canvas>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:12px;align-self:center">
-              <div class="vs-txt">VS</div>
-              <div class="spec-stats-panel">
-                <div class="ss-row"><span class="ss-label">P1 SCORE</span><span class="ss-v1" id="ssP1Score">0</span></div>
-                <div class="ss-row"><span class="ss-label">P2 SCORE</span><span class="ss-v2" id="ssP2Score">0</span></div>
-                <div class="ss-row"><span class="ss-label">P1 LEVEL</span><span class="ss-v1" id="ssP1Level">1</span></div>
-                <div class="ss-row"><span class="ss-label">P2 LEVEL</span><span class="ss-v2" id="ssP2Level">1</span></div>
-                <div class="ss-row"><span class="ss-label">P1 LINES</span><span class="ss-v1" id="ssP1Lines">0</span></div>
-                <div class="ss-row"><span class="ss-label">P2 LINES</span><span class="ss-v2" id="ssP2Lines">0</span></div>
-              </div>
-            </div>
-            <div class="spec-col">
-              <div class="spec-badge p2">P2</div>
-              <div class="spec-name" id="specP2N">PLAYER 2</div>
-              <canvas id="specCv2" class="spec-cv p2" width="200" height="400"></canvas>
-            </div>
+          <div class="spec-arena" id="specArena">
+            <!-- Dynamic slots -->
           </div>
         </div>
       </div>
@@ -715,7 +695,7 @@ canvas.spec-cv.p2{border:1px solid rgba(255,0,128,.5);box-shadow:0 0 16px rgba(2
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import{getDatabase,ref,set,get,onValue,off,update,remove}
   from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import{getFirestore,collection,addDoc,query,orderBy,limit,onSnapshot,deleteDoc,doc,getDocs,serverTimestamp,writeBatch}
+import{getFirestore,collection,addDoc,query,orderBy,limit,onSnapshot,deleteDoc,doc,getDocs,serverTimestamp,writeBatch,updateDoc}
   from"https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 import { APP_VERSION } from './config.js';
@@ -769,7 +749,7 @@ window.doLogout=()=>{
 
 // ══ TETRIS BOARD RENDERER ══
 const COLS=10,ROWS=20,CELL=20;
-const COLORS={I:'#00f5ff',O:'#f5d800',T:'#cc00ff',S:'#aaff00',Z:'#ff2244',J:'#1166ff',L:'#ff8800',G:'#2a3a55'};
+const COLORS={I:'#00f5ff',O:'#ffff00',T:'#cc00ff',S:'#aaff00',Z:'#ff0040',J:'#0066ff',L:'#ff8800',G:'#888888'};
 const PIECES={
   I:[[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],[[0,0,1,0],[0,0,1,0],[0,0,1,0],[0,0,1,0]],[[0,0,0,0],[0,0,0,0],[1,1,1,1],[0,0,0,0]],[[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]]],
   O:[[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]],[[1,1],[1,1]]],
@@ -799,7 +779,7 @@ function drawBoard(cv,d){
 }
 
 // ══ ADMIN STATE ══
-let roomsData={};let specRoom=null,specUnsub={p1:null,p2:null},specStartTs=null,specTimerIv=null;
+let roomsData={};let specRoom=null,specUnsub={},specStartTs=null,specTimerIv=null;
 let roomsListener=null;let logsUnsub=null;let defaultForceMsg='管理者によってこのルームは強制終了されました';
 let totalRooms=0;
 
@@ -1006,19 +986,43 @@ window.startSpec=code=>{
   document.getElementById('specCode').textContent=code;
   specStartTs=Date.now();
 
-  const r=roomsData[code];
-  document.getElementById('specP1N').textContent=r?.p1?.name||'PLAYER 1';
-  document.getElementById('specP2N').textContent=r?.p2?.name||'PLAYER 2';
+  const r=roomsData[code]||{};
+  const arena=document.getElementById('specArena');
+  arena.innerHTML='';
   addLog(`観戦開始: ROOM ${code}`,'info');
 
-  const cv1=document.getElementById('specCv1'),cv2=document.getElementById('specCv2');
-  const rp1=ref(db,`multi/${code}/game/p1`);
-  const rp2=ref(db,`multi/${code}/game/p2`);
-  onValue(rp1,s=>{const d=s.val();drawBoard(cv1,d);if(d){document.getElementById('ssP1Score').textContent=d.score||0;document.getElementById('ssP1Level').textContent=d.level||1;document.getElementById('ssP1Lines').textContent=d.lines||0;}});
-  onValue(rp2,s=>{const d=s.val();drawBoard(cv2,d);if(d){document.getElementById('ssP2Score').textContent=d.score||0;document.getElementById('ssP2Level').textContent=d.level||1;document.getElementById('ssP2Lines').textContent=d.lines||0;}});
-  specUnsub.p1=rp1;specUnsub.p2=rp2;
+  const slots=['p1','p2','p3','p4'];
+  slots.forEach(s=>{
+    if(!r[s]) return;
+    const idx=s.slice(1);
+    const col=document.createElement('div');
+    col.className='spec-col';
+    col.innerHTML=`
+      <div class="spec-badge p${idx}">P${idx}</div>
+      <div class="spec-name" id="specN_${s}">${r[s].name||'PLAYER '+idx}</div>
+      <canvas id="specCv_${s}" class="spec-cv p${idx}" width="200" height="400"></canvas>
+      <div class="spec-stats-panel" style="margin-top:8px; width:100%">
+        <div class="ss-row"><span class="ss-label">SCORE</span><span class="ss-v1" id="ssS_${s}">0</span></div>
+        <div class="ss-row"><span class="ss-label">LEVEL</span><span class="ss-v1" id="ssL_${s}">1</span></div>
+        <div class="ss-row"><span class="ss-label">LINES</span><span class="ss-v1" id="ssLines_${s}">0</span></div>
+      </div>
+    `;
+    arena.appendChild(col);
 
-  // Update timer (store reference so we can clear it in stopSpec)
+    const gRef=ref(db,`multi/${code}/game/${s}`);
+    const unsub=onValue(gRef,snap=>{
+      const d=snap.val();
+      const cv=document.getElementById(`specCv_${s}`);
+      if(cv&&d){
+        drawBoard(cv,d);
+        document.getElementById(`ssS_${s}`).textContent=d.score||0;
+        document.getElementById(`ssL_${s}`).textContent=d.level||1;
+        document.getElementById(`ssLines_${s}`).textContent=d.lines||0;
+      }
+    });
+    specUnsub[s]=unsub;
+  });
+
   if(specTimerIv)clearInterval(specTimerIv);
   specTimerIv=setInterval(()=>{
     if(!specRoom){clearInterval(specTimerIv);specTimerIv=null;return;}
@@ -1028,9 +1032,10 @@ window.startSpec=code=>{
   },1000);
 };
 window.stopSpec=()=>{
-  if(specUnsub.p1)try{off(specUnsub.p1);}catch(e){}
-  if(specUnsub.p2)try{off(specUnsub.p2);}catch(e){}
-  specUnsub={p1:null,p2:null};
+  Object.keys(specUnsub).forEach(s=>{
+    if(specUnsub[s]) try{specUnsub[s]();}catch(e){}
+  });
+  specUnsub={};
   if(specTimerIv){clearInterval(specTimerIv);specTimerIv=null;}
   if(specRoom)addLog(`観戦終了: ROOM ${specRoom}`,'info');
   specRoom=null;window.currentSpecRoom=null;
@@ -1249,19 +1254,29 @@ function showToast(msg,type=''){
 
 
 // ══════════════════════════════════════════════════════
-// FEEDBACK PANEL
+// FEEDBACK PANEL (Firestore)
 // ══════════════════════════════════════════════════════
 let _fbData = {};       // id -> report object
 let _fbFilter = 'all';
 let _fbListener = null;
 
 function startFeedbackListener(){
-  if(_fbListener){ try{_fbListener();}catch(e){} }
-  _fbListener = onValue(ref(db,'reports'), snap => {
-    _fbData = snap.val() || {};
+  if(_fbListener) _fbListener();
+  const q = query(collection(fs, 'reports'), orderBy('ts', 'desc'), limit(100));
+  _fbListener = onSnapshot(q, snap => {
+    _fbData = {};
+    snap.forEach(docSnap => {
+      _fbData[docSnap.id] = docSnap.data();
+      // Firestore timestamp -> ms
+      if(_fbData[docSnap.id].ts) {
+        _fbData[docSnap.id].ts = _fbData[docSnap.id].ts.toMillis ? _fbData[docSnap.id].ts.toMillis() : _fbData[docSnap.id].ts;
+      }
+    });
     updateFbStats();
     renderFbList();
     updateFbNavBadge();
+  }, err => {
+    console.error('Feedback listener error:', err);
   });
 }
 
@@ -1300,9 +1315,8 @@ function renderFbList(){
 
   let entries = Object.entries(_fbData)
     .filter(([,r])=>r && r.message)
-    .sort(([,a],[,b])=>(b.ts||0)-(a.ts||0)); // newest first
+    .sort(([,a],[,b])=>(b.ts||0)-(a.ts||0));
 
-  // Apply filter
   if(_fbFilter === 'new'){
     entries = entries.filter(([,r])=>r.status==='new');
   } else if(_fbFilter !== 'all'){
@@ -1357,7 +1371,7 @@ function renderFbList(){
 
 window.setFbStatus = async (id, status) => {
   try{
-    await update(ref(db,'reports/'+id), {status});
+    await updateDoc(doc(fs, 'reports', id), {status});
     addLog(`フィードバック #${id.slice(-6)} → ${status}`, 'info');
     persistLog(`Feedback ${id.slice(-6)} marked as ${status}`, 'admin', {id, status});
   }catch(e){ showToast('更新失敗: '+e.message,'err'); }
@@ -1366,7 +1380,7 @@ window.setFbStatus = async (id, status) => {
 window.deleteFb = async (id) => {
   if(!confirm('このフィードバックを削除しますか？')) return;
   try{
-    await remove(ref(db,'reports/'+id));
+    await deleteDoc(doc(fs, 'reports', id));
     addLog(`フィードバック #${id.slice(-6)} 削除`, 'warn');
   }catch(e){ showToast('削除失敗: '+e.message,'err'); }
 };
@@ -1375,17 +1389,31 @@ window.deleteResolvedFeedback = async () => {
   const resolved = Object.entries(_fbData).filter(([,r])=>r&&r.status==='resolved');
   if(!resolved.length){ showToast('解決済みのフィードバックがありません','ok'); return; }
   if(!confirm(`解決済み ${resolved.length} 件を削除しますか？`)) return;
-  await Promise.all(resolved.map(([id])=>remove(ref(db,'reports/'+id)).catch(()=>{})));
-  addLog(`解決済みフィードバック ${resolved.length} 件一括削除`, 'warn');
-  showToast(`${resolved.length} 件削除しました`, 'ok');
+  try {
+    const batch = writeBatch(fs);
+    resolved.forEach(([id]) => {
+      batch.delete(doc(fs, 'reports', id));
+    });
+    await batch.commit();
+    addLog(`解決済みフィードバック ${resolved.length} 件一括削除`, 'warn');
+    showToast(`${resolved.length} 件削除しました`, 'ok');
+  } catch(e) { showToast('削除失敗: '+e.message, 'err'); }
 };
 
-window.refreshFeedback = () => {
-  get(ref(db,'reports')).then(snap=>{
-    _fbData=snap.val()||{};
-    updateFbStats();renderFbList();updateFbNavBadge();
+window.refreshFeedback = async () => {
+  try {
+    const q = query(collection(fs, 'reports'), orderBy('ts', 'desc'), limit(100));
+    const snap = await getDocs(q);
+    _fbData = {};
+    snap.forEach(docSnap => {
+      _fbData[docSnap.id] = docSnap.data();
+      if(_fbData[docSnap.id].ts) {
+        _fbData[docSnap.id].ts = _fbData[docSnap.id].ts.toMillis ? _fbData[docSnap.id].ts.toMillis() : _fbData[docSnap.id].ts;
+      }
+    });
+    updateFbStats(); renderFbList(); updateFbNavBadge();
     showToast('更新しました','ok');
-  });
+  } catch(e) { showToast('更新失敗: '+e.message, 'err'); }
 };
 
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }

@@ -1220,8 +1220,9 @@
         btn.disabled = true; btn.textContent = '送信中...'; errEl.textContent = '';
         try {
           const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-          const { getFirestore, collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+          const { FB_CONFIG } = await import('./config.js');
           const app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
+          const { getFirestore, collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
           const fs = getFirestore(app);
           await addDoc(collection(fs, 'reports'), {
             type: _fbType, message: text, page: 'メニュー',

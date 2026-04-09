@@ -217,6 +217,7 @@
 
   <nav class="nav">
     <a href="index.html" class="nav-logo">TETRIS BATTLE</a>
+    <div id="versionDisp" style="font-size:8px;color:var(--acc2);font-weight:bold;margin-left:10px">VER ---</div>
     <a href="index.html" class="nav-back">
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 1L3 5l4 4"/></svg>
       メニューに戻る
@@ -394,8 +395,11 @@
   </script>
 
   <script type="module">
+    import { APP_VERSION } from './config.js';
     import { onAuthReady, signIn, signOut, refreshProfile } from './auth.js';
     import { upsertUserProfile, getUserProfile, getMultiHistory, getSprintHistory, updateUserName, updateUserAvatar } from './db.js';
+
+    document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
 
     const stateMsg=document.getElementById('stateMsg'),mainContent=document.getElementById('mainContent'),loader=document.getElementById('pageLoader');
     function hideLoader(){loader.classList.add('hide');setTimeout(()=>loader.remove(),500);}

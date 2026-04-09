@@ -416,6 +416,7 @@
     </svg>
   </button>
   <div class="bar-inner">
+    <div id="versionDisp" style="font-size:8px;color:var(--acc2);font-weight:bold;margin-right:10px;white-space:nowrap">VER ---</div>
     <button class="tr" onclick="playPrev()">
       <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><rect x="2" y="3" width="3" height="12"/><polygon points="15,3 6,9 15,15"/></svg>
     </button>
@@ -1114,6 +1115,12 @@ function toast(msg){
 // ╚══════════════════════════════════╝
 function setStat(h,c){ const e=document.getElementById('stat'); e.innerHTML=h; e.style.color=c||'var(--acc)'; }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+import('./config.js').then(cfg => {
+  const vd = document.getElementById('versionDisp');
+  if(vd) vd.textContent = `VER ${cfg.APP_VERSION}`;
+});
+
 // ページを離れる・閉じる際に yt_nowplaying をクリア（多用途: マルチ対戦への影響防止）
 window.addEventListener('pagehide', () => {
   try { localStorage.removeItem('yt_nowplaying'); } catch(e) {}

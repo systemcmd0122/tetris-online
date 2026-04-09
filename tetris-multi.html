@@ -1815,6 +1815,18 @@
     document.getElementById('statusText').className = 'status-online';
     document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
 
+    // ── BOT CONFIG SYNC ──
+    let BOT_DELAYS = [750, 400, 80];
+    let BOT_NOISE = [0.4, 0.15, 0.0];
+    try {
+      const snap = await get(ref(db, 'config/bot'));
+      if (snap.exists()) {
+        const d = snap.val();
+        if (d.delays) BOT_DELAYS = d.delays;
+        if (d.noise) BOT_NOISE = d.noise;
+      }
+    } catch (e) { }
+
     // ── AUTH WIDGET & NAME LOCK ──
     mountAuthWidget('multiAuthWidget');
     let _authUser = null;
@@ -2033,9 +2045,6 @@
     const SGLOW = ['', 'rgba(0,245,255,.3)', 'rgba(255,0,128,.3)', 'rgba(170,255,0,.3)', 'rgba(255,136,0,.3)'];
     const SLCLS = ['', 'lp1', 'lp2', 'lp3', 'lp4'];
 
-    // ── BOT AI (for quick match fallback) ──
-    const BOT_DELAYS = [250, 120, 40];
-    const BOT_NOISE = [0.12, 0.04, 0.0];
     let _qmBotGame = null, _qmBotCtrl = null; // quick match bot instances
 
     class BotController {
@@ -3177,8 +3186,11 @@
         if (text.length < 5) { fbErr.textContent = '⚠ もう少し詳しく教えてください'; return; }
         btnSend.disabled = true; btnSend.textContent = '送信中...'; fbErr.textContent = '';
         try {
+          const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+          const { FB_CONFIG } = await import('./config.js');
+          const app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
           const { getFirestore, collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-          const fs = getFirestore(fbApp);
+          const fs = getFirestore(app);
           await addDoc(collection(fs, 'reports'), {
             type: _fbType, message: text,
             page: 'マルチ対戦', version: APP_VERSION,

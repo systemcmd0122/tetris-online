@@ -1663,6 +1663,10 @@
 
     // ══ INIT ══
     (function () {
+      import('./config.js').then(cfg => {
+        const vd = document.getElementById('versionDisp');
+        if (vd) vd.textContent = `VER ${cfg.APP_VERSION}`;
+      });
       // restore name
       const saved = localStorage.getItem('sprint_playerName');
       if (saved) document.getElementById('playerName').value = saved;
