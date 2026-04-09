@@ -321,7 +321,7 @@ const $ = id => document.getElementById(id);
 
 function showScreen(name) {
   ['levelSelect','quizScreen','resultScreen'].forEach(id => {
-    $(id).style.display = id === name ? '' : 'none';
+    $(id).style.display = id === name ? 'block' : 'none';
   });
 }
 
@@ -357,7 +357,7 @@ function renderLevelGrid() {
     card.setAttribute('tabindex','0');
     card.innerHTML = `
       <span class="lv-badge-icon" aria-hidden="true">${lv.icon}</span>
-      <div class="lv-name ${lv.colorCls}">${lv.name}</div>
+      <div class="lv-name">${lv.name}</div>
       <div class="lv-subtitle">${lv.subtitle}</div>
       <div class="lv-info">問題数 <span>10問</span>&nbsp; 合格ライン <span>${lv.passMark}/10</span><br>難易度 <span>${lv.desc}</span></div>
       ${passed
