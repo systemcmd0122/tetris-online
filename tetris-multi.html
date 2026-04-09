@@ -2611,20 +2611,37 @@
       if (code.length !== 4 || !/^[0-9]{4}$/.test(code)) { showToast('4桁の数字コードを入力してください', 'warn'); return; }
       const name = _getPlayerName();
       const rRef = ref(db, 'multi/' + code);
-      let snap; try { snap = await get(rRef); } catch (e) { showToast('接続エラー: ' + e.message, 'warn'); return; }
-      if (!snap.exists()) { showToast('ルームが見つかりません', 'warn'); return; }
-      const d = snap.val();
-      if (d.status === 'started') { showToast('このゲームはすでに開始しています', 'warn'); return; }
-      if (d.status !== 'waiting') { showToast('このルームには参加できません', 'warn'); return; }
-      const max = d.maxPlayers || 3, slots = ['p1', 'p2', 'p3', 'p4'].slice(0, max);
-      const free = slots.find(s => !d[s]);
-      if (!free) { showToast('このルームは満員です', 'warn'); return; }
-      mySlot = free; roomCode = code; endedOnce = false;
-      await update(rRef, { [free]: { name, alive: true } });
-      onDisconnect(ref(db, 'multi/' + code + '/' + free)).remove();
-      document.getElementById('displayRoomCode').textContent = code;
-      document.getElementById('statusRoom').textContent = 'MULTI: ' + code;
-      showScreen('waitingScreen'); listenWait();
+
+      try {
+        const result = await runTransaction(rRef, (d) => {
+          if (!d) return d;
+          if (d.status === 'started' || d.status !== 'waiting') return;
+          const max = d.maxPlayers || 3, slots = ['p1', 'p2', 'p3', 'p4'].slice(0, max);
+          const free = slots.find(s => !d[s]);
+          if (!free) return;
+          d[free] = { name, alive: true };
+          return d;
+        });
+
+        if (!result.committed) {
+          showToast('参加できませんでした（満員または開始済み）', 'warn');
+          return;
+        }
+
+        const d = result.snapshot.val();
+        if (!d) { showToast('ルームが見つかりません', 'warn'); return; }
+        const max = d.maxPlayers || 3, slots = ['p1', 'p2', 'p3', 'p4'].slice(0, max);
+        const assigned = slots.find(s => d[s] && d[s].name === name);
+        if (!assigned) throw new Error('スロット割り当てに失敗しました');
+
+        mySlot = assigned; roomCode = code; endedOnce = false;
+        onDisconnect(ref(db, 'multi/' + code + '/' + assigned)).remove();
+        document.getElementById('displayRoomCode').textContent = code;
+        document.getElementById('statusRoom').textContent = 'MULTI: ' + code;
+        showScreen('waitingScreen'); listenWait();
+      } catch (e) {
+        showToast('接続エラー: ' + e.message, 'warn');
+      }
     };
 
     // ── HOST START ──
@@ -2673,22 +2690,24 @@
       try {
         if (prevSlot === 'p1') {
           // ══ ホスト ══
-          // ① 前のゲームデータを削除
-          await Promise.all([
-            remove(ref(db, 'multi/' + prevCode + '/game')),
-            remove(ref(db, 'multi/' + prevCode + '/garb')),
-            remove(ref(db, 'multi/' + prevCode + '/alive')),
-          ]);
-
-          // ② ルームをatomicにリセット：status=waiting、非p1スロットをnull
+          // ① 前のゲームデータを削除 & ルームをatomicにリセット：status=waiting、非p1スロットをnull
           const rSnap = await get(ref(db, 'multi/' + prevCode));
           if (!rSnap.exists()) throw new Error('ルームが見つかりません');
-          const maxP = rSnap.val().maxPlayers || 3;
-          const resetData = { status: 'waiting', gameStartAt: null, activeSlots: null };
-          ['p2', 'p3', 'p4'].slice(0, maxP - 1).forEach(s => { resetData[s] = null; });
-          // p1スロットも確実に再設定（alive:trueで待機可能状態に）
-          resetData['p1'] = { name: prevName, alive: true };
-          await update(ref(db, 'multi/' + prevCode), resetData);
+
+          const updateData = {
+            status: 'waiting',
+            gameStartAt: null,
+            activeSlots: null,
+            game: null,
+            garb: null,
+            alive: null,
+            p1: { name: prevName, alive: true },
+            p2: null,
+            p3: null,
+            p4: null
+          };
+
+          await update(ref(db, 'multi/' + prevCode), updateData);
           onDisconnect(ref(db, 'multi/' + prevCode)).remove();
 
           // ③ 待機画面に移行
@@ -2725,22 +2744,34 @@
           // BACK TO LOBBY が押された場合は中断
           if (!_rematchActive) return;
 
-          const maxP2 = roomData.maxPlayers || 3;
-          const slots = ['p1', 'p2', 'p3', 'p4'].slice(0, maxP2);
+          // スロット書き込み (runTransactionで確実に確保)
+          const joinResult = await runTransaction(rRef, (d) => {
+            if (!d || d.status !== 'waiting') return;
+            const max = d.maxPlayers || 3;
+            const slots = ['p1', 'p2', 'p3', 'p4'].slice(0, max);
+            let target = prevSlot;
+            // 以前のスロットが他人に使われていれば別の空きを探す
+            if (d[prevSlot] && d[prevSlot].name && d[prevSlot].name !== prevName) {
+              target = slots.find(s => !d[s]) || null;
+            }
+            if (!target) return;
+            d[target] = { name: prevName, alive: true };
+            return d;
+          });
 
-          // 自分のスロットを確保（nullなら再利用、他人が使っていれば別スロット）
-          let targetSlot = prevSlot;
-          if (roomData[prevSlot] && roomData[prevSlot].name && roomData[prevSlot].name !== prevName) {
-            targetSlot = slots.find(s => !roomData[s]) || null;
-            if (!targetSlot) throw new Error('空きスロットがありません');
-          }
+          if (!joinResult.committed) throw new Error('リマッチに参加できませんでした');
+
+          const finalData = joinResult.snapshot.val();
+          const max = finalData.maxPlayers || 3;
+          const slots = ['p1', 'p2', 'p3', 'p4'].slice(0, max);
+          const assigned = slots.find(s => finalData[s] && finalData[s].name === prevName);
+          if (!assigned) throw new Error('スロットの再確保に失敗しました');
 
           // スロット書き込み
-          mySlot = targetSlot; roomCode = prevCode; endedOnce = false;
-          await update(rRef, { [targetSlot]: { name: prevName, alive: true } });
-          onDisconnect(ref(db, 'multi/' + prevCode + '/' + targetSlot)).remove();
+          mySlot = assigned; roomCode = prevCode; endedOnce = false;
+          onDisconnect(ref(db, 'multi/' + prevCode + '/' + assigned)).remove();
 
-          if (!_rematchActive) return; // 書き込み中にキャンセルされた場合
+          if (!_rematchActive) return;
           _rematchActive = false;
           document.getElementById('displayRoomCode').textContent = prevCode;
           document.getElementById('statusRoom').textContent = 'MULTI: ' + prevCode;
@@ -2766,15 +2797,17 @@
       resetState();
       if (!wasBot && code && slot && db) {
         try {
-          // gameOver を記録して他プレイヤーに通知
-          await update(ref(db, 'multi/' + code + '/game'), { [slot]: { gameOver: true, score: 0, board: [] } });
-          // alive を false にする
-          await update(ref(db, 'multi/' + code + '/alive'), { [slot]: false });
-          // 非ホストの場合はスロットを null にする
-          if (slot !== 'p1') {
+          if (slot === 'p1') {
+            // ホストが退出する場合はルームごと削除して残骸を残さない
+            await remove(ref(db, 'multi/' + code));
+          } else {
+            // gameOver を記録して他プレイヤーに通知
+            await update(ref(db, 'multi/' + code + '/game'), { [slot]: { gameOver: true, score: 0, board: [] } });
+            // alive を false にする
+            await update(ref(db, 'multi/' + code + '/alive'), { [slot]: false });
+            // 非ホストの場合はスロットを null にして席を空ける
             await update(ref(db, 'multi/' + code), { [slot]: null });
           }
-          // p1はonDisconnectに任せる（rematchで戻るためルームは保持する）
         } catch (e) { }
       }
       showScreen('lobbyScreen');
@@ -2814,7 +2847,7 @@
       const aliveRef = ref(db, 'multi/' + roomCode + '/alive');
       _addSub('alive', onValue(aliveRef, snap => {
         const av = snap.val() || {};
-        active.filter(s => s !== mySlot).forEach(s => { if (oppInfo[s]) oppInfo[s].alive = av[s] !== false; });
+        active.filter(s => s !== mySlot).forEach(s => { if (oppInfo[s]) oppInfo[s].alive = av[s] === true; });
       }));
 
       // Watch opponent boards
@@ -2866,11 +2899,16 @@
 
       // Countdown
       const gsa = d.gameStartAt || (getServerTime() + 5000);
+
+      // ゲーム開始直後に生存フラグを立て、切断時は自動でfalseになるよう設定
+      const myAliveRef = ref(db, 'multi/' + roomCode + '/alive/' + mySlot);
+      set(myAliveRef, true).catch(() => { });
+      onDisconnect(myAliveRef).set(false);
+
       const aborted = await doCountdown(gsa); if (aborted) return;
 
       game = new TetrisGame('myCanvas', 'holdCanvas', 'nextCanvas');
       gameRunning = true; endedOnce = false;
-      update(ref(db, 'multi/' + roomCode + '/alive'), { [mySlot]: true }).catch(() => { });
 
       const PUSH = 50; let lastPush = 0, pendOut = 0, lastMusicCheck = 0;
       const loop = ts => {
