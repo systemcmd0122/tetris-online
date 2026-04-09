@@ -984,7 +984,9 @@
       margin-top: 4px;
       text-shadow: 0 0 8px rgba(255, 215, 0, .6)
     }
-  </style>
+  
+    body.game-active #tb-nav { display: none !important; }
+</style>
 </head>
 
 <body>
@@ -1016,7 +1018,7 @@
         ▶ 自己ベストは自動で更新
       </div>
       <button class="btn btn-sprint" onclick="startSprint()">▶ START SPRINT</button>
-      <button class="btn btn-rank" onclick="showRanking()">🏆 RANKING</button>
+      <button class="btn btn-rank" onclick="showRanking()">★ RANKING</button>
       <button class="btn btn-back" onclick="location.href='index.html'">◀ MENU</button>
     </div>
     <div style="font-size:9px;color:var(--dim);letter-spacing:2px;margin-top:18px" id="pbDisplay"></div>
@@ -1140,7 +1142,7 @@
     <div id="pbNewBadge" style="min-height:20px"></div>
     <div class="result-btn-row">
       <button class="result-btn retry" onclick="retryGame()">▶ RETRY</button>
-      <button class="result-btn rank" onclick="showRanking()">🏆 RANKING</button>
+      <button class="result-btn rank" onclick="showRanking()">★ RANKING</button>
       <button class="result-btn menu" onclick="goLobby()">LOBBY</button>
     </div>
   </div>
@@ -1153,7 +1155,7 @@
   <!-- ══ RANKING SCREEN ══ -->
   <div class="screen" id="rankScreen">
     <div class="rank-header">
-      <div class="rank-title">🏆 SPRINT RANKING</div>
+      <div class="rank-title">★ SPRINT RANKING</div>
       <div class="rank-sub">40 LINES — GLOBAL TOP 50</div>
     </div>
     <div id="rankContent" style="width:100%;max-width:520px">
@@ -1499,15 +1501,15 @@
         const isNewPB = pb == null || finalMs < pb;
         if (isNewPB) {
           setPB(finalMs);
-          pbNew.innerHTML = '<div class="pb-badge">🏅 NEW PERSONAL BEST!</div>';
+          pbNew.innerHTML = '<div class="pb-badge">★ NEW PERSONAL BEST!</div>';
         }
         // Upload to Firebase
         try {
           const rank = await uploadScore(_playerName, finalMs);
           let cls = 'ranked', txt = `GLOBAL #${rank}`;
-          if (rank === 1) cls = 'gold', txt = '🥇 WORLD #1';
-          else if (rank === 2) cls = 'silver', txt = '🥈 WORLD #2';
-          else if (rank === 3) cls = 'bronze', txt = '🥉 WORLD #3';
+          if (rank === 1) cls = 'gold', txt = 'WORLD #1';
+          else if (rank === 2) cls = 'silver', txt = 'WORLD #2';
+          else if (rank === 3) cls = 'bronze', txt = 'WORLD #3';
           rankBadge.innerHTML = `<div class="result-rank-badge ${cls}">${txt}</div>`;
           // ログイン中ユーザーの個人履歴に保存
           window._onSprintComplete?.(_playerName, finalMs, game?.score || 0, rank);
@@ -1554,7 +1556,7 @@
       document.getElementById('resultOverlay').classList.remove('show');
       showScreen('rankScreen');
       const container = document.getElementById('rankContent');
-      container.innerHTML = '<div class="rank-loading">🔄 読み込み中...</div>';
+      container.innerHTML = '<div class="rank-loading">読み込み中...</div>';
       try {
         // ── Firestore: orderBy('ms') + limit(50) で1クエリ完結 ──
         const fs = await getFS();
@@ -1580,9 +1582,9 @@
           const entry = d.data();
           const pos = i + 1;
           let posStr = '', medal = '';
-          if (pos === 1) { medal = '🥇'; posStr = '<span class="rank-pos gold">1st</span>'; }
-          else if (pos === 2) { medal = '🥈'; posStr = '<span class="rank-pos silver">2nd</span>'; }
-          else if (pos === 3) { medal = '🥉'; posStr = '<span class="rank-pos bronze">3rd</span>'; }
+          if (pos === 1) { medal = ''; posStr = '<span class="rank-pos gold">1st</span>'; }
+          else if (pos === 2) { medal = ''; posStr = '<span class="rank-pos silver">2nd</span>'; }
+          else if (pos === 3) { medal = ''; posStr = '<span class="rank-pos bronze">3rd</span>'; }
           else posStr = `<span class="rank-pos">#${pos}</span>`;
           const isMe = entry.name === myName;
           // Firestore serverTimestamp は Timestamp 型
@@ -1689,6 +1691,9 @@
 
   <!-- ═══ AUTH + DB MODULE ═══ -->
   <script type="module">
+    import { mountNav } from './nav.js';
+    mountNav();
+
     import { onAuthReady, getCachedProfile, mountAuthWidget, getCurrentUser } from './auth.js';
     import { saveSprintResult, upsertUserProfile } from './db.js';
 

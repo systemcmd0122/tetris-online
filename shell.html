@@ -1126,5 +1126,10 @@ window.addEventListener('pagehide', () => {
   try { localStorage.removeItem('yt_nowplaying'); } catch(e) {}
 });
 </script>
+
+  <script type="module">
+    import { mountNav } from './nav.js';
+    mountNav();
+  </script>
 </body>
 </html>

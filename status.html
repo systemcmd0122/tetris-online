@@ -473,6 +473,9 @@
 </div>
 
 <script type="module">
+    import { mountNav } from './nav.js';
+    mountNav();
+
 import { APP_VERSION } from './config.js';
 document.getElementById('infoVersion').textContent = APP_VERSION;
 

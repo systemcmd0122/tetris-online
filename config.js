@@ -1,4 +1,4 @@
-export const APP_VERSION = "3.3.0";
+export const APP_VERSION = "3.2.0";
 
 /** Firebase設定 — auth.js / db.js / フィードバックウィジェットで共有 */
 export const FB_CONFIG = {

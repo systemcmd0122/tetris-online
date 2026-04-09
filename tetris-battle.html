@@ -1159,7 +1159,9 @@
     .board-wrap.shake {
       animation: boardShake .25s ease-out
     }
-  </style>
+  
+    body.game-active #tb-nav { display: none !important; }
+</style>
 </head>
 
 <body>
@@ -1380,6 +1382,9 @@
   <div class="toast" id="toast"></div>
 
   <script type="module">
+    import { mountNav } from './nav.js';
+    mountNav();
+
     import { APP_VERSION } from './config.js';
     import { onAuthReady, getCachedProfile, mountAuthWidget } from './auth.js';
     import { upsertUserProfile } from './db.js';
@@ -1981,14 +1986,14 @@
     <div id="fb-overlay">
       <div id="fb-modal">
         <button class="fb-x" id="fb-close">×</button>
-        <h2>📝 FEEDBACK</h2>
+        <h2>REPORT FEEDBACK</h2>
         <div id="fb-body">
           <span class="fb-lbl">CATEGORY</span>
           <div class="fb-types">
-            <button class="fb-t" data-t="bug">🐛 バグ</button>
-            <button class="fb-t" data-t="feedback">💬 感想</button>
-            <button class="fb-t" data-t="idea">💡 アイデア</button>
-            <button class="fb-t" data-t="other">📌 その他</button>
+            <button class="fb-t" data-t="bug">BUG バグ</button>
+            <button class="fb-t" data-t="feedback">MSG 感想</button>
+            <button class="fb-t" data-t="idea">IDEA アイデア</button>
+            <button class="fb-t" data-t="other">PIN その他</button>
           </div>
           <span class="fb-lbl">MESSAGE</span>
           <textarea class="fb-ta" id="fb-text" placeholder="例: ○○の操作をすると△△が起きます..." maxlength="1000"></textarea>

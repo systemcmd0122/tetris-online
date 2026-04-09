@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎵 MUSIC — TETRIS BATTLE</title>
+  <title>MUSIC MUSIC — TETRIS BATTLE</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
     :root {
@@ -241,15 +241,15 @@
 <div class="rainbow-bar"></div>
 
 <div class="header">
-  <span class="header-logo">🎵 MUSIC PLAYER</span>
+  <span class="header-logo">MUSIC MUSIC PLAYER</span>
   <div id="versionDisp" style="font-size:8px;color:var(--acc2);font-weight:bold;margin-right:10px">VER ---</div>
   <button class="hdr-btn" onclick="window.close()">✕</button>
 </div>
 
 <div class="tabs">
   <div class="tab active" id="tab-player" onclick="switchTab('player')">▶ PLAYER</div>
-  <div class="tab" id="tab-search" onclick="switchTab('search')">🔍 SEARCH</div>
-  <div class="tab" id="tab-queue"  onclick="switchTab('queue')">📋 QUEUE <span id="qCount"></span></div>
+  <div class="tab" id="tab-search" onclick="switchTab('search')">SEARCH SEARCH</div>
+  <div class="tab" id="tab-queue"  onclick="switchTab('queue')">LIST QUEUE <span id="qCount"></span></div>
 </div>
 
 <!-- PLAYER PANEL -->
@@ -273,14 +273,14 @@
     <div style="flex:1"></div>
   </div>
   <div class="vol-row">
-    <span class="vol-icon">🔊</span>
+    <span class="vol-icon">VOL</span>
     <input type="range" id="volSlider" min="0" max="100" value="70" oninput="setVolume(this.value)">
     <span class="vol-val" id="volVal">70</span>
   </div>
   <div class="mode-row">
-    <button class="mode-btn" id="mShuffle"   onclick="toggleShuffle()">🔀 SHUFFLE</button>
-    <button class="mode-btn" id="mRepeat"    onclick="toggleRepeat()">🔁 REPEAT</button>
-    <button class="mode-btn" id="mRepeatOne" onclick="toggleRepeatOne()">🔂 ×1</button>
+    <button class="mode-btn" id="mShuffle"   onclick="toggleShuffle()">SHUF SHUFFLE</button>
+    <button class="mode-btn" id="mRepeat"    onclick="toggleRepeat()">RPT REPEAT</button>
+    <button class="mode-btn" id="mRepeatOne" onclick="toggleRepeatOne()">RPT×1 ×1</button>
   </div>
 </div>
 
@@ -302,7 +302,7 @@
 <!-- QUEUE PANEL -->
 <div class="panel" id="panelQueue">
   <div class="queue-actions">
-    <button class="q-btn" onclick="clearQueue()">🗑 クリア</button>
+    <button class="q-btn" onclick="clearQueue()">DEL クリア</button>
     <span style="flex:1"></span>
     <span class="queue-count-label" id="queueCountLabel"></span>
   </div>
@@ -316,15 +316,15 @@
 const YT_API_KEY = 'AIzaSyCZbk49tTvV6sgnbMOMCwDbQWG28NfEroY';
 
 const GENRES = [
-  { label:'🕹 テトリス',   q:'tetris music remix' },
-  { label:'⚡ テクノ',     q:'techno electronic music' },
-  { label:'🎮 ゲームBGM',  q:'video game music bgm' },
-  { label:'🔥 EDM',       q:'EDM dance music' },
-  { label:'🎸 ロック',     q:'rock music energetic' },
-  { label:'🌙 Lo-Fi',     q:'lofi hip hop chill beats' },
-  { label:'🕹 レトロ',    q:'80s retro synthwave' },
-  { label:'🎹 ジャズ',    q:'jazz piano instrumental' },
-  { label:'🌊 チルアウト', q:'chillout ambient music' },
+  { label:'GAME テトリス',   q:'tetris music remix' },
+  { label:'NEW テクノ',     q:'techno electronic music' },
+  { label:'GAME ゲームBGM',  q:'video game music bgm' },
+  { label:' EDM',       q:'EDM dance music' },
+  { label:'ROCK ロック',     q:'rock music energetic' },
+  { label:'LOFI Lo-Fi',     q:'lofi hip hop chill beats' },
+  { label:'GAME レトロ',    q:'80s retro synthwave' },
+  { label:'JAZZ ジャズ',    q:'jazz piano instrumental' },
+  { label:'CHILL チルアウト', q:'chillout ambient music' },
 ];
 
 let ytPlayer = null, ytReady = false;
@@ -569,5 +569,10 @@ function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
   }
 })();
 </script>
+
+  <script type="module">
+    import { mountNav } from './nav.js';
+    mountNav();
+  </script>
 </body>
 </html>

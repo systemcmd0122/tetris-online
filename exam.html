@@ -194,7 +194,7 @@
 
   <!-- ══ RESULT SCREEN ══ -->
   <section id="resultScreen">
-    <div class="result-badge" id="resultBadge">🏅</div>
+    <div class="result-badge" id="resultBadge">★</div>
     <div class="result-title" id="resultTitle">合格！</div>
     <div class="result-score" id="resultScore"><span>8</span> / 10</div>
     <div class="score-breakdown" id="scoreBreakdown"></div>
@@ -216,10 +216,10 @@ mountNav();
 // ── Exam data ──────────────────────────────────────────
 const LEVELS = [
   {
-    id: 'lv1', cls: 'lv1', name: '入門', subtitle: 'Entry Level', icon: '🟫',
+    id: 'lv1', cls: 'lv1', name: '入門', subtitle: 'Entry Level', icon: '<svg width="24" height="24" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#cd7f32"/></svg>',
     color: 'var(--bronze)', colorCls: 'lv1-c', passMark: 7,
     desc: 'テトリスの基本操作・ルールの確認',
-    badge: { icon: '🟫', label: 'ENTRY', color: '#cd7f32' },
+    badge: { icon: '<svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\"><circle cx=\"10\" cy=\"10\" r=\"8\" fill=\"#cd7f32\"/></svg>', label: 'ENTRY', color: '#cd7f32' },
     questions: [
       { q:'テトリスで使われるミノの種類は全部で何種類か？', opts:['5種類','6種類','7種類','8種類'], ans:2, expl:'I・O・T・S・Z・L・Jの7種類のミノが使用されます。' },
       { q:'4ライン同時消しを英語で何という？', opts:['Perfect','Triple','Tetris','Super'], ans:2, expl:'4ライン消しは「テトリス(Tetris)」と呼ばれ、ゲーム名の由来にもなっています。' },
@@ -237,7 +237,7 @@ const LEVELS = [
     id: 'lv2', cls: 'lv2', name: '初級', subtitle: 'Beginner Level', icon: '⬜',
     color: 'var(--silver)', colorCls: 'lv2-c', passMark: 7,
     desc: '対戦ルール・スコアシステムの理解',
-    badge: { icon: '⬜', label: 'BEGINNER', color: '#c0c0c0' },
+    badge: { icon: '<svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\"><circle cx=\"10\" cy=\"10\" r=\"8\" fill=\"#c0c0c0\"/></svg>', label: 'BEGINNER', color: '#c0c0c0' },
     questions: [
       { q:'対戦テトリスで2ライン消しの時、相手に送るガベージは何ライン？', opts:['0ライン','1ライン','2ライン','4ライン'], ans:1, expl:'2ライン消し(Double)で相手に1ライン送ります。3ライン→2ライン、4ライン(テトリス)→4ラインです。' },
       { q:'Back-to-Back (B2B) が発動する条件は？', opts:['コンボが5回以上続いた時','テトリスまたはT-Spinを連続して行った時','ホールドを使わずプレイした時','パーフェクトクリア後'], ans:1, expl:'テトリスまたはT-Spinを連続して行うとB2Bが発動し、攻撃力が1.5倍になります。' },
@@ -252,10 +252,10 @@ const LEVELS = [
     ]
   },
   {
-    id: 'lv3', cls: 'lv3', name: '中級', subtitle: 'Intermediate Level', icon: '🥇',
+    id: 'lv3', cls: 'lv3', name: '中級', subtitle: 'Intermediate Level', icon: '1ST',
     color: 'var(--gold)', colorCls: 'lv3-c', passMark: 7,
     desc: 'T-Spin・上級テクニックの知識',
-    badge: { icon: '🥇', label: 'INTERMEDIATE', color: '#ffd700' },
+    badge: { icon: '<svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\"><polygon points=\"10,2 12.5,7 18,7 13.5,11 15.5,17 10,13.5 4.5,17 6.5,11 2,7 7.5,7\" fill=\"#ffd700\"/></svg>', label: 'INTERMEDIATE', color: '#ffd700' },
     questions: [
       { q:'T-Spin Tripleで相手に送るライン数は？', opts:['4ライン','5ライン','6ライン','8ライン'], ans:2, expl:'T-Spin Tripleは最大の攻撃力6ラインを誇ります。B2B時はさらに×1.5=9ラインになります。' },
       { q:'パーフェクトクリア（フィールド全消し）の攻撃力は？', opts:['4ライン','6ライン','8ライン','10ライン'], ans:3, expl:'パーフェクトクリアはガイドラインで10ライン送れる最強の攻撃手段です。' },
@@ -270,10 +270,10 @@ const LEVELS = [
     ]
   },
   {
-    id: 'lv4', cls: 'lv4', name: '上級', subtitle: 'Advanced Level', icon: '💎',
+    id: 'lv4', cls: 'lv4', name: '上級', subtitle: 'Advanced Level', icon: '<svg width="24" height="24" viewBox="0 0 20 20"><polygon points="10,2 17,10 10,18 3,10" fill="#00f5ff"/></svg>',
     color: 'var(--acc)', colorCls: 'lv4-c', passMark: 8,
     desc: '上級戦術・詳細な仕様の理解',
-    badge: { icon: '💎', label: 'ADVANCED', color: '#00f5ff' },
+    badge: { icon: '<svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\"><polygon points=\"10,2 17,10 10,18 3,10\" fill=\"#00f5ff\"/></svg>', label: 'ADVANCED', color: '#00f5ff' },
     questions: [
       { q:'「Opener（オープナー）」とは何か？', opts:['ゲームの最初の1ミノ','ゲーム序盤に有利な状態を作るための定石的なミノ配置パターン','相手の攻撃を受け止める技術','最初のコンボルーティン'], ans:1, expl:'PC（パーフェクトクリア）オープナーや様々なT-Spinオープナーなど、有利なスタートを切るための定石です。' },
       { q:'「C4W（Cheese 4-Wide）」戦術の特徴は？', opts:['4列幅を使ったT-Spin連打戦術','フィールド中央に4列分の縦穴を空けてガベージを消化する戦術','4ライン消しだけで攻撃する戦術','コンボ4回でゲームを終わらせる戦術'], ans:1, expl:'4-Wideは中央に縦穴を作り受けたガベージを効率よく消化する防御戦術です。カウンター攻撃にも使えます。' },
@@ -288,10 +288,10 @@ const LEVELS = [
     ]
   },
   {
-    id: 'lv5', cls: 'lv5', name: '名人', subtitle: 'Master Level', icon: '👑',
+    id: 'lv5', cls: 'lv5', name: '名人', subtitle: 'Master Level', icon: '<svg width="24" height="24" viewBox="0 0 20 20"><path d="M10 2l2 5h5l-4 3 1.5 5L10 12l-4 3 1.5-5-4-3h5z" fill="#cc00ff"/></svg>',
     color: '#cc00ff', colorCls: 'lv5-c', passMark: 8,
     desc: '最上位：テトリスの深い知識と歴史',
-    badge: { icon: '👑', label: 'MASTER', color: '#cc00ff' },
+    badge: { icon: '<svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\"><path d=\"M10 2l2 5h5l-4 3 1.5 5L10 12l-4 3 1.5-5-4-3h5z\" fill=\"#cc00ff\"/></svg>', label: 'MASTER', color: '#cc00ff' },
     questions: [
       { q:'テトリスを開発したのは誰で、いつ発表されたか？', opts:['宮本茂、1980年','アレクセイ・パジトノフ、1984年','坂本龍一、1986年','ビル・ゲイツ、1985年'], ans:1, expl:'テトリスはソビエト連邦の科学者アレクセイ・パジトノフが1984年に開発しました。当初はソビエトの研究機関のコンピューターで動いていました。' },
       { q:'ゲームボーイ版テトリスが世界的ヒットになった理由として最も重要だったのは？', opts:['カラー画面の美しさ','ゲームボーイとセット販売され手軽に楽しめたこと','インターネット対戦が可能だったこと','アーケードゲームからの移植だったこと'], ans:1, expl:'1989年発売のゲームボーイ版テトリスは本体とセット販売され、3500万本以上売れた大ヒット作です。' },
@@ -467,7 +467,7 @@ function showResult() {
   const score = _answers.filter(a => a === 'correct').length;
   const passed = score >= lv.passMark;
 
-  $('resultBadge').textContent = passed ? lv.badge.icon : '💔';
+  $('resultBadge').innerHTML = passed ? `<span class='badge-icon-svg'>${lv.badge.icon}</span>` : '<span style="color:var(--acc2)">FAIL</span>';
   $('resultBadge').style.color = passed ? lv.badge.color : '#ff0080';
 
   $('resultTitle').textContent = passed ? `${lv.name} 合格！` : '不合格…';
