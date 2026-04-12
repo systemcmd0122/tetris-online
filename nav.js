@@ -170,6 +170,54 @@ const _NAV_CSS = `
   .tb-nav-link span { display: none; }
   .tb-nav-dot { width: 8px; height: 8px; }
 }
+
+/* ── MOBILE NOT SUPPORTED OVERLAY ── */
+#tb-mobile-wall {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #04060f;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', monospace;
+  text-align: center;
+  padding: 32px 24px;
+}
+#tb-mobile-wall.show { display: flex; }
+.tb-mw-blocks {
+  display: flex; gap: 5px; align-items: flex-end; margin-bottom: 28px;
+}
+.tb-mw-block { border-radius: 3px; animation: mwFloat 2s ease-in-out infinite; }
+.tb-mw-block:nth-child(1){width:16px;height:32px;background:#00f5ff;box-shadow:0 0 10px #00f5ff;animation-delay:0s}
+.tb-mw-block:nth-child(2){width:16px;height:20px;background:#ff0080;box-shadow:0 0 10px #ff0080;animation-delay:.18s}
+.tb-mw-block:nth-child(3){width:16px;height:32px;background:#aaff00;box-shadow:0 0 10px #aaff00;animation-delay:.36s}
+.tb-mw-block:nth-child(4){width:16px;height:14px;background:#ffff00;box-shadow:0 0 10px #ffff00;animation-delay:.54s}
+.tb-mw-block:nth-child(5){width:16px;height:26px;background:#cc00ff;box-shadow:0 0 10px #cc00ff;animation-delay:.72s}
+@keyframes mwFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+.tb-mw-logo {
+  font-family:'Press Start 2P',monospace; font-size:15px; color:#00f5ff;
+  letter-spacing:3px; text-shadow:0 0 18px rgba(0,245,255,.7); margin-bottom:6px;
+}
+.tb-mw-sub { font-size:7px; color:#4a6080; letter-spacing:3px; margin-bottom:32px; }
+.tb-mw-badge {
+  font-size:44px; margin-bottom:16px;
+  filter:drop-shadow(0 0 8px rgba(255,0,128,.5));
+}
+.tb-mw-title {
+  font-family:'Press Start 2P',monospace; font-size:9px; color:#ff0080;
+  letter-spacing:2px; margin-bottom:14px; line-height:1.9;
+}
+.tb-mw-desc {
+  font-size:10px; color:#4a6080; letter-spacing:.5px;
+  line-height:2; max-width:300px; margin-bottom:0;
+}
+.tb-mw-desc b { color:#00f5ff; font-weight:normal; }
+.tb-mw-scanlines {
+  position:fixed; inset:0; pointer-events:none; z-index:100000;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.14) 2px,rgba(0,0,0,.14) 4px);
+}
 `;
 
 let _cssInjected = false;
@@ -237,6 +285,9 @@ export function mountNav(opts = {}) {
 
   // 認証状態でPROFILEリンクを強調
   _watchAuthForNav();
+
+  // スマホ非対応オーバーレイを表示
+  _mountMobileWall();
 }
 
 async function _watchAuthForNav() {
@@ -253,6 +304,54 @@ async function _watchAuthForNav() {
       }
     });
   } catch (e) { /* auth not available */ }
+}
+
+
+// ═══ MOBILE NOT SUPPORTED WALL ═══
+
+function _isMobile() {
+  // タッチデバイスかつ画面幅 768px 未満をモバイルと判定
+  const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  const isNarrow = window.innerWidth < 768;
+  return hasTouch && isNarrow;
+}
+
+function _mountMobileWall() {
+  if (!_isMobile()) return;
+
+  const wall = document.createElement('div');
+  wall.id = 'tb-mobile-wall';
+  wall.setAttribute('aria-live', 'polite');
+  wall.innerHTML = `
+    <div class="tb-mw-scanlines" aria-hidden="true"></div>
+    <div class="tb-mw-blocks" aria-hidden="true">
+      <div class="tb-mw-block"></div>
+      <div class="tb-mw-block"></div>
+      <div class="tb-mw-block"></div>
+      <div class="tb-mw-block"></div>
+      <div class="tb-mw-block"></div>
+    </div>
+    <div class="tb-mw-logo">TETRIS BATTLE</div>
+    <div class="tb-mw-sub">ONLINE MULTIPLAYER</div>
+    <div class="tb-mw-badge" aria-hidden="true">&#x1F5A5;</div>
+    <div class="tb-mw-title">PC 専用</div>
+    <div class="tb-mw-desc">
+      このゲームは<b>PC・デスクトップブラウザ</b>専用です。<br>
+      スマートフォン・タブレットには<br>
+      現在対応していません。<br><br>
+      <b>PCからアクセス</b>してお楽しみください。
+    </div>
+  `;
+  document.body.appendChild(wall);
+  requestAnimationFrame(() => wall.classList.add('show'));
+
+  window.addEventListener('resize', () => {
+    if (_isMobile()) {
+      wall.classList.add('show');
+    } else {
+      wall.classList.remove('show');
+    }
+  });
 }
 
 // ═══ NOTIFICATION SYSTEM ═══

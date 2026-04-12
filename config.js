@@ -1,4 +1,4 @@
-export const APP_VERSION = "3.2.0";
+export const APP_VERSION = "3.3.1";
 
 /** Firebase設定 — auth.js / db.js / フィードバックウィジェットで共有 */
 export const FB_CONFIG = {
@@ -12,6 +12,16 @@ export const FB_CONFIG = {
 };
 
 export const UPDATE_LOG = [
+  {
+    version: "3.3.1",
+    title: "バグ修正・スマホ非対応表示追加",
+    changes: [
+      "バージョン番号の不整合を修正しました。APP_VERSIONが3.2.0のままになっており、テトリス検定モード追加（3.3.0）の更新通知がユーザーに一度も表示されていなかった問題を解消しました。",
+      "スマートフォン・タブレットでアクセスした際に「PC専用」のオーバーレイ画面を表示するようにしました。タッチデバイスかつ画面幅768px未満の端末で自動表示されます。",
+      "あそびかた・更新履歴ページのアカウントウィジェットがナビゲーションバーと重なって表示されていた問題を修正しました（top: 10px → 62px）。",
+      "index.htmlのGoogleフォントURLに&display=swapパラメータが重複していた問題を修正しました。"
+    ]
+  },
   {
     version: "3.3.0",
     title: "テトリス検定モード追加",
