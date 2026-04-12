@@ -1419,7 +1419,7 @@
     mountNav();
 
     import { APP_VERSION } from './config.js';
-    import { onAuthReady, getCachedProfile, mountAuthWidget, getAuthUser } from './auth.js';
+    import { onAuthReady, getCachedProfile, mountAuthWidget, getCurrentUser } from './auth.js';
     import { upsertUserProfile } from './db.js';
     document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
 
@@ -1833,7 +1833,7 @@
       // 勝利時に称号付与判定
       if (result === 'WIN') {
         (async () => {
-          const user = getAuthUser();
+          const user = getCurrentUser();
           if (!user) return;
           try {
             const { awardTitle, AVAILABLE_TITLES } = await import('./db.js');
