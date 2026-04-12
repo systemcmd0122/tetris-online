@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ボット対戦 — TETRIS BATTLE</title>
-  <meta name="description" content="TETRIS BATTLEのボット対戦モード。EASY・NORMAL・HARDの3段階難易度AIと対戦できます。">
+  <meta name="description" content="TETRIS BATTLEのボット対戦モード。EASY・NORMAL・HARD・DEMONの4段階難易度AIと対戦。鬼モード攻略で称号GET！">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://systemcmd0122.github.io/tetris-online/tetris-battle.html">
   <meta property="og:type" content="website">
@@ -424,6 +424,18 @@
     .diff-hard:hover {
       background: rgba(255, 51, 85, .12);
       box-shadow: 0 0 14px rgba(255, 51, 85, .3)
+    }
+
+    .diff-demon {
+      border-color: #9900ff;
+      color: #9900ff;
+      background: rgba(153, 0, 255, .04);
+      font-weight: 900;
+    }
+
+    .diff-demon:hover {
+      background: rgba(153, 0, 255, .15);
+      box-shadow: 0 0 18px rgba(153, 0, 255, .5), inset 0 0 8px rgba(153, 0, 255, .2)
     }
 
     #gameScreen {
@@ -1159,9 +1171,11 @@
     .board-wrap.shake {
       animation: boardShake .25s ease-out
     }
-  
-    body.game-active #tb-nav { display: none !important; }
-</style>
+
+    body.game-active #tb-nav {
+      display: none !important;
+    }
+  </style>
 </head>
 
 <body>
@@ -1210,6 +1224,7 @@
           <button class="diff-btn diff-easy" onclick="startBotGame(1)">EASY</button>
           <button class="diff-btn diff-normal" onclick="startBotGame(2)">NORMAL</button>
           <button class="diff-btn diff-hard" onclick="startBotGame(3)">HARD</button>
+          <button class="diff-btn diff-demon" onclick="startBotGame(4)">DEMON👹</button>
         </div>
       </div>
       <a href="how-to.html" class="btn btn-secondary" style="text-decoration:none;text-align:center;display:block;">
@@ -1382,17 +1397,17 @@
   <div class="toast" id="toast"></div>
 
   <script type="module">
-    import { mountNav } from './nav.js';
+    import { mountNav, notifyOk, notifyErr, notifyWarn, notifySpecial } from './nav.js';
     mountNav();
 
     import { APP_VERSION } from './config.js';
-    import { onAuthReady, getCachedProfile, mountAuthWidget } from './auth.js';
+    import { onAuthReady, getCachedProfile, mountAuthWidget, getAuthUser } from './auth.js';
     import { upsertUserProfile } from './db.js';
     document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
 
     // ── BOT CONFIG SYNC ──
-    let BOT_DELAYS = [750, 400, 80];
-    let BOT_NOISE = [0.4, 0.15, 0.0];
+    let BOT_DELAYS = [750, 400, 80, 20];
+    let BOT_NOISE = [0.4, 0.15, 0.0, 0.0];
     try {
       const { getDatabase, ref, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
       const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
@@ -1413,7 +1428,7 @@
       const inp = document.getElementById('playerName');
       if (!inp) return;
       if (user) {
-        await upsertUserProfile(user).catch(() => {});
+        await upsertUserProfile(user).catch(() => { });
         const p = getCachedProfile();
         const name = ((p?.displayName || user.displayName || user.email || 'PLAYER')
           .trim().replace(/\//g, '_').slice(0, 12).toUpperCase() || 'PLAYER');
@@ -1611,7 +1626,7 @@
     }
 
     // ═══ BOT AI ═══
-    const BOT_NAMES = ['BOT-EASY', 'BOT-NORMAL', 'BOT-HARD'];
+    const BOT_NAMES = ['BOT-EASY', 'BOT-NORMAL', 'BOT-HARD', 'BOT-DEMON'];
 
     class BotController {
       constructor(game, difficulty = 2) {
@@ -1796,6 +1811,51 @@
       document.getElementById('rs-atk').textContent = statAtkSent;
       document.getElementById('rs-tetris').textContent = statTetris;
       document.getElementById('resultSub').innerHTML = '';
+
+      // 勝利時に称号付与判定
+      if (result === 'WIN') {
+        (async () => {
+          const user = getAuthUser();
+          if (!user) return;
+          try {
+            const { awardTitle, AVAILABLE_TITLES } = await import('./db.js');
+            const difficulty = botCtrl?.difficulty || 2;
+            const titleIds = ['bot-easy-win', 'bot-normal-win', 'bot-hard-win', 'bot-demon-win'];
+            const titleId = titleIds[difficulty - 1];
+
+            if (titleId && AVAILABLE_TITLES[titleId]) {
+              await awardTitle(user.uid, titleId);
+              const titleDef = AVAILABLE_TITLES[titleId];
+
+              // 画面上のバナーを表示
+              const sub = document.getElementById('resultSub');
+              const div = document.createElement('div');
+              div.style.cssText = 'margin-top:16px;padding:12px;background:rgba(153,0,255,.1);border:1px solid #9900ff;border-radius:4px;font-size:11px;color:#aaff00;letter-spacing:1px;';
+              div.innerHTML = `🏆 新しい称号を獲得しました！<br>${titleDef.emoji} <strong>${titleDef.name}</strong>`;
+              sub.appendChild(div);
+
+              // 通知トーストも表示
+              notifySpecial(
+                `新しい称号を獲得！`,
+                `${titleDef.emoji} ${titleDef.name}`,
+                titleDef.emoji
+              );
+            }
+          } catch (e) {
+            console.error('称号付与エラー:', e);
+          }
+        })();
+      }
+
+      // 結果に応じた通知
+      if (result === 'WIN') {
+        notifyOk('勝利！', 'You win!');
+      } else if (result === 'LOSE') {
+        notifyErr('敗北', 'You lose...');
+      } else if (result === 'DRAW') {
+        notifyWarn('同着', 'Draw game');
+      }
+
       document.getElementById('resultOverlay').classList.add('show');
     }
 

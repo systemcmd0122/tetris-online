@@ -984,9 +984,11 @@
       margin-top: 4px;
       text-shadow: 0 0 8px rgba(255, 215, 0, .6)
     }
-  
-    body.game-active #tb-nav { display: none !important; }
-</style>
+
+    body.game-active #tb-nav {
+      display: none !important;
+    }
+  </style>
 </head>
 
 <body>
@@ -1480,8 +1482,10 @@
       const title = document.getElementById('resultTitle');
       if (result === 'CLEAR') {
         title.className = 'overlay-title clear'; title.textContent = 'CLEARED!'; playSound('complete');
+        notifyOk('クリア！', `タイム: ${fmtTime(finalMs)}`);
       } else {
         title.className = 'overlay-title fail'; title.textContent = 'GAME OVER'; playSound('fail');
+        notifyErr('ゲームオーバー', 'スプリント終了');
       }
 
       document.getElementById('resultTime').textContent = result === 'CLEAR' ? fmtTime(finalMs) : '--';
@@ -1502,15 +1506,17 @@
         if (isNewPB) {
           setPB(finalMs);
           pbNew.innerHTML = '<div class="pb-badge">★ NEW PERSONAL BEST!</div>';
+          notifySpecial('新しいPB！', `スプリント記録更新: ${fmtTime(finalMs)}`, '🏆');
         }
         // Upload to Firebase
         try {
           const rank = await uploadScore(_playerName, finalMs);
-          let cls = 'ranked', txt = `GLOBAL #${rank}`;
-          if (rank === 1) cls = 'gold', txt = 'WORLD #1';
-          else if (rank === 2) cls = 'silver', txt = 'WORLD #2';
-          else if (rank === 3) cls = 'bronze', txt = 'WORLD #3';
+          let cls = 'ranked', txt = `GLOBAL #${rank}`, msg = '';
+          if (rank === 1) cls = 'gold', txt = 'WORLD #1', msg = '世界1位おめでとう！';
+          else if (rank === 2) cls = 'silver', txt = 'WORLD #2', msg = '世界2位入賞！';
+          else if (rank === 3) cls = 'bronze', txt = 'WORLD #3', msg = '世界3位入賞！';
           rankBadge.innerHTML = `<div class="result-rank-badge ${cls}">${txt}</div>`;
+          if (msg) notifySpecial('ランキング入賞！', msg, '🌟');
           // ログイン中ユーザーの個人履歴に保存
           window._onSprintComplete?.(_playerName, finalMs, game?.score || 0, rank);
         } catch (e) { rankBadge.innerHTML = '<div style="font-size:9px;color:var(--dim)">オフライン — スコア未保存</div>'; }
@@ -1691,7 +1697,7 @@
 
   <!-- ═══ AUTH + DB MODULE ═══ -->
   <script type="module">
-    import { mountNav } from './nav.js';
+    import { mountNav, notifyOk, notifyErr, notifySpecial } from './nav.js';
     mountNav();
 
     import { onAuthReady, getCachedProfile, mountAuthWidget, getCurrentUser } from './auth.js';
@@ -1721,7 +1727,7 @@
     // ログイン状態に応じて名前入力欄を制御 & window グローバルを定義
     onAuthReady(async user => {
       if (user) {
-        await upsertUserProfile(user).catch(() => {});
+        await upsertUserProfile(user).catch(() => { });
         const profile = getCachedProfile();
         const name = (profile?.displayName || user.displayName || user.email || 'PLAYER')
           .trim().replace(/\//g, '_').slice(0, 12).toUpperCase() || 'PLAYER';

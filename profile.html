@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,222 +15,1634 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+
     :root {
-      --bg:#04060f; --s0:#080d18; --s1:#0d1525; --s2:#111b2e;
-      --acc:#00f5ff; --acc2:#ff0080; --acc3:#aaff00; --acc4:#ff8800;
-      --tx:#e0f0ff; --dim:#4a6080; --border:#1a2540;
-      --gold:#ffd700; --silver:#c0c0c0; --bronze:#cd7f32;
+      --bg: #04060f;
+      --s0: #080d18;
+      --s1: #0d1525;
+      --s2: #111b2e;
+      --acc: #00f5ff;
+      --acc2: #ff0080;
+      --acc3: #aaff00;
+      --acc4: #ff8800;
+      --tx: #e0f0ff;
+      --dim: #4a6080;
+      --border: #1a2540;
+      --gold: #ffd700;
+      --silver: #c0c0c0;
+      --bronze: #cd7f32;
     }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth}
-    body{background:var(--bg);color:var(--tx);font-family:'Orbitron',monospace;min-height:100vh;padding-bottom:80px}
-    .scanlines{position:fixed;inset:0;z-index:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.1) 2px,rgba(0,0,0,.1) 4px)}
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--tx);
+      font-family: 'Orbitron', monospace;
+      min-height: 100vh;
+      padding-bottom: 80px
+    }
+
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .1) 2px, rgba(0, 0, 0, .1) 4px)
+    }
 
     /* NAV */
-    .nav{position:sticky;top:0;z-index:100;background:rgba(4,6,15,.94);border-bottom:1px solid rgba(0,245,255,.15);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;padding:12px 20px;gap:12px}
-    .nav-logo{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--acc);text-decoration:none;letter-spacing:2px;text-shadow:0 0 10px rgba(0,245,255,.5)}
-    .nav-back{display:flex;align-items:center;gap:6px;font-size:9px;color:var(--dim);text-decoration:none;letter-spacing:1px;transition:color .2s}
-    .nav-back:hover{color:var(--acc)}
-    .nav-back svg{transition:transform .2s}
-    .nav-back:hover svg{transform:translateX(-2px)}
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(4, 6, 15, .94);
+      border-bottom: 1px solid rgba(0, 245, 255, .15);
+      backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      gap: 12px
+    }
+
+    .nav-logo {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      color: var(--acc);
+      text-decoration: none;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(0, 245, 255, .5)
+    }
+
+    .nav-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 9px;
+      color: var(--dim);
+      text-decoration: none;
+      letter-spacing: 1px;
+      transition: color .2s
+    }
+
+    .nav-back:hover {
+      color: var(--acc)
+    }
+
+    .nav-back svg {
+      transition: transform .2s
+    }
+
+    .nav-back:hover svg {
+      transform: translateX(-2px)
+    }
 
     /* PAGE LOADER */
-    #pageLoader{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;transition:opacity .4s ease}
-    #pageLoader.hide{opacity:0;pointer-events:none}
-    .ld-logo{font-family:'Press Start 2P',monospace;font-size:14px;color:var(--acc);letter-spacing:3px;text-shadow:0 0 16px rgba(0,245,255,.7)}
-    .ld-sub{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--acc2);letter-spacing:2px}
-    .ld-dots{font-size:10px;color:var(--dim);letter-spacing:6px;animation:ldBlink 1.2s step-end infinite}
-    @keyframes ldBlink{0%,100%{opacity:1}50%{opacity:.2}}
+    #pageLoader {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      transition: opacity .4s ease
+    }
 
-    .page{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:28px 16px}
+    #pageLoader.hide {
+      opacity: 0;
+      pointer-events: none
+    }
+
+    .ld-logo {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 14px;
+      color: var(--acc);
+      letter-spacing: 3px;
+      text-shadow: 0 0 16px rgba(0, 245, 255, .7)
+    }
+
+    .ld-sub {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      color: var(--acc2);
+      letter-spacing: 2px
+    }
+
+    .ld-dots {
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 6px;
+      animation: ldBlink 1.2s step-end infinite
+    }
+
+    @keyframes ldBlink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .2
+      }
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 28px 16px
+    }
 
     /* STATE */
-    #stateMsg{text-align:center;padding:80px 20px}
-    .state-title{font-family:'Press Start 2P',monospace;font-size:13px;color:var(--acc);letter-spacing:2px;margin-bottom:16px;line-height:2}
-    .state-sub{font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:32px;line-height:2}
-    .login-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;background:#fff;color:#222;border:none;border-radius:4px;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:opacity .2s,transform .15s;box-shadow:0 4px 20px rgba(255,255,255,.15)}
-    .login-btn:hover{opacity:.9;transform:translateY(-2px)}
+    #stateMsg {
+      text-align: center;
+      padding: 80px 20px
+    }
+
+    .state-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      color: var(--acc);
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      line-height: 2
+    }
+
+    .state-sub {
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      margin-bottom: 32px;
+      line-height: 2
+    }
+
+    .login-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      background: #fff;
+      color: #222;
+      border: none;
+      border-radius: 4px;
+      font-family: 'Orbitron', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: opacity .2s, transform .15s;
+      box-shadow: 0 4px 20px rgba(255, 255, 255, .15)
+    }
+
+    .login-btn:hover {
+      opacity: .9;
+      transform: translateY(-2px)
+    }
 
     /* PROFILE HEADER */
-    .profile-header{display:flex;align-items:flex-start;gap:20px;background:var(--s0);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:20px;position:relative;overflow:hidden;flex-wrap:wrap}
-    .profile-header::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc3),var(--acc4),var(--acc));background-size:300% 100%;animation:rainbowShift 4s linear infinite}
-    @keyframes rainbowShift{0%{background-position:0%}100%{background-position:300%}}
-    .profile-header::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 0% 0%,rgba(0,245,255,.04),transparent 60%);pointer-events:none}
+    .profile-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      background: var(--s0);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+      flex-wrap: wrap
+    }
+
+    .profile-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--acc), var(--acc2), var(--acc3), var(--acc4), var(--acc));
+      background-size: 300% 100%;
+      animation: rainbowShift 4s linear infinite
+    }
+
+    @keyframes rainbowShift {
+      0% {
+        background-position: 0%
+      }
+
+      100% {
+        background-position: 300%
+      }
+    }
+
+    .profile-header::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 0% 0%, rgba(0, 245, 255, .04), transparent 60%);
+      pointer-events: none
+    }
 
     /* AVATAR */
-    .avatar-wrap{position:relative;flex-shrink:0}
-    .prof-avatar,.prof-initials{width:84px;height:84px;border-radius:50%;border:3px solid var(--acc);object-fit:cover;display:block;box-shadow:0 0 24px rgba(0,245,255,.35),0 0 6px rgba(0,245,255,.2)}
-    .prof-initials{background:linear-gradient(135deg,#7700ff,#00f5ff);display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P',monospace;font-size:22px;color:#fff;flex-shrink:0}
-    .avatar-edit-btn{display:flex;align-items:center;gap:4px;margin-top:7px;width:84px;padding:5px 0;background:transparent;border:1px solid rgba(0,245,255,.22);border-radius:3px;color:var(--dim);font-family:'Orbitron',monospace;font-size:7px;letter-spacing:1px;cursor:pointer;transition:all .2s;justify-content:center}
-    .avatar-edit-btn:hover{border-color:var(--acc);color:var(--acc);background:rgba(0,245,255,.05)}
-    .avatar-edit-btn svg{width:10px;height:10px;fill:currentColor;flex-shrink:0}
+    .avatar-wrap {
+      position: relative;
+      flex-shrink: 0
+    }
+
+    .prof-avatar,
+    .prof-initials {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      border: 3px solid var(--acc);
+      object-fit: cover;
+      display: block;
+      box-shadow: 0 0 24px rgba(0, 245, 255, .35), 0 0 6px rgba(0, 245, 255, .2)
+    }
+
+    .prof-initials {
+      background: linear-gradient(135deg, #7700ff, #00f5ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 22px;
+      color: #fff;
+      flex-shrink: 0
+    }
+
+    .avatar-edit-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 7px;
+      width: 84px;
+      padding: 5px 0;
+      background: transparent;
+      border: 1px solid rgba(0, 245, 255, .22);
+      border-radius: 3px;
+      color: var(--dim);
+      font-family: 'Orbitron', monospace;
+      font-size: 7px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all .2s;
+      justify-content: center
+    }
+
+    .avatar-edit-btn:hover {
+      border-color: var(--acc);
+      color: var(--acc);
+      background: rgba(0, 245, 255, .05)
+    }
+
+    .avatar-edit-btn svg {
+      width: 10px;
+      height: 10px;
+      fill: currentColor;
+      flex-shrink: 0
+    }
 
     /* PROFILE INFO */
-    .prof-info{flex:1;min-width:180px}
-    .prof-name-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
-    .prof-name{font-size:clamp(13px,3vw,22px);font-weight:900;color:var(--acc);letter-spacing:2px;text-shadow:0 0 15px rgba(0,245,255,.35);word-break:break-all}
-    .edit-name-btn{background:transparent;border:1px solid rgba(0,245,255,.28);color:var(--dim);border-radius:3px;padding:3px 8px;font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;cursor:pointer;transition:all .2s;flex-shrink:0;white-space:nowrap}
-    .edit-name-btn:hover{border-color:var(--acc);color:var(--acc)}
-    .name-edit-row{display:none;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
-    .name-edit-row.show{display:flex}
-    .name-input{background:rgba(0,245,255,.05);border:1px solid rgba(0,245,255,.3);color:var(--tx);font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:1px;padding:7px 10px;border-radius:3px;outline:none;width:190px;transition:border-color .2s,box-shadow .2s;max-width:100%}
-    .name-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,245,255,.1)}
-    .name-save-btn{background:var(--acc);color:#000;border:none;border-radius:3px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1px;padding:8px 12px;cursor:pointer;transition:opacity .15s,transform .12s;flex-shrink:0}
-    .name-save-btn:hover{opacity:.85;transform:translateY(-1px)}
-    .name-save-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-    .name-cancel-btn{background:transparent;border:1px solid var(--border);color:var(--dim);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;padding:8px 10px;border-radius:3px;cursor:pointer;transition:all .2s;flex-shrink:0}
-    .name-cancel-btn:hover{border-color:var(--acc2);color:var(--acc2)}
-    .name-msg{font-size:9px;letter-spacing:1px;margin-bottom:4px;min-height:14px}
-    .name-msg.ok{color:var(--acc3)} .name-msg.err{color:var(--acc2)}
-    .prof-email{font-size:10px;color:var(--dim);letter-spacing:1px;margin-bottom:10px}
-    .prof-meta{display:flex;gap:14px;flex-wrap:wrap}
-    .prof-meta-item{font-size:9px;color:var(--dim);letter-spacing:1px}
-    .prof-meta-item span{color:var(--tx)}
+    .prof-info {
+      flex: 1;
+      min-width: 180px
+    }
 
-    .logout-btn-sm{background:transparent;border:1px solid rgba(255,0,128,.28);color:rgba(255,0,128,.6);font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;padding:7px 12px;border-radius:3px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;align-self:flex-start}
-    .logout-btn-sm:hover{border-color:var(--acc2);color:var(--acc2);background:rgba(255,0,128,.07)}
+    .prof-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      flex-wrap: wrap
+    }
+
+    .prof-name {
+      font-size: clamp(13px, 3vw, 22px);
+      font-weight: 900;
+      color: var(--acc);
+      letter-spacing: 2px;
+      text-shadow: 0 0 15px rgba(0, 245, 255, .35);
+      word-break: break-all
+    }
+
+    .edit-name-btn {
+      background: transparent;
+      border: 1px solid rgba(0, 245, 255, .28);
+      color: var(--dim);
+      border-radius: 3px;
+      padding: 3px 8px;
+      font-family: 'Orbitron', monospace;
+      font-size: 8px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all .2s;
+      flex-shrink: 0;
+      white-space: nowrap
+    }
+
+    .edit-name-btn:hover {
+      border-color: var(--acc);
+      color: var(--acc)
+    }
+
+    .name-edit-row {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      flex-wrap: wrap
+    }
+
+    .name-edit-row.show {
+      display: flex
+    }
+
+    .name-input {
+      background: rgba(0, 245, 255, .05);
+      border: 1px solid rgba(0, 245, 255, .3);
+      color: var(--tx);
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 7px 10px;
+      border-radius: 3px;
+      outline: none;
+      width: 190px;
+      transition: border-color .2s, box-shadow .2s;
+      max-width: 100%
+    }
+
+    .name-input:focus {
+      border-color: var(--acc);
+      box-shadow: 0 0 0 3px rgba(0, 245, 255, .1)
+    }
+
+    .name-save-btn {
+      background: var(--acc);
+      color: #000;
+      border: none;
+      border-radius: 3px;
+      font-family: 'Orbitron', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: opacity .15s, transform .12s;
+      flex-shrink: 0
+    }
+
+    .name-save-btn:hover {
+      opacity: .85;
+      transform: translateY(-1px)
+    }
+
+    .name-save-btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none
+    }
+
+    .name-cancel-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      font-family: 'Orbitron', monospace;
+      font-size: 9px;
+      letter-spacing: 1px;
+      padding: 8px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .2s;
+      flex-shrink: 0
+    }
+
+    .name-cancel-btn:hover {
+      border-color: var(--acc2);
+      color: var(--acc2)
+    }
+
+    .name-msg {
+      font-size: 9px;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+      min-height: 14px
+    }
+
+    .name-msg.ok {
+      color: var(--acc3)
+    }
+
+    .name-msg.err {
+      color: var(--acc2)
+    }
+
+    .prof-email {
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      margin-bottom: 10px
+    }
+
+    .prof-meta {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap
+    }
+
+    .prof-meta-item {
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 1px
+    }
+
+    .prof-meta-item span {
+      color: var(--tx)
+    }
+
+    .logout-btn-sm {
+      background: transparent;
+      border: 1px solid rgba(255, 0, 128, .28);
+      color: rgba(255, 0, 128, .6);
+      font-family: 'Orbitron', monospace;
+      font-size: 8px;
+      letter-spacing: 1px;
+      padding: 7px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+      align-self: flex-start
+    }
+
+    .logout-btn-sm:hover {
+      border-color: var(--acc2);
+      color: var(--acc2);
+      background: rgba(255, 0, 128, .07)
+    }
 
     /* STATS GRID */
-    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:24px}
-    .stat-card{background:var(--s0);border:1px solid var(--border);border-radius:6px;padding:18px 14px;text-align:center;position:relative;overflow:hidden;transition:border-color .25s,transform .2s,box-shadow .25s;cursor:default}
-    .stat-card:hover{transform:translateY(-3px)}
-    .stat-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;border-radius:0 0 6px 6px}
-    .stat-card::after{content:'';position:absolute;inset:0;opacity:0;transition:opacity .25s;pointer-events:none}
-    .stat-card:hover::after{opacity:1}
-    .stat-card.c-acc::before{background:var(--acc)} .stat-card.c-acc:hover{border-color:rgba(0,245,255,.4);box-shadow:0 4px 20px rgba(0,245,255,.1)} .stat-card.c-acc::after{background:radial-gradient(ellipse at 50% 100%,rgba(0,245,255,.06),transparent 70%)}
-    .stat-card.c-acc2::before{background:var(--acc2)} .stat-card.c-acc2:hover{border-color:rgba(255,0,128,.4);box-shadow:0 4px 20px rgba(255,0,128,.1)} .stat-card.c-acc2::after{background:radial-gradient(ellipse at 50% 100%,rgba(255,0,128,.06),transparent 70%)}
-    .stat-card.c-acc3::before{background:var(--acc3)} .stat-card.c-acc3:hover{border-color:rgba(170,255,0,.4);box-shadow:0 4px 20px rgba(170,255,0,.1)} .stat-card.c-acc3::after{background:radial-gradient(ellipse at 50% 100%,rgba(170,255,0,.06),transparent 70%)}
-    .stat-card.c-acc4::before{background:var(--acc4)} .stat-card.c-acc4:hover{border-color:rgba(255,136,0,.4);box-shadow:0 4px 20px rgba(255,136,0,.1)} .stat-card.c-acc4::after{background:radial-gradient(ellipse at 50% 100%,rgba(255,136,0,.06),transparent 70%)}
-    .stat-card.c-gold::before{background:var(--gold)} .stat-card.c-gold:hover{border-color:rgba(255,215,0,.5);box-shadow:0 4px 20px rgba(255,215,0,.12)} .stat-card.c-gold::after{background:radial-gradient(ellipse at 50% 100%,rgba(255,215,0,.07),transparent 70%)}
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 24px
+    }
+
+    .stat-card {
+      background: var(--s0);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 18px 14px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .25s, transform .2s, box-shadow .25s;
+      cursor: default
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px)
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      border-radius: 0 0 6px 6px
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity .25s;
+      pointer-events: none
+    }
+
+    .stat-card:hover::after {
+      opacity: 1
+    }
+
+    .stat-card.c-acc::before {
+      background: var(--acc)
+    }
+
+    .stat-card.c-acc:hover {
+      border-color: rgba(0, 245, 255, .4);
+      box-shadow: 0 4px 20px rgba(0, 245, 255, .1)
+    }
+
+    .stat-card.c-acc::after {
+      background: radial-gradient(ellipse at 50% 100%, rgba(0, 245, 255, .06), transparent 70%)
+    }
+
+    .stat-card.c-acc2::before {
+      background: var(--acc2)
+    }
+
+    .stat-card.c-acc2:hover {
+      border-color: rgba(255, 0, 128, .4);
+      box-shadow: 0 4px 20px rgba(255, 0, 128, .1)
+    }
+
+    .stat-card.c-acc2::after {
+      background: radial-gradient(ellipse at 50% 100%, rgba(255, 0, 128, .06), transparent 70%)
+    }
+
+    .stat-card.c-acc3::before {
+      background: var(--acc3)
+    }
+
+    .stat-card.c-acc3:hover {
+      border-color: rgba(170, 255, 0, .4);
+      box-shadow: 0 4px 20px rgba(170, 255, 0, .1)
+    }
+
+    .stat-card.c-acc3::after {
+      background: radial-gradient(ellipse at 50% 100%, rgba(170, 255, 0, .06), transparent 70%)
+    }
+
+    .stat-card.c-acc4::before {
+      background: var(--acc4)
+    }
+
+    .stat-card.c-acc4:hover {
+      border-color: rgba(255, 136, 0, .4);
+      box-shadow: 0 4px 20px rgba(255, 136, 0, .1)
+    }
+
+    .stat-card.c-acc4::after {
+      background: radial-gradient(ellipse at 50% 100%, rgba(255, 136, 0, .06), transparent 70%)
+    }
+
+    .stat-card.c-gold::before {
+      background: var(--gold)
+    }
+
+    .stat-card.c-gold:hover {
+      border-color: rgba(255, 215, 0, .5);
+      box-shadow: 0 4px 20px rgba(255, 215, 0, .12)
+    }
+
+    .stat-card.c-gold::after {
+      background: radial-gradient(ellipse at 50% 100%, rgba(255, 215, 0, .07), transparent 70%)
+    }
+
     /* EXAM BADGES */
-    .badges-section{margin-bottom:24px}
-    .badges-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);position:relative}
-    .badges-header::after{content:'';position:absolute;bottom:-1px;left:0;width:48px;height:2px;background:#ffd700;border-radius:2px}
-    .badges-title{font-family:'Press Start 2P',monospace;font-size:10px;color:#ffd700;letter-spacing:2px}
-    .badges-grid{display:flex;flex-wrap:wrap;gap:10px}
-    .badge-chip{display:flex;align-items:center;gap:8px;background:var(--s0);border:1px solid var(--border);border-radius:6px;padding:10px 14px;transition:transform .2s,border-color .2s,box-shadow .2s;cursor:default;position:relative;overflow:hidden}
-    .badge-chip::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-    .badge-chip:hover{transform:translateY(-2px)}
-    .badge-chip.bc-lv1::before{background:#cd7f32} .badge-chip.bc-lv1:hover{border-color:rgba(205,127,50,.5);box-shadow:0 4px 14px rgba(205,127,50,.15)}
-    .badge-chip.bc-lv2::before{background:#c0c0c0} .badge-chip.bc-lv2:hover{border-color:rgba(192,192,192,.5);box-shadow:0 4px 14px rgba(192,192,192,.12)}
-    .badge-chip.bc-lv3::before{background:#ffd700} .badge-chip.bc-lv3:hover{border-color:rgba(255,215,0,.5);box-shadow:0 4px 14px rgba(255,215,0,.15)}
-    .badge-chip.bc-lv4::before{background:#00f5ff} .badge-chip.bc-lv4:hover{border-color:rgba(0,245,255,.5);box-shadow:0 4px 14px rgba(0,245,255,.15)}
-    .badge-chip.bc-lv5::before{background:linear-gradient(90deg,#ff0080,#cc00ff,#00f5ff);animation:rainbowShift 3s linear infinite;background-size:300% 100%} .badge-chip.bc-lv5:hover{border-color:rgba(204,0,255,.5);box-shadow:0 4px 20px rgba(204,0,255,.2)}
-    .badge-icon{font-size:22px;flex-shrink:0;filter:drop-shadow(0 0 5px currentColor)}
-    .badge-info{display:flex;flex-direction:column;gap:2px}
-    .badge-name{font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px}
-    .bc-lv1 .badge-name{color:#cd7f32} .bc-lv2 .badge-name{color:#c0c0c0} .bc-lv3 .badge-name{color:#ffd700} .bc-lv4 .badge-name{color:#00f5ff} .bc-lv5 .badge-name{color:#cc00ff}
-    .badge-score{font-size:8px;color:var(--dim);letter-spacing:1px}
-    .badge-date{font-size:7px;color:var(--dim);letter-spacing:.5px}
-    .badge-empty{font-size:10px;color:var(--dim);letter-spacing:1px;display:flex;align-items:center;gap:8px}
-    .badge-empty a{color:var(--acc);text-decoration:none;font-size:9px;letter-spacing:1px;padding:6px 12px;border:1px solid rgba(0,245,255,.3);border-radius:3px;transition:all .15s}
-    .badge-empty a:hover{background:rgba(0,245,255,.07)}
-    .stat-card.c-purple::before{background:#cc00ff} .stat-card.c-purple:hover{border-color:rgba(204,0,255,.4);box-shadow:0 4px 20px rgba(204,0,255,.1)} .stat-card.c-purple::after{background:radial-gradient(ellipse at 50% 100%,rgba(204,0,255,.06),transparent 70%)}
-    .stat-val{font-family:'Press Start 2P',monospace;font-size:clamp(12px,3vw,20px);font-weight:900;letter-spacing:1px;margin-bottom:8px;position:relative;z-index:1}
-    .stat-card.c-acc .stat-val{color:var(--acc)} .stat-card.c-acc2 .stat-val{color:var(--acc2)} .stat-card.c-acc3 .stat-val{color:var(--acc3)} .stat-card.c-acc4 .stat-val{color:var(--acc4)} .stat-card.c-gold .stat-val{color:var(--gold)} .stat-card.c-purple .stat-val{color:#cc00ff}
-    .stat-label{font-size:7px;color:var(--dim);letter-spacing:1.5px;position:relative;z-index:1;line-height:1.6;word-break:keep-all;overflow-wrap:normal}
-    .wr-bar-wrap{background:rgba(0,0,0,.4);border-radius:2px;height:4px;margin-top:8px;overflow:hidden;position:relative;z-index:1}
-    .wr-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--acc3),var(--acc));transition:width 1.2s cubic-bezier(.34,1.56,.64,1)}
-    .streak-flame{font-size:18px;display:block;margin-bottom:2px;filter:drop-shadow(0 0 6px #ff8800)}
+    .badges-section {
+      margin-bottom: 24px
+    }
+
+    .badges-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      position: relative
+    }
+
+    .badges-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 48px;
+      height: 2px;
+      background: #ffd700;
+      border-radius: 2px
+    }
+
+    .badges-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      color: #ffd700;
+      letter-spacing: 2px
+    }
+
+    .badges-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px
+    }
+
+    .badge-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--s0);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+      cursor: default;
+      position: relative;
+      overflow: hidden
+    }
+
+    .badge-chip::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px
+    }
+
+    .badge-chip:hover {
+      transform: translateY(-2px)
+    }
+
+    .badge-chip.bc-lv1::before {
+      background: #cd7f32
+    }
+
+    .badge-chip.bc-lv1:hover {
+      border-color: rgba(205, 127, 50, .5);
+      box-shadow: 0 4px 14px rgba(205, 127, 50, .15)
+    }
+
+    .badge-chip.bc-lv2::before {
+      background: #c0c0c0
+    }
+
+    .badge-chip.bc-lv2:hover {
+      border-color: rgba(192, 192, 192, .5);
+      box-shadow: 0 4px 14px rgba(192, 192, 192, .12)
+    }
+
+    .badge-chip.bc-lv3::before {
+      background: #ffd700
+    }
+
+    .badge-chip.bc-lv3:hover {
+      border-color: rgba(255, 215, 0, .5);
+      box-shadow: 0 4px 14px rgba(255, 215, 0, .15)
+    }
+
+    .badge-chip.bc-lv4::before {
+      background: #00f5ff
+    }
+
+    .badge-chip.bc-lv4:hover {
+      border-color: rgba(0, 245, 255, .5);
+      box-shadow: 0 4px 14px rgba(0, 245, 255, .15)
+    }
+
+    .badge-chip.bc-lv5::before {
+      background: linear-gradient(90deg, #ff0080, #cc00ff, #00f5ff);
+      animation: rainbowShift 3s linear infinite;
+      background-size: 300% 100%
+    }
+
+    .badge-chip.bc-lv5:hover {
+      border-color: rgba(204, 0, 255, .5);
+      box-shadow: 0 4px 20px rgba(204, 0, 255, .2)
+    }
+
+    .badge-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 0 5px currentColor)
+    }
+
+    .badge-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px
+    }
+
+    .badge-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      letter-spacing: 1px
+    }
+
+    .bc-lv1 .badge-name {
+      color: #cd7f32
+    }
+
+    .bc-lv2 .badge-name {
+      color: #c0c0c0
+    }
+
+    .bc-lv3 .badge-name {
+      color: #ffd700
+    }
+
+    .bc-lv4 .badge-name {
+      color: #00f5ff
+    }
+
+    .bc-lv5 .badge-name {
+      color: #cc00ff
+    }
+
+    .badge-score {
+      font-size: 8px;
+      color: var(--dim);
+      letter-spacing: 1px
+    }
+
+    .badge-date {
+      font-size: 7px;
+      color: var(--dim);
+      letter-spacing: .5px
+    }
+
+    /* TITLES */
+    .titles-section {
+      margin-bottom: 24px
+    }
+
+    .titles-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      position: relative
+    }
+
+    .titles-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 48px;
+      height: 2px;
+      background: #9900ff;
+      border-radius: 2px
+    }
+
+    .titles-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      color: #9900ff;
+      letter-spacing: 2px
+    }
+
+    .titles-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 8px 0
+    }
+
+    .title-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--s0);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 16px;
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+      cursor: default;
+      position: relative;
+      overflow: hidden
+    }
+
+    .title-chip::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #9900ff, #ff0080)
+    }
+
+    .title-chip:hover {
+      transform: translateY(-2px);
+      border-color: rgba(153, 0, 255, .5);
+      box-shadow: 0 4px 16px rgba(153, 0, 255, .2)
+    }
+
+    .title-chip.tc-bot::before {
+      background: linear-gradient(90deg, #cc00ff, #ff0080)
+    }
+
+    .title-chip.tc-multi::before {
+      background: linear-gradient(90deg, #00f5ff, #00aaff)
+    }
+
+    .title-chip.tc-sprint::before {
+      background: linear-gradient(90deg, #aaff00, #00ff88)
+    }
+
+    .title-chip.tc-exam::before {
+      background: linear-gradient(90deg, #ffd700, #ffaa00)
+    }
+
+    .title-chip.tc-streak::before {
+      background: linear-gradient(90deg, #ff8800, #ff4400)
+    }
+
+    .title-chip.tc-other::before {
+      background: linear-gradient(90deg, #4a6080, #1a2540)
+    }
+
+    .title-emoji {
+      font-size: 24px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 0 6px rgba(153, 0, 255, .4))
+    }
+
+    .title-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      flex: 1;
+      min-width: 100px
+    }
+
+    .title-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      color: #9900ff;
+      letter-spacing: 1px;
+      font-weight: 900
+    }
+
+    .title-date {
+      font-size: 8px;
+      color: var(--dim);
+      letter-spacing: .5px
+    }
+
+    .badge-empty {
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .badge-empty a {
+      color: var(--acc);
+      text-decoration: none;
+      font-size: 9px;
+      letter-spacing: 1px;
+      padding: 6px 12px;
+      border: 1px solid rgba(0, 245, 255, .3);
+      border-radius: 3px;
+      transition: all .15s
+    }
+
+    .badge-empty a:hover {
+      background: rgba(0, 245, 255, .07)
+    }
+
+    .stat-card.c-purple::before {
+      background: #cc00ff
+    }
+
+    .stat-card.c-purple:hover {
+      border-color: rgba(204, 0, 255, .4);
+      box-shadow: 0 4px 20px rgba(204, 0, 255, .1)
+    }
+
+    .stat-card.c-purple::after {
+      background: radial-gradient(ellipse at 50% 100%, rgba(204, 0, 255, .06), transparent 70%)
+    }
+
+    .stat-val {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(12px, 3vw, 20px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1
+    }
+
+    .stat-card.c-acc .stat-val {
+      color: var(--acc)
+    }
+
+    .stat-card.c-acc2 .stat-val {
+      color: var(--acc2)
+    }
+
+    .stat-card.c-acc3 .stat-val {
+      color: var(--acc3)
+    }
+
+    .stat-card.c-acc4 .stat-val {
+      color: var(--acc4)
+    }
+
+    .stat-card.c-gold .stat-val {
+      color: var(--gold)
+    }
+
+    .stat-card.c-purple .stat-val {
+      color: #cc00ff
+    }
+
+    .stat-label {
+      font-size: 7px;
+      color: var(--dim);
+      letter-spacing: 1.5px;
+      position: relative;
+      z-index: 1;
+      line-height: 1.6;
+      word-break: keep-all;
+      overflow-wrap: normal
+    }
+
+    .wr-bar-wrap {
+      background: rgba(0, 0, 0, .4);
+      border-radius: 2px;
+      height: 4px;
+      margin-top: 8px;
+      overflow: hidden;
+      position: relative;
+      z-index: 1
+    }
+
+    .wr-bar {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--acc3), var(--acc));
+      transition: width 1.2s cubic-bezier(.34, 1.56, .64, 1)
+    }
+
+    .streak-flame {
+      font-size: 18px;
+      display: block;
+      margin-bottom: 2px;
+      filter: drop-shadow(0 0 6px #ff8800)
+    }
 
     /* TABS */
-    .tab-bar{display:flex;gap:6px;margin-bottom:20px;background:rgba(8,13,24,.8);border:1px solid var(--border);border-radius:6px;padding:5px}
-    .tab-btn{flex:1;padding:10px 8px;border:none;border-radius:4px;cursor:pointer;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1px;transition:all .2s;background:transparent;color:var(--dim);display:flex;align-items:center;justify-content:center;gap:6px}
-    .tab-btn.active{background:rgba(0,245,255,.09);color:var(--acc);box-shadow:inset 0 0 0 1px rgba(0,245,255,.28)}
-    .tab-btn:not(.active):hover{color:var(--tx);background:rgba(255,255,255,.03)}
-    .tab-badge{background:rgba(0,245,255,.15);color:var(--acc);border-radius:10px;font-size:7px;padding:1px 6px;letter-spacing:0;min-width:18px;text-align:center}
-    .tab-btn.active .tab-badge{background:rgba(0,245,255,.25)}
-    .tab-pane{display:none;animation:tabFadeIn .25s ease}
-    .tab-pane.active{display:block}
-    @keyframes tabFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    .tab-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      background: rgba(8, 13, 24, .8);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      transition: all .2s;
+      background: transparent;
+      color: var(--dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px
+    }
+
+    .tab-btn.active {
+      background: rgba(0, 245, 255, .09);
+      color: var(--acc);
+      box-shadow: inset 0 0 0 1px rgba(0, 245, 255, .28)
+    }
+
+    .tab-btn:not(.active):hover {
+      color: var(--tx);
+      background: rgba(255, 255, 255, .03)
+    }
+
+    .tab-badge {
+      background: rgba(0, 245, 255, .15);
+      color: var(--acc);
+      border-radius: 10px;
+      font-size: 7px;
+      padding: 1px 6px;
+      letter-spacing: 0;
+      min-width: 18px;
+      text-align: center
+    }
+
+    .tab-btn.active .tab-badge {
+      background: rgba(0, 245, 255, .25)
+    }
+
+    .tab-pane {
+      display: none;
+      animation: tabFadeIn .25s ease
+    }
+
+    .tab-pane.active {
+      display: block
+    }
+
+    @keyframes tabFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
 
     /* SECTION */
-    .section{margin-bottom:32px}
-    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);position:relative}
-    .section-header::after{content:'';position:absolute;bottom:-1px;left:0;width:48px;height:2px;background:var(--acc2);border-radius:2px}
-    .section-title{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--acc2);letter-spacing:2px}
-    .section-count{font-size:9px;color:var(--dim);letter-spacing:1px}
+    .section {
+      margin-bottom: 32px
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      position: relative
+    }
+
+    .section-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 48px;
+      height: 2px;
+      background: var(--acc2);
+      border-radius: 2px
+    }
+
+    .section-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      color: var(--acc2);
+      letter-spacing: 2px
+    }
+
+    .section-count {
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 1px
+    }
 
     /* TABLE */
-    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:4px;border:1px solid var(--border)}
-    .hist-table{width:100%;border-collapse:collapse}
-    .hist-table th{font-size:7px;letter-spacing:2px;color:var(--dim);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;background:rgba(8,13,24,.6)}
-    .hist-table td{font-size:11px;padding:11px 10px;border-bottom:1px solid rgba(26,37,64,.5);vertical-align:middle}
-    .hist-table tbody tr{transition:background .15s}
-    .hist-table tbody tr:hover td{background:rgba(0,245,255,.04)}
-    .hist-table tbody tr:last-child td{border-bottom:none}
-    .rank-badge{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:5px;font-family:'Press Start 2P',monospace;font-size:8px;font-weight:900;flex-shrink:0}
-    .rank-1{background:rgba(255,215,0,.13);color:var(--gold);border:1px solid rgba(255,215,0,.4);box-shadow:0 0 10px rgba(255,215,0,.15)}
-    .rank-2{background:rgba(192,192,192,.1);color:var(--silver);border:1px solid rgba(192,192,192,.3)}
-    .rank-3{background:rgba(205,127,50,.1);color:var(--bronze);border:1px solid rgba(205,127,50,.3)}
-    .rank-n{background:rgba(74,96,128,.1);color:var(--dim);border:1px solid var(--border)}
-    .mode-tag{font-size:7px;letter-spacing:1px;padding:3px 7px;border-radius:2px;white-space:nowrap}
-    .mode-qm{background:rgba(0,245,255,.08);color:var(--acc);border:1px solid rgba(0,245,255,.25)}
-    .mode-room{background:rgba(255,0,128,.07);color:var(--acc2);border:1px solid rgba(255,0,128,.2)}
-    .mode-bot{background:rgba(74,96,128,.1);color:var(--dim);border:1px solid var(--border)}
-    .time-cell{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--acc3);white-space:nowrap}
-    .time-cell.pb{color:var(--gold);text-shadow:0 0 10px rgba(255,215,0,.4)}
-    .opp-names{font-size:9px;color:var(--dim);letter-spacing:1px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
-    .date-cell{font-size:9px;color:var(--dim);letter-spacing:1px;white-space:nowrap}
-    .sprint-rank{display:inline-flex;align-items:center;gap:4px;font-size:9px;letter-spacing:1px;white-space:nowrap}
-    .sprint-rank.gold{color:var(--gold)} .sprint-rank.silver{color:var(--silver)} .sprint-rank.bronze{color:var(--bronze)} .sprint-rank.ranked{color:var(--dim)}
-    .medal-svg{width:16px;height:16px;flex-shrink:0}
-    .pb-badge{display:inline-flex;align-items:center;gap:3px;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.35);color:var(--gold);border-radius:2px;font-size:7px;letter-spacing:1px;padding:2px 6px;margin-left:6px;flex-shrink:0;vertical-align:middle}
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 4px;
+      border: 1px solid var(--border)
+    }
+
+    .hist-table {
+      width: 100%;
+      border-collapse: collapse
+    }
+
+    .hist-table th {
+      font-size: 7px;
+      letter-spacing: 2px;
+      color: var(--dim);
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      background: rgba(8, 13, 24, .6)
+    }
+
+    .hist-table td {
+      font-size: 11px;
+      padding: 11px 10px;
+      border-bottom: 1px solid rgba(26, 37, 64, .5);
+      vertical-align: middle
+    }
+
+    .hist-table tbody tr {
+      transition: background .15s
+    }
+
+    .hist-table tbody tr:hover td {
+      background: rgba(0, 245, 255, .04)
+    }
+
+    .hist-table tbody tr:last-child td {
+      border-bottom: none
+    }
+
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 5px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      font-weight: 900;
+      flex-shrink: 0
+    }
+
+    .rank-1 {
+      background: rgba(255, 215, 0, .13);
+      color: var(--gold);
+      border: 1px solid rgba(255, 215, 0, .4);
+      box-shadow: 0 0 10px rgba(255, 215, 0, .15)
+    }
+
+    .rank-2 {
+      background: rgba(192, 192, 192, .1);
+      color: var(--silver);
+      border: 1px solid rgba(192, 192, 192, .3)
+    }
+
+    .rank-3 {
+      background: rgba(205, 127, 50, .1);
+      color: var(--bronze);
+      border: 1px solid rgba(205, 127, 50, .3)
+    }
+
+    .rank-n {
+      background: rgba(74, 96, 128, .1);
+      color: var(--dim);
+      border: 1px solid var(--border)
+    }
+
+    .mode-tag {
+      font-size: 7px;
+      letter-spacing: 1px;
+      padding: 3px 7px;
+      border-radius: 2px;
+      white-space: nowrap
+    }
+
+    .mode-qm {
+      background: rgba(0, 245, 255, .08);
+      color: var(--acc);
+      border: 1px solid rgba(0, 245, 255, .25)
+    }
+
+    .mode-room {
+      background: rgba(255, 0, 128, .07);
+      color: var(--acc2);
+      border: 1px solid rgba(255, 0, 128, .2)
+    }
+
+    .mode-bot {
+      background: rgba(74, 96, 128, .1);
+      color: var(--dim);
+      border: 1px solid var(--border)
+    }
+
+    .time-cell {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      color: var(--acc3);
+      white-space: nowrap
+    }
+
+    .time-cell.pb {
+      color: var(--gold);
+      text-shadow: 0 0 10px rgba(255, 215, 0, .4)
+    }
+
+    .opp-names {
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: block
+    }
+
+    .date-cell {
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      white-space: nowrap
+    }
+
+    .sprint-rank {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9px;
+      letter-spacing: 1px;
+      white-space: nowrap
+    }
+
+    .sprint-rank.gold {
+      color: var(--gold)
+    }
+
+    .sprint-rank.silver {
+      color: var(--silver)
+    }
+
+    .sprint-rank.bronze {
+      color: var(--bronze)
+    }
+
+    .sprint-rank.ranked {
+      color: var(--dim)
+    }
+
+    .medal-svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0
+    }
+
+    .pb-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(255, 215, 0, .12);
+      border: 1px solid rgba(255, 215, 0, .35);
+      color: var(--gold);
+      border-radius: 2px;
+      font-size: 7px;
+      letter-spacing: 1px;
+      padding: 2px 6px;
+      margin-left: 6px;
+      flex-shrink: 0;
+      vertical-align: middle
+    }
 
     /* EMPTY STATE */
-    .empty-state{text-align:center;padding:48px 20px}
-    .empty-icon{font-size:32px;margin-bottom:16px;display:block;opacity:.35;filter:grayscale(1)}
-    .empty-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--dim);letter-spacing:2px;line-height:2;margin-bottom:20px}
-    .empty-cta{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:var(--acc);color:#000;text-decoration:none;font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:1px;border-radius:3px;transition:transform .15s,box-shadow .15s}
-    .empty-cta:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,245,255,.4)}
-    .empty-cta.pink{background:var(--acc2);color:#fff}
-    .empty-cta.pink:hover{box-shadow:0 6px 24px rgba(255,0,128,.4)}
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px
+    }
+
+    .empty-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+      display: block;
+      opacity: .35;
+      filter: grayscale(1)
+    }
+
+    .empty-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 2px;
+      line-height: 2;
+      margin-bottom: 20px
+    }
+
+    .empty-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 22px;
+      background: var(--acc);
+      color: #000;
+      text-decoration: none;
+      font-family: 'Orbitron', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      border-radius: 3px;
+      transition: transform .15s, box-shadow .15s
+    }
+
+    .empty-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 245, 255, .4)
+    }
+
+    .empty-cta.pink {
+      background: var(--acc2);
+      color: #fff
+    }
+
+    .empty-cta.pink:hover {
+      box-shadow: 0 6px 24px rgba(255, 0, 128, .4)
+    }
 
     /* AVATAR EDIT MODAL */
-    .ae-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:300;display:none;align-items:center;justify-content:center;backdrop-filter:blur(5px);padding:16px}
-    .ae-backdrop.open{display:flex;animation:fadeIn .2s ease}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    .avatar-edit-panel{background:var(--s1);border:1px solid rgba(0,245,255,.3);border-radius:8px;padding:22px;width:100%;max-width:320px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.8),0 0 40px rgba(0,245,255,.07);animation:slideUp .25s ease}
-    @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
-    .ae-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-    .ae-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--acc);letter-spacing:1px}
-    .ae-close{background:none;border:none;color:var(--dim);font-size:22px;cursor:pointer;line-height:1;padding:0;transition:color .2s;margin:-4px -4px 0 0}
-    .ae-close:hover{color:var(--acc2)}
-    .ae-label{font-size:8px;color:var(--dim);letter-spacing:2px;margin-bottom:7px;display:block}
-    .ae-input{width:100%;background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:4px;color:var(--tx);font-family:'Orbitron',monospace;font-size:11px;padding:10px 11px;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:12px}
-    .ae-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,245,255,.1)}
-    .ae-input::placeholder{color:var(--dim);font-size:9px}
-    .ae-preview-wrap{display:flex;align-items:center;gap:14px;margin-bottom:14px;min-height:56px}
-    .ae-preview{width:56px;height:56px;border-radius:50%;border:2px solid var(--dim);object-fit:cover;display:none;flex-shrink:0;transition:border-color .2s}
-    .ae-preview.show{display:block;border-color:var(--acc)}
-    .ae-preview-err{font-size:9px;color:var(--acc2);letter-spacing:1px;display:none}
-    .ae-preview-hint{font-size:9px;color:var(--dim);letter-spacing:1px;line-height:1.7}
-    .ae-btns{display:flex;gap:8px}
-    .ae-save{flex:1;padding:10px;background:var(--acc);color:#000;border:none;border-radius:4px;font-family:'Orbitron',monospace;font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:opacity .15s,transform .12s}
-    .ae-save:hover{opacity:.88;transform:translateY(-1px)}
-    .ae-save:disabled{opacity:.4;cursor:not-allowed;transform:none}
-    .ae-remove{padding:10px 12px;background:transparent;border:1px solid rgba(255,0,128,.3);color:var(--acc2);border-radius:4px;font-family:'Orbitron',monospace;font-size:8px;cursor:pointer;transition:all .2s;white-space:nowrap}
-    .ae-remove:hover{border-color:var(--acc2);background:rgba(255,0,128,.08)}
-    .ae-msg{font-size:9px;letter-spacing:1px;text-align:center;margin-top:10px;min-height:14px}
-    .ae-msg.ok{color:var(--acc3)} .ae-msg.err{color:var(--acc2)}
+    .ae-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .78);
+      z-index: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(5px);
+      padding: 16px
+    }
+
+    .ae-backdrop.open {
+      display: flex;
+      animation: fadeIn .2s ease
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    .avatar-edit-panel {
+      background: var(--s1);
+      border: 1px solid rgba(0, 245, 255, .3);
+      border-radius: 8px;
+      padding: 22px;
+      width: 100%;
+      max-width: 320px;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .8), 0 0 40px rgba(0, 245, 255, .07);
+      animation: slideUp .25s ease
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(16px);
+        opacity: 0
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1
+      }
+    }
+
+    .ae-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px
+    }
+
+    .ae-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      color: var(--acc);
+      letter-spacing: 1px
+    }
+
+    .ae-close {
+      background: none;
+      border: none;
+      color: var(--dim);
+      font-size: 22px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      transition: color .2s;
+      margin: -4px -4px 0 0
+    }
+
+    .ae-close:hover {
+      color: var(--acc2)
+    }
+
+    .ae-label {
+      font-size: 8px;
+      color: var(--dim);
+      letter-spacing: 2px;
+      margin-bottom: 7px;
+      display: block
+    }
+
+    .ae-input {
+      width: 100%;
+      background: rgba(0, 0, 0, .5);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--tx);
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      padding: 10px 11px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      margin-bottom: 12px
+    }
+
+    .ae-input:focus {
+      border-color: var(--acc);
+      box-shadow: 0 0 0 3px rgba(0, 245, 255, .1)
+    }
+
+    .ae-input::placeholder {
+      color: var(--dim);
+      font-size: 9px
+    }
+
+    .ae-preview-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+      min-height: 56px
+    }
+
+    .ae-preview {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 2px solid var(--dim);
+      object-fit: cover;
+      display: none;
+      flex-shrink: 0;
+      transition: border-color .2s
+    }
+
+    .ae-preview.show {
+      display: block;
+      border-color: var(--acc)
+    }
+
+    .ae-preview-err {
+      font-size: 9px;
+      color: var(--acc2);
+      letter-spacing: 1px;
+      display: none
+    }
+
+    .ae-preview-hint {
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      line-height: 1.7
+    }
+
+    .ae-btns {
+      display: flex;
+      gap: 8px
+    }
+
+    .ae-save {
+      flex: 1;
+      padding: 10px;
+      background: var(--acc);
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      font-family: 'Orbitron', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: opacity .15s, transform .12s
+    }
+
+    .ae-save:hover {
+      opacity: .88;
+      transform: translateY(-1px)
+    }
+
+    .ae-save:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none
+    }
+
+    .ae-remove {
+      padding: 10px 12px;
+      background: transparent;
+      border: 1px solid rgba(255, 0, 128, .3);
+      color: var(--acc2);
+      border-radius: 4px;
+      font-family: 'Orbitron', monospace;
+      font-size: 8px;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap
+    }
+
+    .ae-remove:hover {
+      border-color: var(--acc2);
+      background: rgba(255, 0, 128, .08)
+    }
+
+    .ae-msg {
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-align: center;
+      margin-top: 10px;
+      min-height: 14px
+    }
+
+    .ae-msg.ok {
+      color: var(--acc3)
+    }
+
+    .ae-msg.err {
+      color: var(--acc2)
+    }
 
     /* SCROLL TOP */
-    #scrollTopBtn{position:fixed;bottom:24px;right:20px;z-index:50;width:40px;height:40px;border-radius:50%;background:rgba(8,13,24,.9);border:1px solid rgba(0,245,255,.3);color:var(--acc);cursor:pointer;display:none;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(8px)}
-    #scrollTopBtn.show{display:flex}
-    #scrollTopBtn:hover{border-color:var(--acc);box-shadow:0 0 16px rgba(0,245,255,.3);transform:translateY(-2px)}
-
-    @media(max-width:640px){
-      .profile-header{flex-direction:column;align-items:flex-start;gap:16px}
-      .stats-grid{grid-template-columns:repeat(2,1fr)}
-      .hist-table th:nth-child(5),.hist-table td:nth-child(5){display:none}
-      .tab-btn{font-size:8px;padding:9px 6px;gap:4px}
-      .page{padding:20px 12px}
+    #scrollTopBtn {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      z-index: 50;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(8, 13, 24, .9);
+      border: 1px solid rgba(0, 245, 255, .3);
+      color: var(--acc);
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+      backdrop-filter: blur(8px)
     }
-    @media(max-width:400px){
-      .hist-table th:nth-child(4),.hist-table td:nth-child(4){display:none}
+
+    #scrollTopBtn.show {
+      display: flex
+    }
+
+    #scrollTopBtn:hover {
+      border-color: var(--acc);
+      box-shadow: 0 0 16px rgba(0, 245, 255, .3);
+      transform: translateY(-2px)
+    }
+
+    @media(max-width:640px) {
+      .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      .hist-table th:nth-child(5),
+      .hist-table td:nth-child(5) {
+        display: none
+      }
+
+      .tab-btn {
+        font-size: 8px;
+        padding: 9px 6px;
+        gap: 4px
+      }
+
+      .page {
+        padding: 20px 12px
+      }
+    }
+
+    @media(max-width:400px) {
+
+      .hist-table th:nth-child(4),
+      .hist-table td:nth-child(4) {
+        display: none
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="scanlines"></div>
   <div id="pageLoader">
@@ -241,7 +1654,9 @@
   <nav class="nav">
     <a href="index.html" class="nav-logo">TETRIS BATTLE</a>
     <a href="index.html" class="nav-back">
-      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 1L3 5l4 4"/></svg>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M7 1L3 5l4 4" />
+      </svg>
       メニューに戻る
     </a>
   </nav>
@@ -276,23 +1691,39 @@
       <div class="profile-header" id="profileHeader"></div>
       <div class="stats-grid" id="statsGrid"></div>
 
+      <!-- TITLES -->
+      <div class="titles-section" id="titlesSection" style="display:none">
+        <div class="titles-header">
+          <div class="titles-title">▶ 達成称号</div>
+        </div>
+        <div class="titles-grid" id="titlesGrid"></div>
+      </div>
+
       <!-- EXAM BADGES -->
       <div class="badges-section" id="badgesSection" style="display:none">
         <div class="badges-header">
           <div class="badges-title">▶ 検定バッジ</div>
-          <a href="exam.html" style="font-size:8px;color:var(--dim);text-decoration:none;letter-spacing:1px;transition:color .2s" onmouseover="this.style.color='#ffd700'" onmouseout="this.style.color=''">検定を受ける ▶</a>
+          <a href="exam.html"
+            style="font-size:8px;color:var(--dim);text-decoration:none;letter-spacing:1px;transition:color .2s"
+            onmouseover="this.style.color='#ffd700'" onmouseout="this.style.color=''">検定を受ける ▶</a>
         </div>
         <div class="badges-grid" id="badgesGrid"></div>
       </div>
 
       <div class="tab-bar">
         <button class="tab-btn active" id="tabBtnMulti" onclick="switchTab('multi')" aria-label="マルチ対戦履歴">
-          <svg width="11" height="11" viewBox="0 0 13 13" fill="currentColor" aria-hidden="true"><circle cx="4" cy="4" r="2.2"/><circle cx="9" cy="4" r="2.2"/><path d="M0 11c0-2.2 1.8-4 4-4h5c2.2 0 4 1.8 4 4H0z"/></svg>
+          <svg width="11" height="11" viewBox="0 0 13 13" fill="currentColor" aria-hidden="true">
+            <circle cx="4" cy="4" r="2.2" />
+            <circle cx="9" cy="4" r="2.2" />
+            <path d="M0 11c0-2.2 1.8-4 4-4h5c2.2 0 4 1.8 4 4H0z" />
+          </svg>
           マルチ対戦
           <span class="tab-badge" id="tabBadgeMulti">0</span>
         </button>
         <button class="tab-btn" id="tabBtnSprint" onclick="switchTab('sprint')" aria-label="スプリント履歴">
-          <svg width="11" height="11" viewBox="0 0 13 13" fill="currentColor" aria-hidden="true"><path d="M2 10L6 2l2 4 2-2 1 6z"/></svg>
+          <svg width="11" height="11" viewBox="0 0 13 13" fill="currentColor" aria-hidden="true">
+            <path d="M2 10L6 2l2 4 2-2 1 6z" />
+          </svg>
           スプリント
           <span class="tab-badge" id="tabBadgeSprint">0</span>
         </button>
@@ -321,135 +1752,137 @@
   </div>
 
   <button id="scrollTopBtn" aria-label="ページトップへ">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9L7 4l5 5"/></svg>
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M2 9L7 4l5 5" />
+    </svg>
   </button>
 
   <script>
     function fmtTime(ms) {
       if (ms == null) return '--:--.--';
-      const m=Math.floor(ms/60000), s=Math.floor((ms%60000)/1000), cs=Math.floor((ms%1000)/10);
-      return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+      const m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000), cs = Math.floor((ms % 1000) / 10);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
     }
     function fmtDate(ts) {
       if (!ts) return '---';
-      const d=ts.toDate?ts.toDate():new Date(ts);
-      return d.toLocaleDateString('ja-JP',{year:'2-digit',month:'2-digit',day:'2-digit'});
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleDateString('ja-JP', { year: '2-digit', month: '2-digit', day: '2-digit' });
     }
     function fmtDateFull(ts) {
       if (!ts) return '---';
-      const d=ts.toDate?ts.toDate():new Date(ts);
-      return d.toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'});
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
     }
     function switchTab(name) {
-      ['multi','sprint'].forEach(n => {
-        document.getElementById('tabBtn'+n.charAt(0).toUpperCase()+n.slice(1))?.classList.toggle('active',n===name);
-        document.getElementById('tab-'+n)?.classList.toggle('active',n===name);
+      ['multi', 'sprint'].forEach(n => {
+        document.getElementById('tabBtn' + n.charAt(0).toUpperCase() + n.slice(1))?.classList.toggle('active', n === name);
+        document.getElementById('tab-' + n)?.classList.toggle('active', n === name);
       });
     }
-    function animateCount(el, target, dur=900) {
+    function animateCount(el, target, dur = 900) {
       if (!el) return;
-      const start=performance.now();
-      (function step(now){
-        const p=Math.min((now-start)/dur,1), e=1-Math.pow(1-p,3);
-        el.textContent=Math.round(target*e).toLocaleString();
-        if(p<1) requestAnimationFrame(step); else el.textContent=target.toLocaleString();
+      const start = performance.now();
+      (function step(now) {
+        const p = Math.min((now - start) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * e).toLocaleString();
+        if (p < 1) requestAnimationFrame(step); else el.textContent = target.toLocaleString();
       })(start);
     }
     function medalSVG(rank) {
-      const c={1:'#ffd700',2:'#c0c0c0',3:'#cd7f32'}[rank];
+      const c = { 1: '#ffd700', 2: '#c0c0c0', 3: '#cd7f32' }[rank];
       return `<svg class="medal-svg" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="10" r="5" fill="${c}22" stroke="${c}" stroke-width="1.2"/><text x="8" y="13.5" text-anchor="middle" font-size="6" font-weight="900" fill="${c}" font-family="monospace">${rank}</text><path d="M5 5.5L3 2h10L11 5.5" stroke="${c}" stroke-width="1.2" stroke-linejoin="round" fill="none"/></svg>`;
     }
 
     function renderStats(profile, multiHistory) {
-      const tg=profile?.totalMultiGames||0, tw=profile?.totalWins||0;
-      const wr=tg>0?Math.round(tw/tg*100):0;
-      const bs=profile?.bestSprintMs, tl=profile?.totalLinesCleared||0, ts=profile?.totalSprintGames||0;
-      let streak=0; for(const h of multiHistory){if(h.rank===1)streak++;else break;}
-      const flameHtml='';
-      document.getElementById('statsGrid').innerHTML=`
+      const tg = profile?.totalMultiGames || 0, tw = profile?.totalWins || 0;
+      const wr = tg > 0 ? Math.round(tw / tg * 100) : 0;
+      const bs = profile?.bestSprintMs, tl = profile?.totalLinesCleared || 0, ts = profile?.totalSprintGames || 0;
+      let streak = 0; for (const h of multiHistory) { if (h.rank === 1) streak++; else break; }
+      const flameHtml = '';
+      document.getElementById('statsGrid').innerHTML = `
         <div class="stat-card c-acc"><div class="stat-val" id="sc-games">0</div><div class="stat-label">MULTI GAMES</div></div>
         <div class="stat-card c-acc3"><div class="stat-val" id="sc-wr">0<span style="font-size:.5em">%</span></div><div class="stat-label">WIN RATE</div><div class="wr-bar-wrap"><div class="wr-bar" id="wrBar" style="width:0%"></div></div></div>
-        <div class="stat-card c-gold" style="display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:14px 8px"><div class="stat-val" style="font-size:clamp(8px,1.4vw,12px);letter-spacing:-0.5px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:clip">${bs!=null?fmtTime(bs):'--:--.--'}</div><div class="stat-label" style="white-space:nowrap;letter-spacing:1px">BEST SPRINT</div></div>
+        <div class="stat-card c-gold" style="display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:14px 8px"><div class="stat-val" style="font-size:clamp(8px,1.4vw,12px);letter-spacing:-0.5px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:clip">${bs != null ? fmtTime(bs) : '--:--.--'}</div><div class="stat-label" style="white-space:nowrap;letter-spacing:1px">BEST SPRINT</div></div>
         <div class="stat-card c-acc2"><div class="stat-val" id="sc-lines">0</div><div class="stat-label">TOTAL LINES</div></div>
         <div class="stat-card c-acc4"><div class="stat-val" id="sc-sprint">0</div><div class="stat-label">SPRINT RUNS</div></div>
         <div class="stat-card c-purple">${flameHtml}<div class="stat-val" id="sc-streak">0</div><div class="stat-label">WIN STREAK</div></div>`;
-      setTimeout(()=>{
-        animateCount(document.getElementById('sc-games'),tg);
-        animateCount(document.getElementById('sc-wr'),wr);
-        animateCount(document.getElementById('sc-lines'),tl);
-        animateCount(document.getElementById('sc-sprint'),ts);
-        animateCount(document.getElementById('sc-streak'),streak);
-        setTimeout(()=>{const b=document.getElementById('wrBar');if(b)b.style.width=wr+'%';},200);
-      },300);
+      setTimeout(() => {
+        animateCount(document.getElementById('sc-games'), tg);
+        animateCount(document.getElementById('sc-wr'), wr);
+        animateCount(document.getElementById('sc-lines'), tl);
+        animateCount(document.getElementById('sc-sprint'), ts);
+        animateCount(document.getElementById('sc-streak'), streak);
+        setTimeout(() => { const b = document.getElementById('wrBar'); if (b) b.style.width = wr + '%'; }, 200);
+      }, 300);
     }
 
     function renderMultiHistory(history) {
-      const cnt=history.length;
-      document.getElementById('multiCount').textContent=cnt+'件';
-      document.getElementById('tabBadgeMulti').textContent=cnt;
-      const el=document.getElementById('multiHistContent');
-      if(!cnt){el.innerHTML=`<div class="empty-state"><span class="empty-icon">--</span><div class="empty-title">まだ対戦履歴がありません</div><a href="tetris-multi.html" class="empty-cta pink"><svg width="12" height="12" viewBox="0 0 13 13" fill="currentColor"><circle cx="4" cy="4" r="2.2"/><circle cx="9" cy="4" r="2.2"/><path d="M0 11c0-2.2 1.8-4 4-4h5c2.2 0 4 1.8 4 4H0z"/></svg>マルチ対戦をプレイ</a></div>`;return;}
-      const mL={qm:'QUICK',room:'ROOM',bot:'BOT'},mC={qm:'mode-qm',room:'mode-room',bot:'mode-bot'};
-      const rows=history.map(h=>{
-        const r=h.rank||1,rc=r===1?'rank-1':r===2?'rank-2':r===3?'rank-3':'rank-n';
-        const rl=r===1?'1st':r===2?'2nd':r===3?'3rd':r+'th';
-        const mode=h.mode||'room',opps=(h.opponentNames||[]).join(', ')||'---';
-        return `<tr><td><span class="rank-badge ${rc}">${rl}</span></td><td><span class="mode-tag ${mC[mode]||'mode-room'}">${mL[mode]||mode}</span> <span style="font-size:8px;color:var(--dim)">${h.totalPlayers||2}人</span></td><td style="font-family:'Press Start 2P',monospace;font-size:10px;color:var(--acc)">${(h.score||0).toLocaleString()}</td><td style="color:var(--tx)">${h.lines||0}</td><td><span class="opp-names" title="${opps}">${opps}</span></td><td><span class="date-cell">${fmtDate(h.ts)}</span></td></tr>`;
+      const cnt = history.length;
+      document.getElementById('multiCount').textContent = cnt + '件';
+      document.getElementById('tabBadgeMulti').textContent = cnt;
+      const el = document.getElementById('multiHistContent');
+      if (!cnt) { el.innerHTML = `<div class="empty-state"><span class="empty-icon">--</span><div class="empty-title">まだ対戦履歴がありません</div><a href="tetris-multi.html" class="empty-cta pink"><svg width="12" height="12" viewBox="0 0 13 13" fill="currentColor"><circle cx="4" cy="4" r="2.2"/><circle cx="9" cy="4" r="2.2"/><path d="M0 11c0-2.2 1.8-4 4-4h5c2.2 0 4 1.8 4 4H0z"/></svg>マルチ対戦をプレイ</a></div>`; return; }
+      const mL = { qm: 'QUICK', room: 'ROOM', bot: 'BOT' }, mC = { qm: 'mode-qm', room: 'mode-room', bot: 'mode-bot' };
+      const rows = history.map(h => {
+        const r = h.rank || 1, rc = r === 1 ? 'rank-1' : r === 2 ? 'rank-2' : r === 3 ? 'rank-3' : 'rank-n';
+        const rl = r === 1 ? '1st' : r === 2 ? '2nd' : r === 3 ? '3rd' : r + 'th';
+        const mode = h.mode || 'room', opps = (h.opponentNames || []).join(', ') || '---';
+        return `<tr><td><span class="rank-badge ${rc}">${rl}</span></td><td><span class="mode-tag ${mC[mode] || 'mode-room'}">${mL[mode] || mode}</span> <span style="font-size:8px;color:var(--dim)">${h.totalPlayers || 2}人</span></td><td style="font-family:'Press Start 2P',monospace;font-size:10px;color:var(--acc)">${(h.score || 0).toLocaleString()}</td><td style="color:var(--tx)">${h.lines || 0}</td><td><span class="opp-names" title="${opps}">${opps}</span></td><td><span class="date-cell">${fmtDate(h.ts)}</span></td></tr>`;
       }).join('');
-      el.innerHTML=`<div class="table-wrap"><table class="hist-table"><thead><tr><th>RANK</th><th>MODE</th><th>SCORE</th><th>LINES</th><th>OPPONENT</th><th>DATE</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      el.innerHTML = `<div class="table-wrap"><table class="hist-table"><thead><tr><th>RANK</th><th>MODE</th><th>SCORE</th><th>LINES</th><th>OPPONENT</th><th>DATE</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }
 
     function renderSprintHistory(history) {
-      const cnt=history.length;
-      document.getElementById('sprintCount').textContent=cnt+'件';
-      document.getElementById('tabBadgeSprint').textContent=cnt;
-      const el=document.getElementById('sprintHistContent');
-      if(!cnt){el.innerHTML=`<div class="empty-state"><span class="empty-icon">⏱</span><div class="empty-title">まだスプリント履歴がありません</div><a href="sprint.html" class="empty-cta"><svg width="12" height="12" viewBox="0 0 13 13" fill="currentColor"><path d="M2 10L6 2l2 4 2-2 1 6z"/></svg>スプリントをプレイ</a></div>`;return;}
-      const best=Math.min(...history.map(h=>h.ms).filter(Boolean));
-      const rows=history.map(h=>{
-        const isPB=h.ms===best,gr=h.globalRank;
-        let rh=`<span class="sprint-rank ranked">---</span>`;
-        if(gr===1)rh=`<span class="sprint-rank gold">${medalSVG(1)} #1</span>`;
-        else if(gr===2)rh=`<span class="sprint-rank silver">${medalSVG(2)} #2</span>`;
-        else if(gr===3)rh=`<span class="sprint-rank bronze">${medalSVG(3)} #3</span>`;
-        else if(gr)rh=`<span class="sprint-rank ranked">#${gr}</span>`;
-        return `<tr><td><span class="time-cell${isPB?' pb':''}">${fmtTime(h.ms)}</span>${isPB?`<span class="pb-badge"><svg width="9" height="9" viewBox="0 0 12 12" fill="var(--gold)"><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9.5 3,11 3.5,7.5 1,5 4.5,4.5"/></svg> PB</span>`:''}</td><td>${rh}</td><td style="font-family:'Press Start 2P',monospace;font-size:10px;color:var(--acc)">${(h.score||0).toLocaleString()}</td><td style="color:var(--tx)">${h.lines||40}</td><td><span class="date-cell">${fmtDate(h.ts)}</span></td></tr>`;
+      const cnt = history.length;
+      document.getElementById('sprintCount').textContent = cnt + '件';
+      document.getElementById('tabBadgeSprint').textContent = cnt;
+      const el = document.getElementById('sprintHistContent');
+      if (!cnt) { el.innerHTML = `<div class="empty-state"><span class="empty-icon">⏱</span><div class="empty-title">まだスプリント履歴がありません</div><a href="sprint.html" class="empty-cta"><svg width="12" height="12" viewBox="0 0 13 13" fill="currentColor"><path d="M2 10L6 2l2 4 2-2 1 6z"/></svg>スプリントをプレイ</a></div>`; return; }
+      const best = Math.min(...history.map(h => h.ms).filter(Boolean));
+      const rows = history.map(h => {
+        const isPB = h.ms === best, gr = h.globalRank;
+        let rh = `<span class="sprint-rank ranked">---</span>`;
+        if (gr === 1) rh = `<span class="sprint-rank gold">${medalSVG(1)} #1</span>`;
+        else if (gr === 2) rh = `<span class="sprint-rank silver">${medalSVG(2)} #2</span>`;
+        else if (gr === 3) rh = `<span class="sprint-rank bronze">${medalSVG(3)} #3</span>`;
+        else if (gr) rh = `<span class="sprint-rank ranked">#${gr}</span>`;
+        return `<tr><td><span class="time-cell${isPB ? ' pb' : ''}">${fmtTime(h.ms)}</span>${isPB ? `<span class="pb-badge"><svg width="9" height="9" viewBox="0 0 12 12" fill="var(--gold)"><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9.5 3,11 3.5,7.5 1,5 4.5,4.5"/></svg> PB</span>` : ''}</td><td>${rh}</td><td style="font-family:'Press Start 2P',monospace;font-size:10px;color:var(--acc)">${(h.score || 0).toLocaleString()}</td><td style="color:var(--tx)">${h.lines || 40}</td><td><span class="date-cell">${fmtDate(h.ts)}</span></td></tr>`;
       }).join('');
-      el.innerHTML=`<div class="table-wrap"><table class="hist-table"><thead><tr><th>TIME</th><th>GLOBAL RANK</th><th>SCORE</th><th>LINES</th><th>DATE</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      el.innerHTML = `<div class="table-wrap"><table class="hist-table"><thead><tr><th>TIME</th><th>GLOBAL RANK</th><th>SCORE</th><th>LINES</th><th>DATE</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }
 
     // スクロールトップボタン
-    window.addEventListener('scroll',()=>{
-      document.getElementById('scrollTopBtn').classList.toggle('show',window.scrollY>400);
-    },{passive:true});
-    document.getElementById('scrollTopBtn').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+    window.addEventListener('scroll', () => {
+      document.getElementById('scrollTopBtn').classList.toggle('show', window.scrollY > 400);
+    }, { passive: true });
+    document.getElementById('scrollTopBtn').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   </script>
 
   <script type="module">
-    import { mountNav } from './nav.js';
+    import { mountNav, notifyOk, notifyErr, notifyInfo, notifySpecial } from './nav.js';
     mountNav();
     import { onAuthReady, signIn, signOut, refreshProfile } from './auth.js';
-    import { upsertUserProfile, getUserProfile, getMultiHistory, getSprintHistory, updateUserName, updateUserAvatar, getExamBadges } from './db.js';
+    import { upsertUserProfile, getUserProfile, getMultiHistory, getSprintHistory, updateUserName, updateUserAvatar, getExamBadges, getUserTitles, watchUserTitles, watchUserProfile, AVAILABLE_TITLES } from './db.js';
 
-    const stateMsg=document.getElementById('stateMsg'),mainContent=document.getElementById('mainContent'),loader=document.getElementById('pageLoader');
-    function hideLoader(){loader.classList.add('hide');setTimeout(()=>loader.remove(),500);}
+    const stateMsg = document.getElementById('stateMsg'), mainContent = document.getElementById('mainContent'), loader = document.getElementById('pageLoader');
+    function hideLoader() { loader.classList.add('hide'); setTimeout(() => loader.remove(), 500); }
 
     function showNotLoggedIn() {
-      stateMsg.innerHTML=`<div class="state-title">TETRIS BATTLE</div><div class="state-sub">プロフィールを見るには<br>Googleアカウントでログインしてください</div><button class="login-btn" id="loginBtnPage"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.7 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.7 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.4 26.8 36 24 36c-5.2 0-9.7-3.3-11.3-8H6.1C9.4 35.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.6l6.2 5.2C37 38.2 44 33 44 24c0-1.3-.1-2.7-.4-3.9z"/></svg>Googleでログイン</button>`;
-      document.getElementById('loginBtnPage')?.addEventListener('click',async()=>{try{await signIn();}catch(e){}});
+      stateMsg.innerHTML = `<div class="state-title">TETRIS BATTLE</div><div class="state-sub">プロフィールを見るには<br>Googleアカウントでログインしてください</div><button class="login-btn" id="loginBtnPage"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.7 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 19 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.7 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.4 26.8 36 24 36c-5.2 0-9.7-3.3-11.3-8H6.1C9.4 35.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.6l6.2 5.2C37 38.2 44 33 44 24c0-1.3-.1-2.7-.4-3.9z"/></svg>Googleでログイン</button>`;
+      document.getElementById('loginBtnPage')?.addEventListener('click', async () => { try { await signIn(); } catch (e) { } });
     }
 
     function renderHeader(user, profile) {
-      const name=profile?.displayName||user.displayName||'PLAYER';
-      const email=user.email||'';
-      const photoURL=profile?.customPhotoURL||profile?.photoURL||user.photoURL;
-      const initials=name.slice(0,2).toUpperCase();
-      const createdAt=profile?.createdAt?fmtDateFull(profile.createdAt):'---';
-      const lastSeen=profile?.lastSeen?fmtDateFull(profile.lastSeen):'---';
-      const avatarHtml=photoURL
-        ?`<img class="prof-avatar" id="profAvatarImg" src="${photoURL}" alt="アバター" onerror="this.style.display='none';document.getElementById('profInitialsEl').style.display='flex'"><div class="prof-initials" id="profInitialsEl" style="display:none">${initials}</div>`
-        :`<div class="prof-initials" id="profInitialsEl">${initials}</div>`;
-      document.getElementById('profileHeader').innerHTML=`
+      const name = profile?.displayName || user.displayName || 'PLAYER';
+      const email = user.email || '';
+      const photoURL = profile?.customPhotoURL || profile?.photoURL || user.photoURL;
+      const initials = name.slice(0, 2).toUpperCase();
+      const createdAt = profile?.createdAt ? fmtDateFull(profile.createdAt) : '---';
+      const lastSeen = profile?.lastSeen ? fmtDateFull(profile.lastSeen) : '---';
+      const avatarHtml = photoURL
+        ? `<img class="prof-avatar" id="profAvatarImg" src="${photoURL}" alt="アバター" onerror="this.style.display='none';document.getElementById('profInitialsEl').style.display='flex'"><div class="prof-initials" id="profInitialsEl" style="display:none">${initials}</div>`
+        : `<div class="prof-initials" id="profInitialsEl">${initials}</div>`;
+      document.getElementById('profileHeader').innerHTML = `
         <div class="avatar-wrap" id="avatarWrap">${avatarHtml}
           <button class="avatar-edit-btn" id="avatarEditBtn" aria-label="アイコンを変更">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm17.71-10.21a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>変更
@@ -476,134 +1909,160 @@
     }
 
     function _showNameMsg(text, type) {
-      const m=document.getElementById('nameMsg');
-      if(!m)return;
-      m.textContent=text;m.className='name-msg '+type;
-      setTimeout(()=>{m.textContent='';m.className='name-msg';},3000);
+      const m = document.getElementById('nameMsg');
+      if (!m) return;
+      m.textContent = text; m.className = 'name-msg ' + type;
+      setTimeout(() => { m.textContent = ''; m.className = 'name-msg'; }, 3000);
     }
 
     function wireAvatarEdit(user) {
-      const editBtn=document.getElementById('avatarEditBtn');
-      const backdrop=document.getElementById('aeBackdrop');
-      const closeBtn=document.getElementById('aePanelClose');
-      const input=document.getElementById('aeInput');
-      const preview=document.getElementById('aePreview');
-      const prevErr=document.getElementById('aePreviewErr');
-      const prevHint=document.getElementById('aePreviewHint');
-      const saveBtn=document.getElementById('aeSaveBtn');
-      const removeBtn=document.getElementById('aeRemoveBtn');
-      const msg=document.getElementById('aeMsg');
-      if(!editBtn||!backdrop)return;
+      const editBtn = document.getElementById('avatarEditBtn');
+      const backdrop = document.getElementById('aeBackdrop');
+      const closeBtn = document.getElementById('aePanelClose');
+      const input = document.getElementById('aeInput');
+      const preview = document.getElementById('aePreview');
+      const prevErr = document.getElementById('aePreviewErr');
+      const prevHint = document.getElementById('aePreviewHint');
+      const saveBtn = document.getElementById('aeSaveBtn');
+      const removeBtn = document.getElementById('aeRemoveBtn');
+      const msg = document.getElementById('aeMsg');
+      if (!editBtn || !backdrop) return;
 
-      function _open(){
-        backdrop.classList.add('open');input.value='';
-        preview.classList.remove('show');prevErr.style.display='none';prevHint.style.display='';
-        msg.textContent='';msg.className='ae-msg';
-        setTimeout(()=>input.focus(),50);
+      function _open() {
+        backdrop.classList.add('open'); input.value = '';
+        preview.classList.remove('show'); prevErr.style.display = 'none'; prevHint.style.display = '';
+        msg.textContent = ''; msg.className = 'ae-msg';
+        setTimeout(() => input.focus(), 50);
       }
-      function _close(){backdrop.classList.remove('open');}
+      function _close() { backdrop.classList.remove('open'); }
 
-      editBtn.addEventListener('click',_open);
-      closeBtn.addEventListener('click',_close);
-      backdrop.addEventListener('click',e=>{if(e.target===backdrop)_close();});
-      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&backdrop.classList.contains('open'))_close();});
+      editBtn.addEventListener('click', _open);
+      closeBtn.addEventListener('click', _close);
+      backdrop.addEventListener('click', e => { if (e.target === backdrop) _close(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && backdrop.classList.contains('open')) _close(); });
 
-      let _t=null;
-      input.addEventListener('input',()=>{
-        clearTimeout(_t);preview.classList.remove('show');prevErr.style.display='none';prevHint.style.display='';
-        _t=setTimeout(()=>{
-          const url=input.value.trim();if(!url)return;
-          prevHint.style.display='none';
-          preview.onload=()=>{preview.classList.add('show');prevErr.style.display='none';};
-          preview.onerror=()=>{preview.classList.remove('show');prevErr.style.display='block';};
-          preview.src=url;
-        },600);
+      let _t = null;
+      input.addEventListener('input', () => {
+        clearTimeout(_t); preview.classList.remove('show'); prevErr.style.display = 'none'; prevHint.style.display = '';
+        _t = setTimeout(() => {
+          const url = input.value.trim(); if (!url) return;
+          prevHint.style.display = 'none';
+          preview.onload = () => { preview.classList.add('show'); prevErr.style.display = 'none'; };
+          preview.onerror = () => { preview.classList.remove('show'); prevErr.style.display = 'block'; };
+          preview.src = url;
+        }, 600);
       });
 
-      saveBtn.addEventListener('click',async()=>{
-        const url=input.value.trim();
-        if(!url){msg.textContent='⚠ URLを入力してください';msg.className='ae-msg err';return;}
-        if(!/^https?:\/\//i.test(url)){msg.textContent='⚠ https:// で始まるURLを入力';msg.className='ae-msg err';return;}
-        saveBtn.disabled=true;saveBtn.textContent='保存中...';msg.textContent='';msg.className='ae-msg';
-        try{
-          await updateUserAvatar(user.uid,url);await refreshProfile();
-          _updateAvatarDOM(url);_close();_showNameMsg('✓ アイコンを更新しました','ok');
-        }catch(e){msg.textContent='⚠ 更新に失敗: '+(e.message||'エラー');msg.className='ae-msg err';}
-        finally{saveBtn.disabled=false;saveBtn.textContent='保存';}
+      saveBtn.addEventListener('click', async () => {
+        const url = input.value.trim();
+        if (!url) { msg.textContent = '⚠ URLを入力してください'; msg.className = 'ae-msg err'; return; }
+        if (!/^https?:\/\//i.test(url)) { msg.textContent = '⚠ https:// で始まるURLを入力'; msg.className = 'ae-msg err'; return; }
+        saveBtn.disabled = true; saveBtn.textContent = '保存中...'; msg.textContent = ''; msg.className = 'ae-msg';
+        try {
+          await updateUserAvatar(user.uid, url); await refreshProfile();
+          _updateAvatarDOM(url); _close(); _showNameMsg('✓ アイコンを更新しました', 'ok');
+        } catch (e) { msg.textContent = '⚠ 更新に失敗: ' + (e.message || 'エラー'); msg.className = 'ae-msg err'; }
+        finally { saveBtn.disabled = false; saveBtn.textContent = '保存'; }
       });
 
-      removeBtn.addEventListener('click',async()=>{
-        removeBtn.disabled=true;msg.textContent='';msg.className='ae-msg';
-        try{
-          await updateUserAvatar(user.uid,null);await refreshProfile();
-          _updateAvatarDOM(null);_close();_showNameMsg('✓ アイコンをリセットしました','ok');
-        }catch(e){msg.textContent='⚠ エラー: '+(e.message||'');msg.className='ae-msg err';}
-        finally{removeBtn.disabled=false;}
+      removeBtn.addEventListener('click', async () => {
+        removeBtn.disabled = true; msg.textContent = ''; msg.className = 'ae-msg';
+        try {
+          await updateUserAvatar(user.uid, null); await refreshProfile();
+          _updateAvatarDOM(null); _close(); _showNameMsg('✓ アイコンをリセットしました', 'ok');
+        } catch (e) { msg.textContent = '⚠ エラー: ' + (e.message || ''); msg.className = 'ae-msg err'; }
+        finally { removeBtn.disabled = false; }
       });
 
       function _updateAvatarDOM(url) {
-        const wrap=document.getElementById('avatarWrap'),existing=document.getElementById('profAvatarImg'),inits=document.getElementById('profInitialsEl');
-        const ini2=(document.getElementById('profNameDisplay')?.textContent||'PL').slice(0,2).toUpperCase();
-        if(url){
-          if(existing){existing.src=url;existing.style.display='';if(inits)inits.style.display='none';}
-          else{const img=document.createElement('img');img.className='prof-avatar';img.id='profAvatarImg';img.alt='アバター';img.src=url;img.onerror=()=>{img.style.display='none';if(inits){inits.textContent=ini2;inits.style.display='flex';}};wrap.insertBefore(img,wrap.firstChild);if(inits)inits.style.display='none';}
-        }else{
-          if(existing)existing.remove();
-          if(inits){inits.textContent=ini2;inits.style.display='flex';}
-          else{const div=document.createElement('div');div.className='prof-initials';div.id='profInitialsEl';div.textContent=ini2;wrap.insertBefore(div,wrap.firstChild);}
+        const wrap = document.getElementById('avatarWrap'), existing = document.getElementById('profAvatarImg'), inits = document.getElementById('profInitialsEl');
+        const ini2 = (document.getElementById('profNameDisplay')?.textContent || 'PL').slice(0, 2).toUpperCase();
+        if (url) {
+          if (existing) { existing.src = url; existing.style.display = ''; if (inits) inits.style.display = 'none'; }
+          else { const img = document.createElement('img'); img.className = 'prof-avatar'; img.id = 'profAvatarImg'; img.alt = 'アバター'; img.src = url; img.onerror = () => { img.style.display = 'none'; if (inits) { inits.textContent = ini2; inits.style.display = 'flex'; } }; wrap.insertBefore(img, wrap.firstChild); if (inits) inits.style.display = 'none'; }
+        } else {
+          if (existing) existing.remove();
+          if (inits) { inits.textContent = ini2; inits.style.display = 'flex'; }
+          else { const div = document.createElement('div'); div.className = 'prof-initials'; div.id = 'profInitialsEl'; div.textContent = ini2; wrap.insertBefore(div, wrap.firstChild); }
         }
       }
     }
 
     function wireNameEdit(user) {
-      const editBtn=document.getElementById('editNameBtn'),editRow=document.getElementById('nameEditRow');
-      const nameInput=document.getElementById('nameInput'),saveBtn=document.getElementById('nameSaveBtn');
-      const cancelBtn=document.getElementById('nameCancelBtn'),nameDisp=document.getElementById('profNameDisplay');
-      const initEl=document.getElementById('profInitialsEl');
-      if(!editBtn)return;
-      editBtn.addEventListener('click',()=>{editRow.classList.add('show');editBtn.style.display='none';nameInput.focus();nameInput.select();});
-      cancelBtn.addEventListener('click',()=>{editRow.classList.remove('show');editBtn.style.display='';nameInput.value=nameDisp.textContent;});
-      nameInput.addEventListener('keydown',e=>{if(e.key==='Enter')saveBtn.click();if(e.key==='Escape')cancelBtn.click();});
-      saveBtn.addEventListener('click',async()=>{
-        const raw=nameInput.value.trim();
-        if(!raw){_showNameMsg('⚠ 名前を入力してください','err');return;}
-        if(raw.length>20){_showNameMsg('⚠ 20文字以内で入力してください','err');return;}
-        if(raw===nameDisp.textContent){cancelBtn.click();return;}
-        saveBtn.disabled=true;saveBtn.textContent='保存中...';
-        try{
-          await updateUserName(user.uid,raw);await refreshProfile();
-          nameDisp.textContent=raw;if(initEl)initEl.textContent=raw.slice(0,2).toUpperCase();
-          editRow.classList.remove('show');editBtn.style.display='';
-          _showNameMsg('✓ ユーザー名を更新しました','ok');
-        }catch(e){_showNameMsg('⚠ 更新に失敗しました: '+(e.message||'エラー'),'err');}
-        finally{saveBtn.disabled=false;saveBtn.textContent='保存';}
+      const editBtn = document.getElementById('editNameBtn'), editRow = document.getElementById('nameEditRow');
+      const nameInput = document.getElementById('nameInput'), saveBtn = document.getElementById('nameSaveBtn');
+      const cancelBtn = document.getElementById('nameCancelBtn'), nameDisp = document.getElementById('profNameDisplay');
+      const initEl = document.getElementById('profInitialsEl');
+      if (!editBtn) return;
+      editBtn.addEventListener('click', () => { editRow.classList.add('show'); editBtn.style.display = 'none'; nameInput.focus(); nameInput.select(); });
+      cancelBtn.addEventListener('click', () => { editRow.classList.remove('show'); editBtn.style.display = ''; nameInput.value = nameDisp.textContent; });
+      nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveBtn.click(); if (e.key === 'Escape') cancelBtn.click(); });
+      saveBtn.addEventListener('click', async () => {
+        const raw = nameInput.value.trim();
+        if (!raw) { _showNameMsg('⚠ 名前を入力してください', 'err'); return; }
+        if (raw.length > 20) { _showNameMsg('⚠ 20文字以内で入力してください', 'err'); return; }
+        if (raw === nameDisp.textContent) { cancelBtn.click(); return; }
+        saveBtn.disabled = true; saveBtn.textContent = '保存中...';
+        try {
+          await updateUserName(user.uid, raw); await refreshProfile();
+          nameDisp.textContent = raw; if (initEl) initEl.textContent = raw.slice(0, 2).toUpperCase();
+          editRow.classList.remove('show'); editBtn.style.display = '';
+          _showNameMsg('✓ ユーザー名を更新しました', 'ok');
+        } catch (e) { _showNameMsg('⚠ 更新に失敗しました: ' + (e.message || 'エラー'), 'err'); }
+        finally { saveBtn.disabled = false; saveBtn.textContent = '保存'; }
       });
     }
 
     async function loadProfile(user) {
-      mainContent.style.display='block';stateMsg.innerHTML='';
-      await upsertUserProfile(user).catch(()=>{});
-      const [profile,multiHistory,sprintHistory,examBadges]=await Promise.all([
-        getUserProfile(user.uid),getMultiHistory(user.uid,50),getSprintHistory(user.uid,50),
-        getExamBadges(user.uid).catch(()=>[]),
+      mainContent.style.display = 'block'; stateMsg.innerHTML = '';
+      await upsertUserProfile(user).catch(() => { });
+      const [profile, multiHistory, sprintHistory, examBadges, userTitles] = await Promise.all([
+        getUserProfile(user.uid), getMultiHistory(user.uid, 50), getSprintHistory(user.uid, 50),
+        getExamBadges(user.uid).catch(() => []),
+        getUserTitles(user.uid).catch(() => []),
       ]);
-      renderHeader(user,profile);renderStats(profile,multiHistory);
+      renderHeader(user, profile); renderStats(profile, multiHistory);
+      renderTitles(userTitles);
       renderBadges(examBadges);
-      renderMultiHistory(multiHistory);renderSprintHistory(sprintHistory);
-      wireNameEdit(user);wireAvatarEdit(user);
-      document.getElementById('logoutBtnProf')?.addEventListener('click',async()=>await signOut());
+      renderMultiHistory(multiHistory); renderSprintHistory(sprintHistory);
+      wireNameEdit(user); wireAvatarEdit(user);
+      document.getElementById('logoutBtnProf')?.addEventListener('click', async () => await signOut());
+    }
+
+    function renderTitles(titles) {
+      const section = document.getElementById('titlesSection');
+      const grid = document.getElementById('titlesGrid');
+      if (!section || !grid) return;
+
+      if (!titles || titles.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = '';
+      grid.innerHTML = titles.map(t => {
+        const earned = t.earnedAt ? fmtDateFull(t.earnedAt) : '---';
+        const category = t.category || 'other';
+        return `<div class="title-chip tc-${category}" title="${t.label || t.name}">
+          <span class="title-emoji">${t.emoji || '★'}</span>
+          <div class="title-info">
+            <div class="title-name">${t.name}</div>
+            <div class="title-date">${earned}</div>
+          </div>
+        </div>`;
+      }).join('');
     }
 
     function renderBadges(badges) {
       const BADGE_META = {
-        lv1:{ cls:'bc-lv1', icon:'<svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#cd7f32"/></svg>', name:'入門合格', color:'#cd7f32' },
-        lv2:{ cls:'bc-lv2', icon:'⬜', name:'初級合格',    color:'#c0c0c0' },
-        lv3:{ cls:'bc-lv3', icon:'1ST', name:'中級合格',    color:'#ffd700' },
-        lv4:{ cls:'bc-lv4', icon:'<svg width="18" height="18" viewBox="0 0 20 20"><polygon points="10,2 17,10 10,18 3,10" fill="#00f5ff"/></svg>', name:'上級合格', color:'#00f5ff' },
-        lv5:{ cls:'bc-lv5', icon:'<svg width="18" height="18" viewBox="0 0 20 20"><path d="M10 2l2 5h5l-4 3 1.5 5L10 12l-4 3 1.5-5-4-3h5z" fill="#cc00ff"/></svg>', name:'名人合格', color:'#cc00ff' },
+        lv1: { cls: 'bc-lv1', icon: '<svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#cd7f32"/></svg>', name: '入門合格', color: '#cd7f32' },
+        lv2: { cls: 'bc-lv2', icon: '⬜', name: '初級合格', color: '#c0c0c0' },
+        lv3: { cls: 'bc-lv3', icon: '1ST', name: '中級合格', color: '#ffd700' },
+        lv4: { cls: 'bc-lv4', icon: '<svg width="18" height="18" viewBox="0 0 20 20"><polygon points="10,2 17,10 10,18 3,10" fill="#00f5ff"/></svg>', name: '上級合格', color: '#00f5ff' },
+        lv5: { cls: 'bc-lv5', icon: '<svg width="18" height="18" viewBox="0 0 20 20"><path d="M10 2l2 5h5l-4 3 1.5 5L10 12l-4 3 1.5-5-4-3h5z" fill="#cc00ff"/></svg>', name: '名人合格', color: '#cc00ff' },
       };
       const section = document.getElementById('badgesSection');
-      const grid    = document.getElementById('badgesGrid');
+      const grid = document.getElementById('badgesGrid');
       if (!section || !grid) return;
       section.style.display = '';
 
@@ -611,30 +2070,70 @@
         grid.innerHTML = `<div class="badge-empty">まだバッジなし&nbsp; <a href="exam.html">検定を受ける ▶</a></div>`;
         return;
       }
-      const ORDER = ['lv1','lv2','lv3','lv4','lv5'];
+      const ORDER = ['lv1', 'lv2', 'lv3', 'lv4', 'lv5'];
       const map = {};
-      badges.forEach(b => map[b.levelId||b.id] = b);
+      badges.forEach(b => map[b.levelId || b.id] = b);
       grid.innerHTML = ORDER.filter(id => map[id]).map(id => {
         const b = map[id], m = BADGE_META[id] || {};
         const earned = b.earnedAt ? fmtDateFull(b.earnedAt) : '---';
-        return `<div class="badge-chip ${m.cls||''}" title="${m.name}">
-          <span class="badge-icon" aria-hidden="true">${m.icon||'★'}</span>
+        return `<div class="badge-chip ${m.cls || ''}" title="${m.name}">
+          <span class="badge-icon" aria-hidden="true">${m.icon || '★'}</span>
           <div class="badge-info">
             <div class="badge-name">${m.name}</div>
-            <div class="badge-score">${b.score||'?'}/10点</div>
+            <div class="badge-score">${b.score || '?'}/10点</div>
             <div class="badge-date">${earned}</div>
           </div>
         </div>`;
       }).join('');
     }
 
-    onAuthReady(async user=>{
-      if(user){
-        try{await loadProfile(user);}
-        catch(e){stateMsg.innerHTML=`<div class="state-title" style="color:var(--acc2)">⚠ エラー</div><div class="state-sub">${e.message}</div>`;mainContent.style.display='none';}
-      }else{mainContent.style.display='none';showNotLoggedIn();}
+    onAuthReady(async user => {
+      if (user) {
+        try {
+          await loadProfile(user);
+
+          // リアルタイム監視: 新しい称号を獲得したら通知
+          let unwatchTitles = null;
+          try {
+            unwatchTitles = await watchUserTitles(user.uid, (titleId, titleDef) => {
+              notifySpecial(
+                `新しい称号を獲得！`,
+                `${titleDef.emoji} ${titleDef.name}`,
+                titleDef.emoji
+              );
+              // プロフィールを再読み込み
+              loadProfile(user).catch(() => { });
+            });
+          } catch (e) {
+            console.warn('Title watch failed:', e);
+          }
+
+          // リアルタイム監視: プロフィール更新を監視
+          let unwatchProfile = null;
+          try {
+            unwatchProfile = await watchUserProfile(user.uid, (profileData, changes) => {
+              if (changes.displayName) {
+                notifyOk('プロフィール更新', `名前が変更されました`);
+              }
+              if (changes.totalWins) {
+                const diff = changes.totalWins.new - (changes.totalWins.old || 0);
+                if (diff > 0) {
+                  notifyOk('勝利！', `通算${changes.totalWins.new}勝です！`);
+                }
+              }
+              if (changes.bestSprintMs && changes.bestSprintMs.new < (changes.bestSprintMs.old || Infinity)) {
+                notifyOk('新しいPB！', `スプリント記録更新！`);
+              }
+            });
+          } catch (e) {
+            console.warn('Profile watch failed:', e);
+          }
+        }
+        catch (e) { stateMsg.innerHTML = `<div class="state-title" style="color:var(--acc2)">⚠ エラー</div><div class="state-sub">${e.message}</div>`; mainContent.style.display = 'none'; }
+      } else { mainContent.style.display = 'none'; showNotLoggedIn(); }
       hideLoader();
     });
   </script>
 </body>
+
 </html>

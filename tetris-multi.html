@@ -1499,9 +1499,11 @@
       border-color: var(--accent);
       color: var(--accent)
     }
-  
-    body.game-active #tb-nav { display: none !important; }
-</style>
+
+    body.game-active #tb-nav {
+      display: none !important;
+    }
+  </style>
 </head>
 
 <body>
@@ -1801,7 +1803,7 @@
   <div class="toast" id="toast"></div>
 
   <script type="module">
-    import { mountNav } from './nav.js';
+    import { mountNav, notifyOk, notifyErr, notifyWarn, notifyInfo } from './nav.js';
     mountNav();
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1848,7 +1850,7 @@
       const inp = document.getElementById('playerName');
       if (!inp) return;
       if (user) {
-        await upsertUserProfile(user).catch(() => {});
+        await upsertUserProfile(user).catch(() => { });
         const name = _getPlayerName();
         inp.value = name; inp.readOnly = true;
         inp.style.opacity = '0.6'; inp.style.cursor = 'not-allowed';
@@ -2147,6 +2149,13 @@
 
     // クイックマッチ開始
     window.quickMatch = async () => {
+      const { getCurrentUser } = await import('./auth.js');
+      const user = getCurrentUser();
+      if (!user) {
+        showToast('クイックマッチを利用するには Google アカウントでログインしてください', 'err');
+        return;
+      }
+
       if (_qmState) return;
       const name = _getPlayerName();
       _qmState = 'searching';
@@ -2610,8 +2619,27 @@
       else { sb.style.display = 'none'; wl.textContent = mySlot === 'p1' ? 'あと1人以上必要です' : 'ホストのゲーム開始を待っています'; }
     }
 
+    // ── AUTH CHECK (ログイン必須) ──────────────────────────
+    function _checkLoginSync() {
+      const auth_module = import('./auth.js');
+      // Note: This is called from sync context, so we use a workaround
+      const user = window._current_user_cached;
+      if (!user) {
+        showToast('ゲームを利用するには Google アカウントでログインしてください', 'err');
+        return false;
+      }
+      return true;
+    }
+
     // ── JOIN ROOM ──
     window.joinRoom = async () => {
+      const { getCurrentUser } = await import('./auth.js');
+      const user = getCurrentUser();
+      if (!user) {
+        showToast('ゲームを利用するには Google アカウントでログインしてください', 'err');
+        return;
+      }
+
       const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
       if (code.length !== 4 || !/^[0-9]{4}$/.test(code)) { showToast('4桁の数字コードを入力してください', 'warn'); return; }
       const name = _getPlayerName();
@@ -2981,9 +3009,18 @@
       const suf = ['st', 'nd', 'rd', 'th'][Math.min(rank - 1, 3)] || 'th';
       const re = document.getElementById('finalRank'); re.textContent = rank + suf; re.className = 'final-rank r' + Math.min(rank, 4);
       const te = document.getElementById('resultTitle'), ld = document.getElementById('rankLabelText'); ld.textContent = 'PLACE';
-      if (rank === 1) { te.className = 'overlay-title win'; te.textContent = 'WINNER!!'; playSound('win'); }
-      else if (rank === totalPlayers) { te.className = 'overlay-title lose'; te.textContent = 'ELIMINATED'; }
-      else { te.className = 'overlay-title mid'; te.textContent = 'TOP ' + rank; }
+      if (rank === 1) {
+        te.className = 'overlay-title win'; te.textContent = 'WINNER!!'; playSound('win');
+        notifyOk(`優勝！`, `${totalPlayers}人中 第1位\nスコア: ${score}`);
+      }
+      else if (rank === totalPlayers) {
+        te.className = 'overlay-title lose'; te.textContent = 'ELIMINATED';
+        notifyWarn(`敗北`, `${totalPlayers}人中 最下位`);
+      }
+      else {
+        te.className = 'overlay-title mid'; te.textContent = 'TOP ' + rank;
+        notifyInfo(`ランクイン`, `${totalPlayers}人中 第${rank}位`);
+      }
       document.getElementById('rs-score').textContent = score; document.getElementById('rs-level').textContent = lvl; document.getElementById('rs-lines').textContent = lines; document.getElementById('rs-atk').textContent = statAtkSent;
       document.getElementById('resultSub').textContent = totalPlayers + '人中 第' + rank + '位';
       document.getElementById('rankDisplay').textContent = rank;
@@ -3004,7 +3041,7 @@
           rank, totalPlayers, score, lines, level: game?.level || 1,
           attackSent: statAtkSent, mode: _qmIsBot ? 'qm' : (roomCode ? 'room' : 'qm'),
           opponentNames: _oppNames,
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }
 
