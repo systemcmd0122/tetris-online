@@ -1397,6 +1397,24 @@
   <div class="toast" id="toast"></div>
 
   <script type="module">
+    // ═══ PAGE LOADER INIT (Must be first) ═══
+    let _loaderInstance = null;
+    (function initLoader() {
+      const loader = document.getElementById('pageLoader'); const bar = document.getElementById('plBar'); const txt = document.getElementById('plText');
+      if (!loader || !bar) return;
+      const bColors = ['#00f5ff', '#ffff00', '#cc00ff', '#aaff00', '#ff0040', '#0066ff', '#ff8800', '#00f5ff', '#ffff00', '#cc00ff'];
+      const N = 10; for (let i = 0; i < N; i++) { const b = document.createElement('div'); b.className = 'pl-b'; bar.appendChild(b); }
+      let f = 0;
+      const next = () => {
+        if (f >= N) { Array.from(bar.children).forEach(b => { b.style.background = 'rgba(255,255,255,.9)'; b.style.boxShadow = '0 0 20px #fff'; }); setTimeout(() => { loader.classList.add('hide'); setTimeout(() => { try { loader.remove(); } catch (e) { } }, 500); }, 150); return; }
+        const b = bar.children[f]; b.classList.add('lit'); b.style.background = bColors[f]; b.style.boxShadow = `0 0 14px ${bColors[f]}`; b.style.borderColor = bColors[f];
+        f++; if (f === 4) txt.textContent = 'CONNECTING...'; if (f === 8) txt.textContent = 'READY!';
+        setTimeout(next, 55 + Math.random() * 75);
+      };
+      setTimeout(next, 200);
+      _loaderInstance = { loader, txt, finish: () => { if (f < N) f = N; } };
+    })();
+
     import { mountNav, notifyOk, notifyErr, notifyWarn, notifySpecial } from './nav.js';
     mountNav();
 
@@ -2116,22 +2134,15 @@
         }
       };
     })();
-    // ═════════════════════════════════════════════════════════
-    // ═══ PAGE LOADER ═══
-    (function () {
-      const loader = document.getElementById('pageLoader'); const bar = document.getElementById('plBar'); const txt = document.getElementById('plText');
-      if (!loader || !bar) return;
-      const bColors = ['#00f5ff', '#ffff00', '#cc00ff', '#aaff00', '#ff0040', '#0066ff', '#ff8800', '#00f5ff', '#ffff00', '#cc00ff'];
-      const N = 10; for (let i = 0; i < N; i++) { const b = document.createElement('div'); b.className = 'pl-b'; bar.appendChild(b); }
-      let f = 0;
-      const next = () => {
-        if (f >= N) { Array.from(bar.children).forEach(b => { b.style.background = 'rgba(255,255,255,.9)'; b.style.boxShadow = '0 0 20px #fff'; }); setTimeout(() => { loader.classList.add('hide'); setTimeout(() => { try { loader.remove(); } catch (e) { } }, 500); }, 150); return; }
-        const b = bar.children[f]; b.classList.add('lit'); b.style.background = bColors[f]; b.style.boxShadow = `0 0 14px ${bColors[f]}`; b.style.borderColor = bColors[f];
-        f++; if (f === 4) txt.textContent = 'CONNECTING...'; if (f === 8) txt.textContent = 'READY!';
-        setTimeout(next, 55 + Math.random() * 75);
-      };
-      setTimeout(next, 200);
-    })();
+
+    // ═══ ENSURE LOADER FINISHES ═══
+    setTimeout(() => {
+      if (_loaderInstance && _loaderInstance.loader && _loaderInstance.loader.parentElement) {
+        if (_loaderInstance.finish) _loaderInstance.finish();
+        _loaderInstance.loader.classList.add('hide');
+        setTimeout(() => { try { _loaderInstance.loader.remove(); } catch (e) { } }, 500);
+      }
+    }, 5000);
   </script>
 </body>
 
