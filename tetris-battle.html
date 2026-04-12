@@ -1423,6 +1423,105 @@
     import { upsertUserProfile } from './db.js';
     document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
 
+    // ── BOT SESSION (RTDB sync for admin spectate) ──
+    let _botSid = null, _botDb = null, _botSyncIv = null;
+    let _botSyncLast = 0;
+    const BOT_SYNC_INTERVAL = 400; // ms
+
+    async function _getBotDb() {
+      if (_botDb) return _botDb;
+      try {
+        const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+        const { getDatabase } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+        const { FB_CONFIG } = await import('./config.js');
+        const app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
+        _botDb = getDatabase(app);
+      } catch (e) { console.warn('RTDB init failed', e); }
+      return _botDb;
+    }
+
+    async function _startBotSession(playerName, botName, difficulty) {
+      try {
+        const db = await _getBotDb();
+        if (!db) return;
+        const { ref, set, onDisconnect } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+        const sid = (playerName.replace(/[^a-zA-Z0-9_]/g, '_') + '_' + Date.now()).slice(0, 40);
+        _botSid = sid;
+        const sRef = ref(db, 'bot_sessions/' + sid);
+        await set(sRef, {
+          player: playerName,
+          botName: botName,
+          difficulty: difficulty,
+          startedAt: Date.now(),
+          status: 'playing',
+          result: null,
+          game: {
+            player: { board: null, cur: null, score: 0, level: 1, lines: 0, atk: 0, over: false },
+            bot:    { board: null, cur: null, score: 0, level: 1, lines: 0, atk: 0, over: false }
+          }
+        });
+        // 切断時に自動削除
+        onDisconnect(sRef).remove();
+        console.log('[BotSession] started:', sid);
+      } catch (e) { console.warn('[BotSession] start failed', e); _botSid = null; }
+    }
+
+    async function _syncBotSession() {
+      if (!_botSid || !game || !botGame) return;
+      const now = Date.now();
+      if (now - _botSyncLast < BOT_SYNC_INTERVAL) return;
+      _botSyncLast = now;
+      try {
+        const db = await _getBotDb();
+        if (!db) return;
+        const { ref, update } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+        const pBoard = game.board.slice(2).map(r => r.map(c => c || ''));
+        const bBoard = botGame.board.slice(2).map(r => r.map(c => c || ''));
+        await update(ref(db, 'bot_sessions/' + _botSid), {
+          'game/player': {
+            board: pBoard,
+            cur: game.current ? { name: game.current.name, rot: game.current.rot, x: game.current.x, y: game.current.y } : null,
+            score: game.score || 0, level: game.level || 1, lines: game.lines || 0,
+            atk: statAtkSent, over: !!game.over
+          },
+          'game/bot': {
+            board: bBoard,
+            cur: botGame.current ? { name: botGame.current.name, rot: botGame.current.rot, x: botGame.current.x, y: botGame.current.y } : null,
+            score: botGame.score || 0, level: botGame.level || 1, lines: botGame.lines || 0,
+            atk: statAtkRecv, over: !!botGame.over
+          }
+        });
+      } catch (e) { /* silent */ }
+    }
+
+    async function _endBotSession(result) {
+      if (!_botSid) return;
+      const sid = _botSid;
+      try {
+        const db = await _getBotDb();
+        if (!db) return;
+        const { ref, update, remove } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+        await update(ref(db, 'bot_sessions/' + sid), { status: 'ended', result: result });
+        // 10秒後に削除（管理者が結果を確認できるように）
+        setTimeout(async () => {
+          try { await remove(ref(db, 'bot_sessions/' + sid)); } catch (e) {}
+        }, 10000);
+      } catch (e) { /* silent */ }
+      _botSid = null;
+    }
+
+    async function _removeBotSession() {
+      if (!_botSid) return;
+      const sid = _botSid;
+      _botSid = null;
+      try {
+        const db = await _getBotDb();
+        if (!db) return;
+        const { ref, remove } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+        await remove(ref(db, 'bot_sessions/' + sid));
+      } catch (e) { /* silent */ }
+    }
+
     // ── BOT CONFIG SYNC ──
     let BOT_DELAYS = [750, 400, 80, 20];
     let BOT_NOISE = [0.4, 0.15, 0.0, 0.0];
@@ -1726,6 +1825,7 @@
     function resetState() {
       gameRunning = false; endedOnce = false;
       if (animId) { cancelAnimationFrame(animId); animId = null; }
+      _removeBotSession().catch(() => {});
       game = null; botGame = null; botCtrl = null;
       dasStop(); clearInterval(softDropInterval); softDropInterval = null;
       _prevScore = 0; _prevCombo = -1;
@@ -1769,6 +1869,9 @@
       botCtrl = new BotController(botGame, difficulty);
       gameRunning = true; endedOnce = false;
 
+      // RTDBセッション開始
+      _startBotSession(name, botName, difficulty).catch(() => {});
+
       const loop = ts => {
         if (!gameRunning) return;
         game.update(ts); game.draw();
@@ -1801,6 +1904,7 @@
         if (game.over && botGame.over && !endedOnce) { endGame('DRAW'); return; } // 同時判定を最優先
         if (game.over && !endedOnce) { endGame('LOSE'); return; }
         if (botGame.over && !endedOnce) { endGame('WIN'); return; }
+        _syncBotSession().catch(() => {});
         animId = requestAnimationFrame(loop);
       };
       animId = requestAnimationFrame(loop);
@@ -1817,6 +1921,7 @@
       if (endedOnce) return;
       endedOnce = true; gameRunning = false;
       if (animId) { cancelAnimationFrame(animId); animId = null; }
+      _endBotSession(result).catch(() => {});
       const title = document.getElementById('resultTitle');
       const score = game?.score || 0, lvl = game?.level || 1, lines = game?.lines || 0;
       if (result === 'WIN') { title.className = 'overlay-title win'; title.textContent = 'YOU WIN!'; playSound('win'); }

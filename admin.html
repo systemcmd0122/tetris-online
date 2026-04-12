@@ -1720,6 +1720,10 @@
         <div class="nav-item" onclick="gotoPanel('spectate',this)">
           <span class="nav-icon">VIEW</span><span>Spectate</span>
         </div>
+        <div class="nav-item" onclick="gotoPanel('bot',this)" id="nav-bot">
+          <span class="nav-icon">BOT</span><span>Bot Games</span>
+          <span class="nav-badge" id="botNavBadge" style="display:none">0</span>
+        </div>
         <div class="sb-section">MANAGEMENT</div>
         <div class="nav-item" onclick="gotoPanel('users',this)">
           <span class="nav-icon">USR</span><span>Users</span>
@@ -1768,6 +1772,10 @@
             <div class="sc c4">
               <div class="sc-label">TOTAL ROOMS</div>
               <div class="sc-val c4" id="st-total">0</div>
+            </div>
+            <div class="sc" style="border-color:rgba(204,0,255,.3)">
+              <div class="sc-label">BOT GAMES</div>
+              <div class="sc-val" id="st-bot" style="color:#cc00ff">0</div>
             </div>
           </div>
           <div class="tbl-wrap">
@@ -1881,6 +1889,82 @@
             </div>
           </div>
         </div>
+
+        <!-- ── BOT GAMES ── -->
+        <div class="panel" id="panel-bot">
+          <div id="botSessionList">
+            <div class="ph">
+              <div class="ph-left">
+                <div class="ph-title">BOT GAMES</div>
+                <div class="ph-sub">ボット対戦のリアルタイム観戦</div>
+              </div>
+              <button class="sbtn" onclick="refreshBotSessions()">↻ 更新</button>
+            </div>
+            <div style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+              <div class="live-dot"></div>Firebase RTDB: <span id="botListenStatus" style="color:var(--acc3)">監視中</span>
+            </div>
+            <div class="tbl-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>PLAYER</th>
+                    <th>BOT</th>
+                    <th>DIFFICULTY</th>
+                    <th>STATUS</th>
+                    <th>P SCORE</th>
+                    <th>BOT SCORE</th>
+                    <th>経過時間</th>
+                    <th>ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="botTbody">
+                  <tr><td class="empty-td" colspan="8">アクティブなボット対戦なし</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bot Spectate View -->
+          <div id="botSpecView" style="display:none">
+            <div class="ph">
+              <div class="ph-left">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="live-label"><div class="live-dot"></div>LIVE</div>
+                  <div class="ph-title" style="font-size:10px">BOT GAME — <span id="botSpecPlayerName">---</span></div>
+                </div>
+                <div class="ph-sub" id="botSpecTimer">--:--</div>
+              </div>
+              <button class="sbtn" onclick="stopBotSpec()">← 戻る</button>
+            </div>
+            <div class="spec-arena" id="botSpecArena">
+              <!-- Player slot -->
+              <div class="spec-col" id="botSpecColPlayer">
+                <div class="spec-badge p1">YOU</div>
+                <div class="spec-name" id="botSpecNamePlayer">PLAYER</div>
+                <canvas id="botSpecCvPlayer" class="spec-cv p1" width="200" height="400"></canvas>
+                <div class="spec-stats-panel" style="margin-top:8px;width:100%">
+                  <div class="ss-row"><span class="ss-label">SCORE</span><span class="ss-v1" id="botSpecSP">0</span></div>
+                  <div class="ss-row"><span class="ss-label">LEVEL</span><span class="ss-v1" id="botSpecLP">1</span></div>
+                  <div class="ss-row"><span class="ss-label">LINES</span><span class="ss-v1" id="botSpecLinesP">0</span></div>
+                  <div class="ss-row"><span class="ss-label">ATK SENT</span><span class="ss-v1" id="botSpecAtkP">0</span></div>
+                </div>
+              </div>
+              <!-- Bot slot -->
+              <div class="spec-col" id="botSpecColBot">
+                <div class="spec-badge p2" style="background:rgba(204,0,255,.15);border-color:rgba(204,0,255,.5);color:#cc00ff">BOT</div>
+                <div class="spec-name" id="botSpecNameBot">BOT</div>
+                <canvas id="botSpecCvBot" class="spec-cv p2" width="200" height="400"></canvas>
+                <div class="spec-stats-panel" style="margin-top:8px;width:100%">
+                  <div class="ss-row"><span class="ss-label">SCORE</span><span class="ss-v1" id="botSpecSB">0</span></div>
+                  <div class="ss-row"><span class="ss-label">LEVEL</span><span class="ss-v1" id="botSpecLB">1</span></div>
+                  <div class="ss-row"><span class="ss-label">LINES</span><span class="ss-v1" id="botSpecLinesB">0</span></div>
+                  <div class="ss-row"><span class="ss-label">ATK SENT</span><span class="ss-v1" id="botSpecAtkB">0</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
 
         <!-- ── BROADCAST ── -->
         <div class="panel" id="panel-broadcast">
@@ -2295,6 +2379,7 @@
     document.getElementById('pwIn').addEventListener('keydown', e => { if (e.key === 'Enter') window.doLogin(); });
     window.doLogout = () => {
       stopSpec();
+      stopBotSpec();
       document.getElementById('shell').classList.remove('active');
       document.getElementById('loginWrap').classList.remove('hidden');
       document.getElementById('pwIn').value = '';
@@ -2343,6 +2428,7 @@
       startLogsListener();
       startBotConfigListener();
       startFeedbackListener();
+      startBotSessionsListener();
       startClock();
     }
 
@@ -2379,6 +2465,10 @@
       document.getElementById('st-players').textContent = players;
       document.getElementById('st-total').textContent = r.length;
       document.getElementById('navBadge').textContent = active + waiting;
+      // ボットセッション数もダッシュボードに反映
+      const botActive = Object.values(botSessionsData).filter(s => s.status === 'playing').length;
+      const botEl = document.getElementById('st-bot');
+      if (botEl) botEl.textContent = botActive;
     }
 
     function fmtTime(ts) { if (!ts) return '—'; return new Date(ts).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
@@ -2538,6 +2628,7 @@
     // ══ SPECTATE ══
     window.startSpec = code => {
       stopSpec();
+      stopBotSpec();
       specRoom = code; window.currentSpecRoom = code;
       gotoPanel('spectate', document.querySelector('.nav-item:nth-child(3)'));
       document.getElementById('spectateList').style.display = 'none';
@@ -2600,6 +2691,171 @@
       specRoom = null; window.currentSpecRoom = null;
       document.getElementById('spectateList').style.display = '';
       document.getElementById('spectateView').style.display = 'none';
+    };
+
+
+    // ══ BOT SESSION SPECTATE ══
+    let botSessionsData = {};
+    let botSessionsListener = null;
+    let botSpecSid = null;
+    let botSpecUnsub = null;
+    let botSpecTimerIv = null;
+    let botSpecStartTs = null;
+    const DIFF_LABELS = ['', 'EASY', 'NORMAL', 'HARD', 'DEMON'];
+    const DIFF_COLORS = ['', 'var(--acc3)', 'var(--acc)', 'var(--warn)', 'var(--red)'];
+
+    function startBotSessionsListener() {
+      if (botSessionsListener) return;
+      const bsRef = ref(db, 'bot_sessions');
+      onValue(bsRef, snap => {
+        botSessionsData = snap.val() || {};
+        renderBotTable();
+        updateBotBadge();
+        updateStats();
+        // 観戦中のセッションが消えたら自動で一覧に戻る
+        if (botSpecSid && !botSessionsData[botSpecSid]) {
+          stopBotSpec();
+          showToast('観戦中のセッションが終了しました', 'warn');
+        }
+      });
+      botSessionsListener = true;
+      addLog('BotSessionsリスナー開始', 'info');
+    }
+
+    window.refreshBotSessions = () => {
+      get(ref(db, 'bot_sessions')).then(snap => {
+        botSessionsData = snap.val() || {};
+        renderBotTable();
+        updateBotBadge();
+        addLog('Bot Sessionsを手動更新', 'info');
+      });
+    };
+
+    function updateBotBadge() {
+      const playing = Object.values(botSessionsData).filter(s => s.status === 'playing').length;
+      const badge = document.getElementById('botNavBadge');
+      if (!badge) return;
+      if (playing > 0) {
+        badge.textContent = playing;
+        badge.style.display = '';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    function fmtElapsed(startedAt) {
+      if (!startedAt) return '—';
+      const s = Math.floor((Date.now() - startedAt) / 1000);
+      const m = Math.floor(s / 60);
+      return m + ':' + String(s % 60).padStart(2, '0');
+    }
+
+    function diffBadge(d) {
+      const lbl = DIFF_LABELS[d] || '?';
+      const col = DIFF_COLORS[d] || 'var(--dim)';
+      return `<span style="font-size:8px;padding:3px 8px;border:1px solid ${col};color:${col};border-radius:2px;letter-spacing:1px;font-family:'Press Start 2P',monospace">${lbl}</span>`;
+    }
+
+    function renderBotTable() {
+      const tbody = document.getElementById('botTbody');
+      if (!tbody) return;
+      const entries = Object.entries(botSessionsData);
+      if (!entries.length) {
+        tbody.innerHTML = '<tr><td class="empty-td" colspan="8">アクティブなボット対戦なし</td></tr>';
+        return;
+      }
+      tbody.innerHTML = entries.map(([sid, s]) => {
+        const pScore = s.game?.player?.score || 0;
+        const bScore = s.game?.bot?.score || 0;
+        const isPlaying = s.status === 'playing';
+        const statusBadgeHtml = isPlaying
+          ? '<span class="badge badge-live"><div class="live-dot"></div>LIVE</span>'
+          : '<span class="badge badge-end">ENDED ' + (s.result || '') + '</span>';
+        return `<tr>
+          <td style="color:var(--acc);font-weight:700;letter-spacing:1px">${s.player || '—'}</td>
+          <td style="color:#cc00ff;letter-spacing:1px">${s.botName || '—'}</td>
+          <td>${diffBadge(s.difficulty)}</td>
+          <td>${statusBadgeHtml}</td>
+          <td style="color:var(--acc3);font-weight:700">${pScore.toLocaleString()}</td>
+          <td style="color:#cc00ff">${bScore.toLocaleString()}</td>
+          <td style="color:var(--dim);font-size:10px">${fmtElapsed(s.startedAt)}</td>
+          <td>
+            ${isPlaying ? `<button class="abtn abtn-watch" onclick="startBotSpec('${sid}')">VIEW 観戦</button>` : ''}
+            <button class="abtn abtn-del" onclick="removeBotSession('${sid}')">DEL</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    window.removeBotSession = async sid => {
+      try {
+        await remove(ref(db, 'bot_sessions/' + sid));
+        addLog('BotSession削除: ' + sid.slice(0, 20), 'warn');
+      } catch (e) { showToast('削除失敗: ' + e.message, 'err'); }
+    };
+
+    window.startBotSpec = sid => {
+      stopBotSpec();
+      const s = botSessionsData[sid];
+      if (!s) { showToast('セッションが見つかりません', 'err'); return; }
+
+      botSpecSid = sid;
+      gotoPanel('bot', document.getElementById('nav-bot'));
+      document.getElementById('botSessionList').style.display = 'none';
+      document.getElementById('botSpecView').style.display = 'block';
+      document.getElementById('botSpecPlayerName').textContent = s.player || 'PLAYER';
+      document.getElementById('botSpecNamePlayer').textContent = s.player || 'PLAYER';
+      document.getElementById('botSpecNameBot').textContent = s.botName || 'BOT';
+      botSpecStartTs = s.startedAt || Date.now();
+
+      addLog('Bot観戦開始: ' + (s.player || '?') + ' vs ' + (s.botName || 'BOT'), 'info');
+
+      // RTDBリスナー登録
+      const sessionRef = ref(db, 'bot_sessions/' + sid);
+      botSpecUnsub = onValue(sessionRef, snap => {
+        const d = snap.val();
+        if (!d) return;
+        // 盤面描画
+        const cvPlayer = document.getElementById('botSpecCvPlayer');
+        const cvBot    = document.getElementById('botSpecCvBot');
+        if (cvPlayer && d.game?.player) drawBoard(cvPlayer, d.game.player);
+        if (cvBot    && d.game?.bot)    drawBoard(cvBot,    d.game.bot);
+        // スコア更新
+        const gp = d.game?.player || {};
+        const gb = d.game?.bot    || {};
+        document.getElementById('botSpecSP').textContent    = (gp.score || 0).toLocaleString();
+        document.getElementById('botSpecLP').textContent    = gp.level || 1;
+        document.getElementById('botSpecLinesP').textContent = gp.lines || 0;
+        document.getElementById('botSpecAtkP').textContent  = gp.atk   || 0;
+        document.getElementById('botSpecSB').textContent    = (gb.score || 0).toLocaleString();
+        document.getElementById('botSpecLB').textContent    = gb.level || 1;
+        document.getElementById('botSpecLinesB').textContent = gb.lines || 0;
+        document.getElementById('botSpecAtkB').textContent  = gb.atk   || 0;
+        // 終了検知
+        if (d.status === 'ended' && botSpecSid === sid) {
+          const res = d.result || 'ENDED';
+          document.getElementById('botSpecTimer').textContent = '結果: ' + res;
+        }
+      });
+
+      // タイマー
+      botSpecTimerIv = setInterval(() => {
+        if (!botSpecSid) { clearInterval(botSpecTimerIv); return; }
+        const elapsed = Math.floor((Date.now() - botSpecStartTs) / 1000);
+        const m = Math.floor(elapsed / 60), sec = elapsed % 60;
+        document.getElementById('botSpecTimer').textContent = '経過時間: ' + m + ':' + String(sec).padStart(2, '0');
+      }, 1000);
+    };
+
+    window.stopBotSpec = () => {
+      if (botSpecUnsub) { try { botSpecUnsub(); } catch (e) {} botSpecUnsub = null; }
+      if (botSpecTimerIv) { clearInterval(botSpecTimerIv); botSpecTimerIv = null; }
+      if (botSpecSid) addLog('Bot観戦終了', 'info');
+      botSpecSid = null;
+      const listEl = document.getElementById('botSessionList');
+      const viewEl = document.getElementById('botSpecView');
+      if (listEl) listEl.style.display = '';
+      if (viewEl) viewEl.style.display = 'none';
     };
 
     // ══ BROADCAST ══
