@@ -1967,7 +1967,7 @@
         this.score += pts;
         if (cl > 0) { this.lines += cl; this.level = Math.floor(this.lines / 10) + 1; this.spd = Math.max(50, 800 - (this.level - 1) * 70); if (cl === 4) playSound('tetris'); else playSound('clear1'); } else playSound('lock');
         if (this.pendGarb > 0) { const cn = Math.min(go, this.pendGarb); go -= cn; this.pendGarb -= cn; if (this.pendGarb > 0) { this._addGarb(this.pendGarb); this.pendGarb = 0; } }
-        this.waiting = true; this.nextTs = performance.now() + 200;
+        this.waiting = true; this.nextTs = (this._lastTs || performance.now()) + 200;
         this.canHold = true; this.lockTm = null; this.lockRst = 0; this.onGnd = false; this.lastAct = null;
         this.results.push({ cleared: cl, garbageOut: go, actionLabel: lbl }); return { cleared: cl, garbageOut: go, actionLabel: lbl };
       }
@@ -2064,8 +2064,8 @@
       _sim(board, pName, rot, sx) {
         const m = PIECES[pName][rot]; if (!m) return null;
         for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) { if (m[r][c] && (sx + c < 0 || sx + c >= COLS)) return null; }
-        let py = -2, stopped = false;
-        while (!stopped) { py++; for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) { if (!m[r][c]) continue; const ny = py + r, nx = sx + c; if (ny >= ROWS) { py--; stopped = true; break; } if (ny >= 0 && board[ny][nx]) { py--; stopped = true; break; } } if (py > ROWS) return null; }
+        let py = -2;
+        dropLoop: for (;;) { py++; if (py > ROWS) return null; for (let r = 0; r < m.length; r++) { for (let c = 0; c < m[r].length; c++) { if (!m[r][c]) continue; const ny = py + r, nx = sx + c; if (ny >= ROWS || (ny >= 0 && board[ny][nx])) { py--; break dropLoop; } } } }
         const nb = board.map(r => [...r]);
         for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) { if (m[r][c]) { const ny = py + r, nx = sx + c; if (ny < 0 || ny >= ROWS) return null; nb[ny][nx] = pName; } }
         const filt = nb.filter(row => !row.every(c => c !== null)); const cleared = ROWS - filt.length; while (filt.length < ROWS) filt.unshift(new Array(COLS).fill(null));
@@ -2411,6 +2411,7 @@
 
         const loop = ts => {
           if (!gameRunning) return;
+          game._lastTs = ts;
           game.update(ts); game.draw();
           _qmBotCtrl.tick(ts); _qmBotGame.update(ts);
 
@@ -2946,6 +2947,7 @@
       const PUSH = 50; let lastPush = 0, pendOut = 0, lastMusicCheck = 0;
       const loop = ts => {
         if (!gameRunning) return;
+        game._lastTs = ts;
         game.update(ts); game.draw();
         while (game.results.length > 0) { const res = game.results.shift(); if (res.garbageOut > 0) { statAtkSent += res.garbageOut; pendOut += res.garbageOut; } if (res.actionLabel) showAP(res.actionLabel); }
         updateUI();

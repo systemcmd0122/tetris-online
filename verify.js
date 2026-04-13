@@ -8,7 +8,7 @@ const { chromium } = require('playwright');
   await page.goto('http://localhost:8080/index.html');
   const version = await page.textContent('#versionDisp');
   console.log('Version found:', version);
-  if (!version.includes('3.3.1')) {
+  if (!version.includes('3.5.0')) {
     console.error('Wrong version on index.html');
     process.exit(1);
   }

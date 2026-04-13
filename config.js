@@ -1,4 +1,4 @@
-export const APP_VERSION = "3.4.0";
+export const APP_VERSION = "3.5.0";
 
 /** Firebase設定 — auth.js / db.js / フィードバックウィジェットで共有 */
 export const FB_CONFIG = {
@@ -12,6 +12,16 @@ export const FB_CONFIG = {
 };
 
 export const UPDATE_LOG = [
+  {
+    version: "3.5.0",
+    title: "ボットAIシミュレーション修正・タイミング統一",
+    changes: [
+      "【修正】ボットAIの _sim() 関数でネストされた for ループ内の break が内側ループしか終了しないバグを修正しました。外側の行ループが継続して py-- が複数回発生し、ピースの着地位置が誤計算される問題がボット対戦・クイックマッチの両方で発生していました。ラベル付き break dropLoop で全ループを一括終了するよう変更し、ボットの配置精度が大幅に向上しました。",
+      "【修正】ゲームループ内の時刻ソースを統一しました。_lock() の nextTs・hold() の lastDrop がいずれも performance.now() を使用していた一方、update(ts) は requestAnimationFrame のタイムスタンプ ts と比較していました。_lastTs プロパティにフレーム開始時刻を保存し、nextTs = (_lastTs || performance.now()) + 200 で一貫したタイムベースを使用するよう修正しました。",
+      "【修正】draw() のロックタイマー進捗バー（ボット対戦）が performance.now() で lockTm（rAF ts ベース）を参照していた不整合を修正。game._lastTs を参照するよう変更し、ロックディレイ残量表示が正確になりました。",
+      "【修正】verify.js のバージョンチェックを 3.3.1 から 3.5.0 に更新。CI テストがアプリの実際のバージョンと一致するようになりました。"
+    ]
+  },
   {
     version: "3.4.0",
     title: "バグ修正・管理者観戦フルビュー対応",

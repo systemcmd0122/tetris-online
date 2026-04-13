@@ -1678,7 +1678,7 @@
         this.score += pts;
         if (cl > 0) { this.lines += cl; this.level = Math.floor(this.lines / 10) + 1; this.spd = Math.max(50, 800 - (this.level - 1) * 70); if (cl === 4) playSound('tetris'); else playSound('clear1'); } else playSound('lock');
         if (this.pendGarb > 0) { const cn = Math.min(go, this.pendGarb); go -= cn; this.pendGarb -= cn; if (this.pendGarb > 0) { this._addGarb(this.pendGarb); this.pendGarb = 0; } }
-        this.waiting = true; this.nextTs = performance.now() + 200;
+        this.waiting = true; this.nextTs = (this._lastTs || performance.now()) + 200;
         this.canHold = true; this.lockTm = null; this.lockRst = 0; this.onGnd = false; this.lastAct = null;
         this.results.push({ cleared: cl, garbageOut: go, actionLabel: lbl });
         return { cleared: cl, garbageOut: go, actionLabel: lbl };
@@ -1726,7 +1726,7 @@
               }
             }
           }));
-          if (this.onGnd && this.lockTm !== null) { const pct = 1 - Math.min(1, (performance.now() - this.lockTm) / LOCK_DELAY); const cells = this.cells(); const maxY = Math.max(...cells.map(c => c[1])); cells.filter(([, cy]) => cy === maxY && cy >= 0).forEach(([cx, cy]) => { ctx.fillStyle = `rgba(255,255,255,${0.4 * pct})`; ctx.fillRect(cx * CELL + 1, cy * CELL + CELL - 3, Math.floor((CELL - 2) * pct), 2); }); }
+          if (this.onGnd && this.lockTm !== null) { const pct = 1 - Math.min(1, (this._lastTs - this.lockTm) / LOCK_DELAY); const cells = this.cells(); const maxY = Math.max(...cells.map(c => c[1])); cells.filter(([, cy]) => cy === maxY && cy >= 0).forEach(([cx, cy]) => { ctx.fillStyle = `rgba(255,255,255,${0.4 * pct})`; ctx.fillRect(cx * CELL + 1, cy * CELL + CELL - 3, Math.floor((CELL - 2) * pct), 2); }); }
           this.mat().forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = this.current.y + r; if (py >= 0) this._dc(ctx, this.current.x + c, py, COLORS[this.current.name]); } }));
         }
         if (this.over) { ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(0, 0, this.cvs.width, this.cvs.height); ctx.fillStyle = '#ff0080'; ctx.font = 'bold 13px "Press Start 2P"'; ctx.textAlign = 'center'; ctx.fillText('GAME', this.cvs.width / 2, this.cvs.height / 2 - 14); ctx.fillText('OVER', this.cvs.width / 2, this.cvs.height / 2 + 10); }
@@ -1759,8 +1759,8 @@
       _sim(board, pName, rot, sx) {
         const m = PIECES[pName][rot]; if (!m) return null;
         for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) { if (m[r][c] && (sx + c < 0 || sx + c >= COLS)) return null; }
-        let py = -2; let stopped = false;
-        while (!stopped) { py++; for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) { if (!m[r][c]) continue; const ny = py + r, nx = sx + c; if (ny >= ROWS) { py--; stopped = true; break; } if (ny >= 0 && board[ny][nx]) { py--; stopped = true; break; } } if (py > ROWS) return null; }
+        let py = -2;
+        dropLoop: for (;;) { py++; if (py > ROWS) return null; for (let r = 0; r < m.length; r++) { for (let c = 0; c < m[r].length; c++) { if (!m[r][c]) continue; const ny = py + r, nx = sx + c; if (ny >= ROWS || (ny >= 0 && board[ny][nx])) { py--; break dropLoop; } } } }
         const nb = board.map(r => [...r]);
         for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) { if (m[r][c]) { const ny = py + r, nx = sx + c; if (ny < 0 || ny >= ROWS) return null; nb[ny][nx] = pName; } }
         const filt = nb.filter(row => !row.every(c => c !== null)); const cleared = ROWS - filt.length; while (filt.length < ROWS) filt.unshift(new Array(COLS).fill(null));
@@ -1878,6 +1878,7 @@
 
       const loop = ts => {
         if (!gameRunning) return;
+        game._lastTs = ts; // draw()のロックタイマー可視化に使用
         game.update(ts); game.draw();
         botCtrl.tick(ts); botGame.update(ts);
 
