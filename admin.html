@@ -975,6 +975,97 @@
       box-shadow: 0 0 16px rgba(255, 0, 128, .25)
     }
 
+    canvas.spec-cv.p3 {
+      border: 1px solid rgba(170, 255, 0, .5);
+      box-shadow: 0 0 16px rgba(170, 255, 0, .25)
+    }
+
+    canvas.spec-cv.p4 {
+      border: 1px solid rgba(255, 136, 0, .5);
+      box-shadow: 0 0 16px rgba(255, 136, 0, .25)
+    }
+
+    /* Full game view layout per player */
+    .spec-game-wrap {
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+    }
+    .spec-side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 54px;
+    }
+    .spec-mini-box {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 3px;
+      padding: 4px;
+      text-align: center;
+    }
+    .spec-mini-label {
+      font-size: 6px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      margin-bottom: 3px;
+    }
+    canvas.spec-mini-cv {
+      image-rendering: pixelated;
+      display: block;
+      margin: 0 auto;
+    }
+    .spec-stat-box {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 3px;
+      padding: 5px 4px;
+      font-size: 8px;
+    }
+    .spec-stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      color: var(--dim);
+      letter-spacing: 1px;
+      font-size: 7px;
+    }
+    .spec-stat-row .sv {
+      color: var(--acc);
+      font-weight: 700;
+    }
+    .spec-b2b-badge {
+      font-size: 6px;
+      padding: 2px 5px;
+      border-radius: 2px;
+      letter-spacing: 1px;
+      text-align: center;
+      margin-top: 2px;
+    }
+    .spec-b2b-badge.on {
+      background: rgba(255,170,0,.15);
+      border: 1px solid rgba(255,170,0,.5);
+      color: #ffaa00;
+    }
+    .spec-b2b-badge.off {
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.08);
+      color: var(--dim);
+    }
+    .spec-garb-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-height: 20px;
+    }
+    .spec-garb-cell {
+      height: 4px;
+      border-radius: 1px;
+      background: #ff3355;
+      transition: background .2s;
+    }
+    .spec-garb-cell.warn { background: #ff8800; }
+
     .vs-txt {
       font-family: 'Press Start 2P', monospace;
       font-size: 16px;
@@ -1941,24 +2032,60 @@
               <div class="spec-col" id="botSpecColPlayer">
                 <div class="spec-badge p1">YOU</div>
                 <div class="spec-name" id="botSpecNamePlayer">PLAYER</div>
-                <canvas id="botSpecCvPlayer" class="spec-cv p1" width="200" height="400"></canvas>
-                <div class="spec-stats-panel" style="margin-top:8px;width:100%">
-                  <div class="ss-row"><span class="ss-label">SCORE</span><span class="ss-v1" id="botSpecSP">0</span></div>
-                  <div class="ss-row"><span class="ss-label">LEVEL</span><span class="ss-v1" id="botSpecLP">1</span></div>
-                  <div class="ss-row"><span class="ss-label">LINES</span><span class="ss-v1" id="botSpecLinesP">0</span></div>
-                  <div class="ss-row"><span class="ss-label">ATK SENT</span><span class="ss-v1" id="botSpecAtkP">0</span></div>
+                <div class="spec-game-wrap">
+                  <div class="spec-side-panel">
+                    <div class="spec-mini-box">
+                      <div class="spec-mini-label">HOLD</div>
+                      <canvas id="botSpecHoldP" class="spec-mini-cv" width="48" height="48"></canvas>
+                    </div>
+                    <div class="spec-stat-box">
+                      <div class="spec-stat-row"><span>SCORE</span><span class="sv" id="botSpecSP">0</span></div>
+                      <div class="spec-stat-row"><span>LVL</span><span class="sv" id="botSpecLP">1</span></div>
+                      <div class="spec-stat-row"><span>LINES</span><span class="sv" id="botSpecLinesP">0</span></div>
+                      <div class="spec-stat-row"><span>ATK</span><span class="sv" id="botSpecAtkP">0</span></div>
+                      <div class="spec-stat-row"><span>COMBO</span><span class="sv" id="botSpecComboP">-</span></div>
+                      <div class="spec-stat-row"><span>GARB</span><span class="sv" id="botSpecPGP">0</span></div>
+                    </div>
+                    <div class="spec-b2b-badge off" id="botSpecB2BP">B2B</div>
+                    <div class="spec-garb-bar" id="botSpecGarbP"></div>
+                  </div>
+                  <canvas id="botSpecCvPlayer" class="spec-cv p1" width="200" height="400"></canvas>
+                  <div class="spec-side-panel">
+                    <div class="spec-mini-box">
+                      <div class="spec-mini-label">NEXT</div>
+                      <canvas id="botSpecNextP" class="spec-mini-cv" width="48" height="48"></canvas>
+                    </div>
+                  </div>
                 </div>
               </div>
               <!-- Bot slot -->
               <div class="spec-col" id="botSpecColBot">
                 <div class="spec-badge p2" style="background:rgba(204,0,255,.15);border-color:rgba(204,0,255,.5);color:#cc00ff">BOT</div>
                 <div class="spec-name" id="botSpecNameBot">BOT</div>
-                <canvas id="botSpecCvBot" class="spec-cv p2" width="200" height="400"></canvas>
-                <div class="spec-stats-panel" style="margin-top:8px;width:100%">
-                  <div class="ss-row"><span class="ss-label">SCORE</span><span class="ss-v1" id="botSpecSB">0</span></div>
-                  <div class="ss-row"><span class="ss-label">LEVEL</span><span class="ss-v1" id="botSpecLB">1</span></div>
-                  <div class="ss-row"><span class="ss-label">LINES</span><span class="ss-v1" id="botSpecLinesB">0</span></div>
-                  <div class="ss-row"><span class="ss-label">ATK SENT</span><span class="ss-v1" id="botSpecAtkB">0</span></div>
+                <div class="spec-game-wrap">
+                  <div class="spec-side-panel">
+                    <div class="spec-mini-box">
+                      <div class="spec-mini-label">HOLD</div>
+                      <canvas id="botSpecHoldB" class="spec-mini-cv" width="48" height="48"></canvas>
+                    </div>
+                    <div class="spec-stat-box">
+                      <div class="spec-stat-row"><span>SCORE</span><span class="sv" id="botSpecSB">0</span></div>
+                      <div class="spec-stat-row"><span>LVL</span><span class="sv" id="botSpecLB">1</span></div>
+                      <div class="spec-stat-row"><span>LINES</span><span class="sv" id="botSpecLinesB">0</span></div>
+                      <div class="spec-stat-row"><span>ATK</span><span class="sv" id="botSpecAtkB">0</span></div>
+                      <div class="spec-stat-row"><span>COMBO</span><span class="sv" id="botSpecComboB">-</span></div>
+                      <div class="spec-stat-row"><span>GARB</span><span class="sv" id="botSpecPGB">0</span></div>
+                    </div>
+                    <div class="spec-b2b-badge off" id="botSpecB2BB">B2B</div>
+                    <div class="spec-garb-bar" id="botSpecGarbB"></div>
+                  </div>
+                  <canvas id="botSpecCvBot" class="spec-cv p2" width="200" height="400"></canvas>
+                  <div class="spec-side-panel">
+                    <div class="spec-mini-box">
+                      <div class="spec-mini-label">NEXT</div>
+                      <canvas id="botSpecNextB" class="spec-mini-cv" width="48" height="48"></canvas>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2412,8 +2539,37 @@
           cx.fillStyle = 'rgba(255,255,255,.15)'; cx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, 3); cx.globalAlpha = 1;
         });
       });
+      // Ghost piece
+      if (d.cur && PIECES[d.cur.name] && !d.over && !d.gameOver) {
+        const m = PIECES[d.cur.name][d.cur.rot || 0];
+        if (m) {
+          let gy = d.cur.y;
+          const validPos = (dy) => { for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) { if (!m[r][c]) continue; const ny = d.cur.y + r + dy, nx = d.cur.x + c; if (nx < 0 || nx >= COLS || ny >= ROWS) return false; if (ny >= 0 && d.board[ny] && d.board[ny][nx]) return false; } return true; };
+          while (validPos(gy - d.cur.y + 1)) gy++;
+          const pCol = COLORS[d.cur.name] || '#fff';
+          m.forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = gy + r; if (py >= 0 && py < ROWS) { cx.fillStyle = pCol + '30'; cx.fillRect((d.cur.x + c) * CELL + 1, py * CELL + 1, CELL - 2, CELL - 2); cx.strokeStyle = pCol + '80'; cx.lineWidth = 1; cx.strokeRect((d.cur.x + c) * CELL + 1.5, py * CELL + 1.5, CELL - 3, CELL - 3); } } }));
+        }
+      }
       if (d.cur && PIECES[d.cur.name]) { const m = PIECES[d.cur.name][d.cur.rot || 0]; m.forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = d.cur.y + r; if (py >= 0) { cx.fillStyle = (COLORS[d.cur.name] || '#888') + '99'; cx.fillRect((d.cur.x + c) * CELL + 1, py * CELL + 1, CELL - 2, CELL - 2); } } })); }
-      if (d.over) { cx.fillStyle = 'rgba(0,0,0,.8)'; cx.fillRect(0, 0, cv.width, cv.height); cx.fillStyle = '#ff2244'; cx.font = 'bold 11px "Press Start 2P"'; cx.textAlign = 'center'; cx.fillText('GAME OVER', cv.width / 2, cv.height / 2); }
+      if (d.over || d.gameOver) { cx.fillStyle = 'rgba(0,0,0,.8)'; cx.fillRect(0, 0, cv.width, cv.height); cx.fillStyle = '#ff2244'; cx.font = 'bold 11px "Press Start 2P"'; cx.textAlign = 'center'; cx.fillText('GAME OVER', cv.width / 2, cv.height / 2); }
+    }
+
+    // Hold/Next piece mini-canvas renderer
+    function drawMini(cv, pieceName, dim) {
+      if (!cv) return;
+      const cx = cv.getContext('2d'); cx.clearRect(0, 0, cv.width, cv.height);
+      if (!pieceName || !PIECES[pieceName]) return;
+      const m = PIECES[pieceName][0]; const cs = 12;
+      const ox = Math.floor((4 - m[0].length) / 2), oy = Math.floor((4 - m.length) / 2);
+      m.forEach((row, r) => row.forEach((cell, c) => {
+        if (cell) {
+          const col = COLORS[pieceName] || '#888';
+          cx.globalAlpha = dim ? 0.35 : 1;
+          cx.fillStyle = col + 'cc'; cx.fillRect((ox + c) * cs + 1, (oy + r) * cs + 1, cs - 2, cs - 2);
+          cx.fillStyle = 'rgba(255,255,255,.15)'; cx.fillRect((ox + c) * cs + 1, (oy + r) * cs + 1, cs - 2, 3);
+          cx.globalAlpha = 1;
+        }
+      }));
     }
 
     // ══ ADMIN STATE ══
@@ -2641,22 +2797,45 @@
       arena.innerHTML = '';
       addLog(`観戦開始: ROOM ${code}`, 'info');
 
+      const COLORS_A = ['#00f5ff','#ff0080','#aaff00','#ff8800'];
       const slots = ['p1', 'p2', 'p3', 'p4'];
       slots.forEach(s => {
         if (!r[s]) return;
-        const idx = s.slice(1);
+        const idx = parseInt(s.slice(1));
+        const borderCol = COLORS_A[idx-1] || '#00f5ff';
         const col = document.createElement('div');
-        col.className = 'spec-col';
+        col.className = 'spec-col'; col.id = 'oppSec_' + s;
         col.innerHTML = `
-      <div class="spec-badge p${idx}">P${idx}</div>
-      <div class="spec-name" id="specN_${s}">${r[s].name || 'PLAYER ' + idx}</div>
-      <canvas id="specCv_${s}" class="spec-cv p${idx}" width="200" height="400"></canvas>
-      <div class="spec-stats-panel" style="margin-top:8px; width:100%">
-        <div class="ss-row"><span class="ss-label">SCORE</span><span class="ss-v1" id="ssS_${s}">0</span></div>
-        <div class="ss-row"><span class="ss-label">LEVEL</span><span class="ss-v1" id="ssL_${s}">1</span></div>
-        <div class="ss-row"><span class="ss-label">LINES</span><span class="ss-v1" id="ssLines_${s}">0</span></div>
-      </div>
-    `;
+          <div class="spec-badge p${idx}">P${idx}</div>
+          <div class="spec-name" id="specN_${s}">${r[s].name || 'PLAYER ' + idx}</div>
+          <div class="spec-game-wrap">
+            <!-- Left side: hold + stats -->
+            <div class="spec-side-panel">
+              <div class="spec-mini-box">
+                <div class="spec-mini-label">HOLD</div>
+                <canvas id="specHold_${s}" class="spec-mini-cv" width="48" height="48"></canvas>
+              </div>
+              <div class="spec-stat-box">
+                <div class="spec-stat-row"><span>SCORE</span><span class="sv" id="ssS_${s}">0</span></div>
+                <div class="spec-stat-row"><span>LVL</span><span class="sv" id="ssL_${s}">1</span></div>
+                <div class="spec-stat-row"><span>LINES</span><span class="sv" id="ssLines_${s}">0</span></div>
+                <div class="spec-stat-row"><span>COMBO</span><span class="sv" id="ssCombo_${s}">0</span></div>
+                <div class="spec-stat-row"><span>GARB</span><span class="sv" id="ssPG_${s}">0</span></div>
+              </div>
+              <div class="spec-b2b-badge off" id="ssB2B_${s}">B2B</div>
+              <div class="spec-garb-bar" id="ssGarbBar_${s}"></div>
+            </div>
+            <!-- Center: main board -->
+            <canvas id="specCv_${s}" class="spec-cv p${idx}" width="200" height="400"></canvas>
+            <!-- Right side: next -->
+            <div class="spec-side-panel">
+              <div class="spec-mini-box">
+                <div class="spec-mini-label">NEXT</div>
+                <canvas id="specNext_${s}" class="spec-mini-cv" width="48" height="48"></canvas>
+              </div>
+            </div>
+          </div>
+        `;
         arena.appendChild(col);
 
         const gRef = ref(db, `multi/${code}/game/${s}`);
@@ -2665,9 +2844,33 @@
           const cv = document.getElementById(`specCv_${s}`);
           if (cv && d) {
             drawBoard(cv, d);
-            document.getElementById(`ssS_${s}`).textContent = d.score || 0;
-            document.getElementById(`ssL_${s}`).textContent = d.level || 1;
-            document.getElementById(`ssLines_${s}`).textContent = d.lines || 0;
+            // Stats
+            const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setText(`ssS_${s}`, (d.score || 0).toLocaleString());
+            setText(`ssL_${s}`, d.level || 1);
+            setText(`ssLines_${s}`, d.lines || 0);
+            setText(`ssCombo_${s}`, d.combo > 1 ? 'x' + d.combo : '-');
+            setText(`ssPG_${s}`, d.pendGarb || 0);
+            // B2B badge
+            const b2bEl = document.getElementById(`ssB2B_${s}`);
+            if (b2bEl) b2bEl.className = 'spec-b2b-badge ' + (d.b2b ? 'on' : 'off');
+            // Garbage bar
+            const gbEl = document.getElementById(`ssGarbBar_${s}`);
+            if (gbEl) {
+              gbEl.innerHTML = '';
+              const pg = Math.min(d.pendGarb || 0, 20);
+              for (let i = 0; i < pg; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'spec-garb-cell' + (pg >= 10 ? ' warn' : '');
+                gbEl.appendChild(cell);
+              }
+            }
+            // Hold mini canvas
+            const holdCv = document.getElementById(`specHold_${s}`);
+            if (holdCv) drawMini(holdCv, d.held || null, false);
+            // Next mini canvas
+            const nextCv = document.getElementById(`specNext_${s}`);
+            if (nextCv) drawMini(nextCv, d.next || null, false);
           }
         });
         specUnsub[s] = unsub;
@@ -2815,23 +3018,44 @@
       botSpecUnsub = onValue(sessionRef, snap => {
         const d = snap.val();
         if (!d) return;
-        // 盤面描画
         const cvPlayer = document.getElementById('botSpecCvPlayer');
         const cvBot    = document.getElementById('botSpecCvBot');
         if (cvPlayer && d.game?.player) drawBoard(cvPlayer, d.game.player);
         if (cvBot    && d.game?.bot)    drawBoard(cvBot,    d.game.bot);
-        // スコア更新
+
+        const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        const setB2B = (id, on) => { const el = document.getElementById(id); if (el) el.className = 'spec-b2b-badge ' + (on ? 'on' : 'off'); };
+        const setGarb = (id, pg) => {
+          const el = document.getElementById(id); if (!el) return;
+          el.innerHTML = '';
+          const n = Math.min(pg || 0, 20);
+          for (let i = 0; i < n; i++) { const c = document.createElement('div'); c.className = 'spec-garb-cell' + (n >= 10 ? ' warn' : ''); el.appendChild(c); }
+        };
+
         const gp = d.game?.player || {};
-        const gb = d.game?.bot    || {};
-        document.getElementById('botSpecSP').textContent    = (gp.score || 0).toLocaleString();
-        document.getElementById('botSpecLP').textContent    = gp.level || 1;
-        document.getElementById('botSpecLinesP').textContent = gp.lines || 0;
-        document.getElementById('botSpecAtkP').textContent  = gp.atk   || 0;
-        document.getElementById('botSpecSB').textContent    = (gb.score || 0).toLocaleString();
-        document.getElementById('botSpecLB').textContent    = gb.level || 1;
-        document.getElementById('botSpecLinesB').textContent = gb.lines || 0;
-        document.getElementById('botSpecAtkB').textContent  = gb.atk   || 0;
-        // 終了検知
+        setEl('botSpecSP',     (gp.score || 0).toLocaleString());
+        setEl('botSpecLP',     gp.level || 1);
+        setEl('botSpecLinesP', gp.lines || 0);
+        setEl('botSpecAtkP',   gp.atk   || 0);
+        setEl('botSpecComboP', gp.combo > 1 ? 'x' + gp.combo : '-');
+        setEl('botSpecPGP',    gp.pendGarb || 0);
+        setB2B('botSpecB2BP', gp.b2b);
+        setGarb('botSpecGarbP', gp.pendGarb);
+        drawMini(document.getElementById('botSpecHoldP'), gp.held || null, false);
+        drawMini(document.getElementById('botSpecNextP'), gp.next || null, false);
+
+        const gb = d.game?.bot || {};
+        setEl('botSpecSB',     (gb.score || 0).toLocaleString());
+        setEl('botSpecLB',     gb.level || 1);
+        setEl('botSpecLinesB', gb.lines || 0);
+        setEl('botSpecAtkB',   gb.atk   || 0);
+        setEl('botSpecComboB', gb.combo > 1 ? 'x' + gb.combo : '-');
+        setEl('botSpecPGB',    gb.pendGarb || 0);
+        setB2B('botSpecB2BB', gb.b2b);
+        setGarb('botSpecGarbB', gb.pendGarb);
+        drawMini(document.getElementById('botSpecHoldB'), gb.held || null, false);
+        drawMini(document.getElementById('botSpecNextB'), gb.next || null, false);
+
         if (d.status === 'ended' && botSpecSid === sid) {
           const res = d.result || 'ENDED';
           document.getElementById('botSpecTimer').textContent = '結果: ' + res;

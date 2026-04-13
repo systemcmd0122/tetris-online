@@ -1926,7 +1926,7 @@
         this.board = Array.from({ length: ROWS + 2 }, () => Array(COLS).fill(null));
         this.bag = new Bag(); this.current = mkP(this.bag.next());
         this.held = null; this.canHold = true; this.score = 0; this.lines = 0; this.level = 1; this.combo = 0; this.b2b = false;
-        this.over = false; this.spd = 800; this.lastDrop = 0; this.lockTm = null; this.lockRst = 0; this.onGnd = false;
+        this.over = false; this.spd = 800; this.lastDrop = 0; this.lockTm = null; this.lockRst = 0; this._lockRstPnd = false; this.onGnd = false;
         this.waiting = false; this.nextTs = 0; this.dirty = true; this.lastAct = null; this.pendGarb = 0; this.results = [];
       }
       _get(x, y) { if (x < 0 || x >= COLS || y < -2 || y >= ROWS) return y >= ROWS ? 'W' : null; return this.board[y + 2][x] }
@@ -1953,7 +1953,7 @@
         let d = 0; while (this.valid(this.current, 0, 1)) { this.current.y++; d++; } this.score += d * 2; this.lastAct = { type: 'hard' }; playSound('harddrop'); return this._lock();
       }
       ghostY() { let g = this.current.y; while (this.valid(this.current, 0, g - this.current.y + 1)) g++; return g; }
-      _rstLock() { if (this.onGnd && this.lockRst < 15) { this.lockTm = performance.now(); this.lockRst++; } }
+      _rstLock() { if (this.onGnd && this.lockRst < 15) { this._lockRstPnd = true; this.lockRst++; } }
       _tSpin() { if (this.current.name !== 'T' || !this.lastAct || this.lastAct.type !== 'rotate') return false; const { x, y } = this.current; const cs = [[x, y], [x + 2, y], [x, y + 2], [x + 2, y + 2]]; return cs.filter(([cx, cy]) => cy < 0 || cy >= ROWS || cx < 0 || cx >= COLS || !!this._get(cx, cy)).length >= 3; }
       _lock() {
         for (const [cx, cy] of this.cells()) { if (cy >= 0) this._set(cx, cy, this.current.name); else this.over = true; }
@@ -1984,13 +1984,13 @@
         if (this.over) return null;
         if (this.waiting) { if (ts >= this.nextTs) { this.waiting = false; this.current = mkP(this.bag.next()); while (!this.valid(this.current) && this.current.y > -4) this.current.y--; if (!this.valid(this.current)) this.over = true; } return null; }
         const og = !this.valid(this.current, 0, 1);
-        if (og) { if (!this.onGnd || this.lockTm === null) { this.onGnd = true; this.lockTm = ts; } if (ts - this.lockTm >= 750) { this.onGnd = false; return this._lock(); } }
+        if (og) { if (!this.onGnd || this.lockTm === null) { this.onGnd = true; this.lockTm = ts; } if (this._lockRstPnd) { this.lockTm = ts; this._lockRstPnd = false; } if (ts - this.lockTm >= 750) { this.onGnd = false; return this._lock(); } }
         else { this.onGnd = false; this.lockTm = null; if (ts - this.lastDrop >= this.spd) { this.lastDrop = ts; this.current.y++; } }
         return null;
       }
       serialize() {
         if (this.dirty || !this._cb) { this._cb = this.board.slice(2).map(r => r.map(c => c || '')); this.dirty = false; }
-        return { board: this._cb, score: this.score, lines: this.lines, level: this.level, gameOver: this.over, cur: { name: this.current.name, rot: this.current.rot, x: this.current.x, y: this.current.y } };
+        return { board: this._cb, score: this.score, lines: this.lines, level: this.level, gameOver: this.over, cur: { name: this.current.name, rot: this.current.rot, x: this.current.x, y: this.current.y }, held: this.held || '', next: this.bag.peek(1)[0] || '', combo: this.combo, b2b: this.b2b, pendGarb: this.pendGarb };
       }
       draw() {
         const ctx = this.ctx; ctx.clearRect(0, 0, this.cvs.width, this.cvs.height);
@@ -3090,6 +3090,10 @@
       if (e.code === 'ArrowLeft' && dasDir === -1) dasStop();
       if (e.code === 'ArrowRight' && dasDir === 1) dasStop();
       if (e.code === 'ArrowDown') { clearInterval(sdi); sdi = null; }
+    });
+    // ウィンドウのフォーカス喪失時にキー入力を全クリア（キーが「貼り付く」バグ対策）
+    window.addEventListener('blur', () => {
+      keys.clear(); dasStop(); clearInterval(sdi); sdi = null;
     });
 
     // Mobile controls with DAS for left/right

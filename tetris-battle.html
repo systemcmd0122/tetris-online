@@ -1482,13 +1482,17 @@
             board: pBoard,
             cur: game.current ? { name: game.current.name, rot: game.current.rot, x: game.current.x, y: game.current.y } : null,
             score: game.score || 0, level: game.level || 1, lines: game.lines || 0,
-            atk: statAtkSent, over: !!game.over
+            atk: statAtkSent, over: !!game.over,
+            held: game.held || '', next: game.bag.peek(1)[0] || '',
+            combo: game.combo || 0, b2b: !!game.b2b, pendGarb: game.pendGarb || 0
           },
           'game/bot': {
             board: bBoard,
             cur: botGame.current ? { name: botGame.current.name, rot: botGame.current.rot, x: botGame.current.x, y: botGame.current.y } : null,
             score: botGame.score || 0, level: botGame.level || 1, lines: botGame.lines || 0,
-            atk: statAtkRecv, over: !!botGame.over
+            atk: statAtkRecv, over: !!botGame.over,
+            held: botGame.held || '', next: botGame.bag.peek(1)[0] || '',
+            combo: botGame.combo || 0, b2b: !!botGame.b2b, pendGarb: botGame.pendGarb || 0
           }
         });
       } catch (e) { /* silent */ }
@@ -1632,7 +1636,7 @@
         this.board = Array.from({ length: ROWS + 2 }, () => Array(COLS).fill(null));
         this.bag = new Bag(); this.current = mkP(this.bag.next());
         this.held = null; this.canHold = true; this.score = 0; this.lines = 0; this.level = 1; this.combo = 0; this.b2b = false;
-        this.over = false; this.spd = 800; this.lastDrop = 0; this.lockTm = null; this.lockRst = 0; this.onGnd = false;
+        this.over = false; this.spd = 800; this.lastDrop = 0; this.lockTm = null; this.lockRst = 0; this._lockRstPnd = false; this.onGnd = false;
         this.waiting = false; this.nextTs = 0; this.dirty = true; this.lastAct = null; this.pendGarb = 0; this.results = [];
       }
       _get(x, y) { if (x < 0 || x >= COLS || y < -2 || y >= ROWS) return y >= ROWS ? 'W' : null; return this.board[y + 2][x]; }
@@ -1660,7 +1664,7 @@
         this.score += d * 2; this.lastAct = { type: 'hard' }; playSound('harddrop'); return this._lock();
       }
       ghostY() { let g = this.current.y; while (this.valid(this.current, 0, g - this.current.y + 1)) g++; return g; }
-      _rstLock() { if (this.onGnd && this.lockRst < MAX_RESETS) { this.lockTm = performance.now(); this.lockRst++; } }
+      _rstLock() { if (this.onGnd && this.lockRst < MAX_RESETS) { this._lockRstPnd = true; this.lockRst++; } }
       _tSpin() { if (this.current.name !== 'T' || !this.lastAct || this.lastAct.type !== 'rotate') return false; const { x, y } = this.current; const cs = [[x, y], [x + 2, y], [x, y + 2], [x + 2, y + 2]]; return cs.filter(([cx, cy]) => cy < 0 || cy >= ROWS || cx < 0 || cx >= COLS || !!this._get(cx, cy)).length >= 3; }
       _lock() {
         for (const [cx, cy] of this.cells()) { if (cy >= 0) this._set(cx, cy, this.current.name); else this.over = true; }
@@ -1695,7 +1699,7 @@
           return null;
         }
         const og = !this.valid(this.current, 0, 1);
-        if (og) { if (!this.onGnd || this.lockTm === null) { this.onGnd = true; this.lockTm = ts; } if (ts - this.lockTm >= LOCK_DELAY) { this.onGnd = false; return this._lock(); } }
+        if (og) { if (!this.onGnd || this.lockTm === null) { this.onGnd = true; this.lockTm = ts; } if (this._lockRstPnd) { this.lockTm = ts; this._lockRstPnd = false; } if (ts - this.lockTm >= LOCK_DELAY) { this.onGnd = false; return this._lock(); } }
         else { this.onGnd = false; this.lockTm = null; if (ts - this.lastDrop >= this.spd) { this.lastDrop = ts; this.current.y++; } }
         return null;
       }
@@ -2036,6 +2040,10 @@
       if (e.code === 'ArrowLeft' && dasDir === -1) dasStop();
       if (e.code === 'ArrowRight' && dasDir === 1) dasStop();
       if (e.code === 'ArrowDown') { clearInterval(softDropInterval); softDropInterval = null; }
+    });
+    // ウィンドウのフォーカス喪失時にキー入力を全クリア（キーが「貼り付く」バグ対策）
+    window.addEventListener('blur', () => {
+      keys.clear(); dasStop(); clearInterval(softDropInterval); softDropInterval = null;
     });
 
     function setupMobile(id, fn, repeatMs = false) {
