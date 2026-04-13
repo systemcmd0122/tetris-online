@@ -1724,6 +1724,10 @@
           <span class="nav-icon">BOT</span><span>Bot Games</span>
           <span class="nav-badge" id="botNavBadge" style="display:none">0</span>
         </div>
+        <div class="nav-item" onclick="gotoPanel('sprint_live',this)" id="nav-sprint">
+          <span class="nav-icon">RUN</span><span>Sprint Live</span>
+          <span class="nav-badge" id="sprintNavBadge" style="display:none">0</span>
+        </div>
         <div class="sb-section">MANAGEMENT</div>
         <div class="nav-item" onclick="gotoPanel('users',this)">
           <span class="nav-icon">USR</span><span>Users</span>
@@ -1890,6 +1894,64 @@
           </div>
         </div>
 
+        <!-- ── SPRINT LIVE ── -->
+        <div class="panel" id="panel-sprint_live">
+          <div id="sprintSessionList">
+            <div class="ph">
+              <div class="ph-left">
+                <div class="ph-title">SPRINT LIVE</div>
+                <div class="ph-sub">スプリントプレイのリアルタイム観戦</div>
+              </div>
+              <button class="sbtn" onclick="refreshSprintSessions()">↻ 更新</button>
+            </div>
+            <div class="tbl-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>PLAYER</th>
+                    <th>STATUS</th>
+                    <th>LINES</th>
+                    <th>TIME</th>
+                    <th>PROGRESS</th>
+                    <th>ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="sprintTbody">
+                  <tr><td class="empty-td" colspan="6">アクティブなスプリントなし</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Sprint Spectate View -->
+          <div id="sprintSpecView" style="display:none">
+            <div class="ph">
+              <div class="ph-left">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div class="live-label"><div class="live-dot"></div>LIVE</div>
+                  <div class="ph-title" style="font-size:10px">SPRINT — <span id="sprintSpecPlayerName">---</span></div>
+                </div>
+                <div class="ph-sub" id="sprintSpecTimer">--:--</div>
+              </div>
+              <button class="sbtn" onclick="stopSprintSpec()">← 戻る</button>
+            </div>
+            <div class="spec-arena" id="sprintSpecArena">
+              <div class="spec-col">
+                <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:4px">
+                  <canvas id="sprintSpecHold" width="40" height="40" style="background:rgba(0,0,0,.3);border-radius:2px"></canvas>
+                  <canvas id="sprintSpecNext" width="40" height="40" style="background:rgba(0,0,0,.3);border-radius:2px"></canvas>
+                </div>
+                <div class="spec-badge p1">P1</div>
+                <canvas id="sprintSpecCv" class="spec-cv p1" width="200" height="400"></canvas>
+                <div class="spec-stats-panel" style="margin-top:8px; width:100%">
+                  <div class="ss-row"><span class="ss-label">SCORE</span><span class="ss-v1" id="sprintSpecS">0</span></div>
+                  <div class="ss-row"><span class="ss-label">LINES</span><span class="ss-v1" id="sprintSpecL">0</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ── BOT GAMES ── -->
         <div class="panel" id="panel-bot">
           <div id="botSessionList">
@@ -1938,7 +2000,11 @@
             </div>
             <div class="spec-arena" id="botSpecArena">
               <!-- Player slot -->
-              <div class="spec-col" id="botSpecColPlayer">
+              <div class="spec-col" id="botSpecColPlayer" style="width:200px">
+                <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:4px">
+                  <canvas id="botSpecHoldP" width="40" height="40" style="background:rgba(0,0,0,.3);border-radius:2px"></canvas>
+                  <canvas id="botSpecNextP" width="40" height="40" style="background:rgba(0,0,0,.3);border-radius:2px"></canvas>
+                </div>
                 <div class="spec-badge p1">YOU</div>
                 <div class="spec-name" id="botSpecNamePlayer">PLAYER</div>
                 <canvas id="botSpecCvPlayer" class="spec-cv p1" width="200" height="400"></canvas>
@@ -1949,8 +2015,13 @@
                   <div class="ss-row"><span class="ss-label">ATK SENT</span><span class="ss-v1" id="botSpecAtkP">0</span></div>
                 </div>
               </div>
+              <div class="vs-txt">VS</div>
               <!-- Bot slot -->
-              <div class="spec-col" id="botSpecColBot">
+              <div class="spec-col" id="botSpecColBot" style="width:200px">
+                <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:4px">
+                  <canvas id="botSpecHoldB" width="40" height="40" style="background:rgba(0,0,0,.3);border-radius:2px"></canvas>
+                  <canvas id="botSpecNextB" width="40" height="40" style="background:rgba(0,0,0,.3);border-radius:2px"></canvas>
+                </div>
                 <div class="spec-badge p2" style="background:rgba(204,0,255,.15);border-color:rgba(204,0,255,.5);color:#cc00ff">BOT</div>
                 <div class="spec-name" id="botSpecNameBot">BOT</div>
                 <canvas id="botSpecCvBot" class="spec-cv p2" width="200" height="400"></canvas>
@@ -2385,35 +2456,49 @@
       document.getElementById('pwIn').value = '';
     };
 
-    // ══ TETRIS BOARD RENDERER ══
-    const COLS = 10, ROWS = 20, CELL = 20;
-    const COLORS = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800', G: '#888888' };
-    const PIECES = {
-      I: [[[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]], [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]],
-      O: [[[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]]],
-      T: [[[0, 1, 0], [1, 1, 1], [0, 0, 0]], [[0, 1, 0], [0, 1, 1], [0, 1, 0]], [[0, 0, 0], [1, 1, 1], [0, 1, 0]], [[0, 1, 0], [1, 1, 0], [0, 1, 0]]],
-      S: [[[0, 1, 1], [1, 1, 0], [0, 0, 0]], [[0, 1, 0], [0, 1, 1], [0, 0, 1]], [[0, 0, 0], [0, 1, 1], [1, 1, 0]], [[1, 0, 0], [1, 1, 0], [0, 1, 0]]],
-      Z: [[[1, 1, 0], [0, 1, 1], [0, 0, 0]], [[0, 0, 1], [0, 1, 1], [0, 1, 0]], [[0, 0, 0], [1, 1, 0], [0, 1, 1]], [[0, 1, 0], [1, 1, 0], [1, 0, 0]]],
-      J: [[[1, 0, 0], [1, 1, 1], [0, 0, 0]], [[0, 1, 1], [0, 1, 0], [0, 1, 0]], [[0, 0, 0], [1, 1, 1], [0, 0, 1]], [[0, 1, 0], [0, 1, 0], [1, 1, 0]]],
-      L: [[[0, 0, 1], [1, 1, 1], [0, 0, 0]], [[0, 1, 0], [0, 1, 0], [0, 1, 1]], [[0, 0, 0], [1, 1, 1], [1, 0, 0]], [[1, 1, 0], [0, 1, 0], [0, 1, 0]]]
-    };
+    import { PIECES, COLORS, COLS, ROWS } from './tetris-core.js';
+
+    function drawPiecePreview(ctx, name, size, alpha = 1) {
+      if (!name) { ctx.clearRect(0,0,size,size); return; }
+      const cs = size / 5; ctx.clearRect(0, 0, size, size); ctx.globalAlpha = alpha;
+      const m = PIECES[name][0]; const ox = (5 - m[0].length) / 2, oy = (5 - m.length) / 2;
+      m.forEach((row, r) => row.forEach((cell, c) => {
+        if (cell) {
+          ctx.fillStyle = COLORS[name] + 'dd';
+          ctx.fillRect((ox + c) * cs + 1, (oy + r) * cs + 1, cs - 2, cs - 2);
+          ctx.fillStyle = 'rgba(255,255,255,.2)';
+          ctx.fillRect((ox + c) * cs + 1, (oy + r) * cs + 1, cs - 2, 3);
+        }
+      })); ctx.globalAlpha = 1;
+    }
+
     function drawBoard(cv, d) {
       if (!d || !d.board) return;
+      const CELL = cv.width / COLS;
       const cx = cv.getContext('2d'); cx.clearRect(0, 0, cv.width, cv.height);
       cx.strokeStyle = 'rgba(255,255,255,.035)'; cx.lineWidth = .5;
       for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++)cx.strokeRect(c * CELL, r * CELL, CELL, CELL);
-      const cl = d.clRows || [];
       d.board.forEach((row, r) => {
-        const isCl = cl.includes(r);
         row.forEach((cell, c) => {
           if (!cell) return; const col = COLORS[cell] || '#888';
-          cx.globalAlpha = isCl ? .35 : 1; cx.fillStyle = col + 'cc'; cx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
-          if (isCl) { cx.fillStyle = 'rgba(255,255,255,.5)'; cx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2); }
-          cx.fillStyle = 'rgba(255,255,255,.15)'; cx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, 3); cx.globalAlpha = 1;
+          cx.fillStyle = col + 'cc'; cx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
+          cx.fillStyle = 'rgba(255,255,255,.15)'; cx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, 3);
         });
       });
-      if (d.cur && PIECES[d.cur.name]) { const m = PIECES[d.cur.name][d.cur.rot || 0]; m.forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = d.cur.y + r; if (py >= 0) { cx.fillStyle = (COLORS[d.cur.name] || '#888') + '99'; cx.fillRect((d.cur.x + c) * CELL + 1, py * CELL + 1, CELL - 2, CELL - 2); } } })); }
-      if (d.over) { cx.fillStyle = 'rgba(0,0,0,.8)'; cx.fillRect(0, 0, cv.width, cv.height); cx.fillStyle = '#ff2244'; cx.font = 'bold 11px "Press Start 2P"'; cx.textAlign = 'center'; cx.fillText('GAME OVER', cv.width / 2, cv.height / 2); }
+      if (d.cur && PIECES[d.cur.name]) {
+        const pColor = COLORS[d.cur.name] || '#888';
+        if (d.ghostY !== undefined) {
+          const m = PIECES[d.cur.name][d.cur.rot || 0];
+          m.forEach((row, r) => row.forEach((cell, c) => {
+            if (cell && (d.ghostY + r) >= 0) {
+              cx.fillStyle = pColor + '30'; cx.fillRect((d.cur.x + c) * CELL + 1, (d.ghostY + r) * CELL + 1, CELL - 2, CELL - 2);
+              cx.strokeStyle = pColor + '80'; cx.strokeRect((d.cur.x + c) * CELL + 1.5, (d.ghostY + r) * CELL + 1.5, CELL - 3, CELL - 3);
+            }
+          }));
+        }
+        const m = PIECES[d.cur.name][d.cur.rot || 0]; m.forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = d.cur.y + r; if (py >= 0) { cx.fillStyle = pColor + '99'; cx.fillRect((d.cur.x + c) * CELL + 1, py * CELL + 1, CELL - 2, CELL - 2); } } }));
+      }
+      if (d.gameOver) { cx.fillStyle = 'rgba(0,0,0,.8)'; cx.fillRect(0, 0, cv.width, cv.height); cx.fillStyle = '#ff2244'; cx.font = 'bold 11px "Press Start 2P"'; cx.textAlign = 'center'; cx.fillText('OUT', cv.width / 2, cv.height / 2); }
     }
 
     // ══ ADMIN STATE ══
@@ -2647,7 +2732,12 @@
         const idx = s.slice(1);
         const col = document.createElement('div');
         col.className = 'spec-col';
+        col.style.width = '200px';
         col.innerHTML = `
+      <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:4px">
+        <canvas id="specHold_${s}" width="40" height="40" style="background:rgba(0,0,0,.3);border-radius:2px"></canvas>
+        <canvas id="specNext_${s}" width="40" height="40" style="background:rgba(0,0,0,.3);border-radius:2px"></canvas>
+      </div>
       <div class="spec-badge p${idx}">P${idx}</div>
       <div class="spec-name" id="specN_${s}">${r[s].name || 'PLAYER ' + idx}</div>
       <canvas id="specCv_${s}" class="spec-cv p${idx}" width="200" height="400"></canvas>
@@ -2655,6 +2745,7 @@
         <div class="ss-row"><span class="ss-label">SCORE</span><span class="ss-v1" id="ssS_${s}">0</span></div>
         <div class="ss-row"><span class="ss-label">LEVEL</span><span class="ss-v1" id="ssL_${s}">1</span></div>
         <div class="ss-row"><span class="ss-label">LINES</span><span class="ss-v1" id="ssLines_${s}">0</span></div>
+        <div class="ss-row"><span class="ss-label">COMBO</span><span class="ss-v1" id="ssCombo_${s}">0</span></div>
       </div>
     `;
         arena.appendChild(col);
@@ -2668,6 +2759,11 @@
             document.getElementById(`ssS_${s}`).textContent = d.score || 0;
             document.getElementById(`ssL_${s}`).textContent = d.level || 1;
             document.getElementById(`ssLines_${s}`).textContent = d.lines || 0;
+            if(document.getElementById(`ssCombo_${s}`)) document.getElementById(`ssCombo_${s}`).textContent = d.combo || 0;
+            const hcv = document.getElementById(`specHold_${s}`);
+            if(hcv) drawPiecePreview(hcv.getContext('2d'), d.held, 40);
+            const ncv = document.getElementById(`specNext_${s}`);
+            if(ncv) drawPiecePreview(ncv.getContext('2d'), d.next, 40);
           }
         });
         specUnsub[s] = unsub;
@@ -2815,12 +2911,18 @@
       botSpecUnsub = onValue(sessionRef, snap => {
         const d = snap.val();
         if (!d) return;
-        // 盤面描画
         const cvPlayer = document.getElementById('botSpecCvPlayer');
         const cvBot    = document.getElementById('botSpecCvBot');
-        if (cvPlayer && d.game?.player) drawBoard(cvPlayer, d.game.player);
-        if (cvBot    && d.game?.bot)    drawBoard(cvBot,    d.game.bot);
-        // スコア更新
+        if (cvPlayer && d.game?.player) {
+          drawBoard(cvPlayer, d.game.player);
+          drawPiecePreview(document.getElementById('botSpecHoldP').getContext('2d'), d.game.player.held, 40);
+          drawPiecePreview(document.getElementById('botSpecNextP').getContext('2d'), d.game.player.next, 40);
+        }
+        if (cvBot && d.game?.bot) {
+          drawBoard(cvBot, d.game.bot);
+          drawPiecePreview(document.getElementById('botSpecHoldB').getContext('2d'), d.game.bot.held, 40);
+          drawPiecePreview(document.getElementById('botSpecNextB').getContext('2d'), d.game.bot.next, 40);
+        }
         const gp = d.game?.player || {};
         const gb = d.game?.bot    || {};
         document.getElementById('botSpecSP').textContent    = (gp.score || 0).toLocaleString();
@@ -2856,6 +2958,77 @@
       const viewEl = document.getElementById('botSpecView');
       if (listEl) listEl.style.display = '';
       if (viewEl) viewEl.style.display = 'none';
+    };
+
+    // ══ SPRINT SESSION SPECTATE ══
+    let sprintSessionsData = {};
+    let sprintSessionsListener = null;
+    let sprintSpecSid = null;
+    let sprintSpecUnsub = null;
+
+    function startSprintSessionsListener() {
+      if (sprintSessionsListener) return;
+      onValue(ref(db, 'sprint_sessions'), snap => {
+        sprintSessionsData = snap.val() || {};
+        renderSprintTable();
+        const count = Object.values(sprintSessionsData).filter(s => s.status === 'playing').length;
+        const b = document.getElementById('sprintNavBadge');
+        if(b) { b.textContent = count; b.style.display = count > 0 ? '' : 'none'; }
+        if (sprintSpecSid && !sprintSessionsData[sprintSpecSid]) stopSprintSpec();
+      });
+      sprintSessionsListener = true;
+    }
+
+    window.refreshSprintSessions = () => {
+      get(ref(db, 'sprint_sessions')).then(snap => { sprintSessionsData = snap.val() || {}; renderSprintTable(); });
+    };
+
+    function renderSprintTable() {
+      const tbody = document.getElementById('sprintTbody');
+      if (!tbody) return;
+      const entries = Object.entries(sprintSessionsData);
+      if (!entries.length) { tbody.innerHTML = '<tr><td class="empty-td" colspan="6">アクティブなスプリントなし</td></tr>'; return; }
+      tbody.innerHTML = entries.map(([sid, s]) => {
+        const lines = s.game?.lines || 0;
+        const time = s.game?.score ? s.game.score : 0; // use score for time in sprint? no, game.serialize has score as score.
+        // Actually I didn't add timer to serialize. Let's use something else or just show lines.
+        return `<tr>
+          <td>${s.player || '—'}</td>
+          <td><span class="badge badge-live">LIVE</span></td>
+          <td>${lines}/40</td>
+          <td>${fmtElapsed(s.startedAt)}</td>
+          <td><div style="background:#222;width:60px;height:6px;border-radius:3px"><div style="background:var(--acc3);width:${(lines/40)*100}%;height:100%"></div></div></td>
+          <td><button class="abtn abtn-watch" onclick="startSprintSpec('${sid}')">VIEW</button></td>
+        </tr>`;
+      }).join('');
+    }
+
+    window.startSprintSpec = sid => {
+      stopSpec(); stopBotSpec(); stopSprintSpec();
+      const s = sprintSessionsData[sid]; if (!s) return;
+      sprintSpecSid = sid;
+      gotoPanel('sprint_live', document.getElementById('nav-sprint'));
+      document.getElementById('sprintSessionList').style.display = 'none';
+      document.getElementById('sprintSpecView').style.display = 'block';
+      document.getElementById('sprintSpecPlayerName').textContent = s.player || 'PLAYER';
+
+      sprintSpecUnsub = onValue(ref(db, 'sprint_sessions/' + sid), snap => {
+        const d = snap.val(); if (!d || !d.game) return;
+        const cv = document.getElementById('sprintSpecCv');
+        if (cv) drawBoard(cv, d.game);
+        document.getElementById('sprintSpecS').textContent = d.game.score || 0;
+        document.getElementById('sprintSpecL').textContent = d.game.lines || 0;
+        drawPiecePreview(document.getElementById('sprintSpecHold').getContext('2d'), d.game.held, 40);
+        drawPiecePreview(document.getElementById('sprintSpecNext').getContext('2d'), d.game.next, 40);
+        document.getElementById('sprintSpecTimer').textContent = '経過時間: ' + fmtElapsed(d.startedAt);
+      });
+    };
+
+    window.stopSprintSpec = () => {
+      if (sprintSpecUnsub) { try { sprintSpecUnsub(); } catch (e) {} sprintSpecUnsub = null; }
+      sprintSpecSid = null;
+      document.getElementById('sprintSessionList').style.display = '';
+      document.getElementById('sprintSpecView').style.display = 'none';
     };
 
     // ══ BROADCAST ══

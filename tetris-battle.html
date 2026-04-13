@@ -683,7 +683,21 @@
       border-color: var(--accent)
     }
 
-    @media(max-width:640px) {
+    @media(max-width:768px) {
+      .game-layout {
+        flex-direction: column;
+        align-items: center;
+      }
+      .center-col {
+        order: -1;
+        width: 100%;
+      }
+      .side-panel {
+        flex-direction: row;
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
       .mobile-controls {
         display: flex
       }
@@ -1418,9 +1432,11 @@
     import { mountNav, notifyOk, notifyErr, notifyWarn, notifySpecial } from './nav.js';
     mountNav();
 
-    import { APP_VERSION } from './config.js';
+    import { APP_VERSION, FB_CONFIG } from './config.js';
     import { onAuthReady, getCachedProfile, mountAuthWidget, getCurrentUser } from './auth.js';
     import { upsertUserProfile } from './db.js';
+    import { TetrisGame, PIECES, COLORS, COLS, ROWS } from './tetris-core.js';
+    import { InputHandler } from './input-handler.js';
     document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
 
     // ── BOT SESSION (RTDB sync for admin spectate) ──
@@ -1475,21 +1491,11 @@
         const db = await _getBotDb();
         if (!db) return;
         const { ref, update } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-        const pBoard = game.board.slice(2).map(r => r.map(c => c || ''));
-        const bBoard = botGame.board.slice(2).map(r => r.map(c => c || ''));
+        const pData = game.serialize(); pData.atk = statAtkSent;
+        const bData = botGame.serialize(); bData.atk = statAtkRecv;
         await update(ref(db, 'bot_sessions/' + _botSid), {
-          'game/player': {
-            board: pBoard,
-            cur: game.current ? { name: game.current.name, rot: game.current.rot, x: game.current.x, y: game.current.y } : null,
-            score: game.score || 0, level: game.level || 1, lines: game.lines || 0,
-            atk: statAtkSent, over: !!game.over
-          },
-          'game/bot': {
-            board: bBoard,
-            cur: botGame.current ? { name: botGame.current.name, rot: botGame.current.rot, x: botGame.current.x, y: botGame.current.y } : null,
-            score: botGame.score || 0, level: botGame.level || 1, lines: botGame.lines || 0,
-            atk: statAtkRecv, over: !!botGame.over
-          }
+          'game/player': pData,
+          'game/bot': bData
         });
       } catch (e) { /* silent */ }
     }
@@ -1594,152 +1600,75 @@
       btn.className = soundEnabled ? 'sound-btn on' : 'sound-btn';
     };
 
-    // ═══ TETRIS ENGINE ═══
-    const COLS = 10, ROWS = 20, CELL = 20;
-    const COLORS = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800', GHOST: 'rgba(255,255,255,0.10)' };
-    const PIECES = {
-      I: [[[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]], [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]],
-      O: [[[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]]],
-      T: [[[0, 1, 0], [1, 1, 1], [0, 0, 0]], [[0, 1, 0], [0, 1, 1], [0, 1, 0]], [[0, 0, 0], [1, 1, 1], [0, 1, 0]], [[0, 1, 0], [1, 1, 0], [0, 1, 0]]],
-      S: [[[0, 1, 1], [1, 1, 0], [0, 0, 0]], [[0, 1, 0], [0, 1, 1], [0, 0, 1]], [[0, 0, 0], [0, 1, 1], [1, 1, 0]], [[1, 0, 0], [1, 1, 0], [0, 1, 0]]],
-      Z: [[[1, 1, 0], [0, 1, 1], [0, 0, 0]], [[0, 0, 1], [0, 1, 1], [0, 1, 0]], [[0, 0, 0], [1, 1, 0], [0, 1, 1]], [[0, 1, 0], [1, 1, 0], [1, 0, 0]]],
-      J: [[[1, 0, 0], [1, 1, 1], [0, 0, 0]], [[0, 1, 1], [0, 1, 0], [0, 1, 0]], [[0, 0, 0], [1, 1, 1], [0, 0, 1]], [[0, 1, 0], [0, 1, 0], [1, 1, 0]]],
-      L: [[[0, 0, 1], [1, 1, 1], [0, 0, 0]], [[0, 1, 0], [0, 1, 0], [0, 1, 1]], [[0, 0, 0], [1, 1, 1], [1, 0, 0]], [[1, 1, 0], [0, 1, 0], [0, 1, 0]]]
-    };
-    const NAMES = Object.keys(PIECES);
-    const KJ = { '0->R': [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]], 'R->0': [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]], 'R->2': [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]], '2->R': [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]], '2->L': [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]], 'L->2': [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]], 'L->0': [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]], '0->L': [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]] };
-    const KI = { '0->R': [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]], 'R->0': [[0, 0], [2, 0], [-1, 0], [2, 1], [-1, -2]], 'R->2': [[0, 0], [-1, 0], [2, 0], [-1, 2], [2, -1]], '2->R': [[0, 0], [1, 0], [-2, 0], [1, -2], [-2, 1]], '2->L': [[0, 0], [2, 0], [-1, 0], [2, 1], [-1, -2]], 'L->2': [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]], 'L->0': [[0, 0], [1, 0], [-2, 0], [1, -2], [-2, 1]], '0->L': [[0, 0], [-1, 0], [2, 0], [-1, 2], [2, -1]] };
-    const RN = ['0', 'R', '2', 'L'];
-    const LS = [0, 100, 300, 500, 800], TS = [400, 800, 1200, 1600];
-    const LOCK_DELAY = 750, MAX_RESETS = 15;
-
-    class Bag {
-      constructor() { this.q = []; }
-      _refill() { const b = [...NAMES]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[b[i], b[j]] = [b[j], b[i]]; } this.q.push(...b); }
-      next() { if (this.q.length < 4) this._refill(); return this.q.shift(); }
-      peek(n = 1) { while (this.q.length < n + 4) this._refill(); return this.q.slice(0, n); }
+    function drawPiecePreview(ctx, name, size, alpha = 1) {
+      if (!name) { ctx.clearRect(0, 0, size, size); return; }
+      const cs = size / 5; ctx.clearRect(0, 0, size, size); ctx.globalAlpha = alpha;
+      const m = PIECES[name][0]; const ox = (5 - m[0].length) / 2, oy = (5 - m.length) / 2;
+      m.forEach((row, r) => row.forEach((cell, c) => {
+        if (cell) {
+          ctx.fillStyle = COLORS[name] + 'dd';
+          ctx.fillRect((ox + c) * cs + 1, (oy + r) * cs + 1, cs - 2, cs - 2);
+          ctx.fillStyle = 'rgba(255,255,255,.2)';
+          ctx.fillRect((ox + c) * cs + 1, (oy + r) * cs + 1, cs - 2, 3);
+        }
+      })); ctx.globalAlpha = 1;
     }
-    function mkP(name) { return { name, rot: 0, x: 3, y: -1 }; }
 
-    class TetrisGame {
-      constructor(cid, hid, nid) {
-        this.cvs = document.getElementById(cid); this.ctx = this.cvs.getContext('2d');
-        this.hCvs = hid ? document.getElementById(hid) : null; this.hCtx = this.hCvs ? this.hCvs.getContext('2d') : null;
-        this.nCvs = nid ? document.getElementById(nid) : null; this.nCtx = this.nCvs ? this.nCvs.getContext('2d') : null;
-        this.reset();
-      }
-      reset() {
-        this.board = Array.from({ length: ROWS + 2 }, () => Array(COLS).fill(null));
-        this.bag = new Bag(); this.current = mkP(this.bag.next());
-        this.held = null; this.canHold = true; this.score = 0; this.lines = 0; this.level = 1; this.combo = 0; this.b2b = false;
-        this.over = false; this.spd = 800; this.lastDrop = 0; this.lockTm = null; this.lockRst = 0; this.onGnd = false;
-        this.waiting = false; this.nextTs = 0; this.dirty = true; this.lastAct = null; this.pendGarb = 0; this.results = [];
-      }
-      _get(x, y) { if (x < 0 || x >= COLS || y < -2 || y >= ROWS) return y >= ROWS ? 'W' : null; return this.board[y + 2][x]; }
-      _set(x, y, v) { if (y < -2 || y >= ROWS || x < 0 || x >= COLS) return; this.board[y + 2][x] = v; this.dirty = true; }
-      mat(p = this.current) { return PIECES[p.name][p.rot]; }
-      cells(p = this.current) { const m = this.mat(p), o = []; for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++)if (m[r][c]) o.push([p.x + c, p.y + r]); return o; }
-      valid(p, dx = 0, dy = 0, rot = null) {
-        const m = rot !== null ? PIECES[p.name][rot] : this.mat(p);
-        for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) {
-          if (!m[r][c]) continue; const nx = p.x + c + dx, ny = p.y + r + dy;
-          if (nx < 0 || nx >= COLS || ny >= ROWS) return false;
-          if (ny >= -2 && this._get(nx, ny)) return false;
-        } return true;
-      }
-      rotate(dir = 1) {
-        const f = this.current.rot, t = (f + (dir > 0 ? 1 : 3)) % 4, k = `${RN[f]}->${RN[t]}`;
-        const ks = this.current.name === 'I' ? KI[k] : KJ[k]; if (!ks) return false;
-        for (const [kx, ky] of ks) { if (this.valid(this.current, kx, -ky, t)) { this.current.x += kx; this.current.y += -ky; this.current.rot = t; this.lastAct = { type: 'rotate', dir, kick: kx || ky }; this._rstLock(); playSound('rotate'); return true; } } return false;
-      }
-      move(dx) { if (this.valid(this.current, dx)) { this.current.x += dx; this.lastAct = { type: 'move' }; this._rstLock(); playSound('move'); return true; } return false; }
-      softDrop() { if (this.valid(this.current, 0, 1)) { this.current.y++; this.score++; this.lastAct = { type: 'move' }; this.onGnd = false; this.lockTm = null; return true; } return false; }
-      hardDrop() {
-        if (this.waiting) return null; // 次ミノ出現待ち中は無視（スペース連打バグ対策）
-        let d = 0; while (this.valid(this.current, 0, 1)) { this.current.y++; d++; }
-        this.score += d * 2; this.lastAct = { type: 'hard' }; playSound('harddrop'); return this._lock();
-      }
-      ghostY() { let g = this.current.y; while (this.valid(this.current, 0, g - this.current.y + 1)) g++; return g; }
-      _rstLock() { if (this.onGnd && this.lockRst < MAX_RESETS) { this.lockTm = performance.now(); this.lockRst++; } }
-      _tSpin() { if (this.current.name !== 'T' || !this.lastAct || this.lastAct.type !== 'rotate') return false; const { x, y } = this.current; const cs = [[x, y], [x + 2, y], [x, y + 2], [x + 2, y + 2]]; return cs.filter(([cx, cy]) => cy < 0 || cy >= ROWS || cx < 0 || cx >= COLS || !!this._get(cx, cy)).length >= 3; }
-      _lock() {
-        for (const [cx, cy] of this.cells()) { if (cy >= 0) this._set(cx, cy, this.current.name); else this.over = true; }
-        const ts = this._tSpin(), cl = this._clearLines();
-        let pts = 0, go = 0, lbl = ''; const sp = ts || cl === 4;
-        if (ts) { pts = TS[cl] * this.level; lbl = ['T-SPIN!', 'T-SPIN SINGLE!', 'T-SPIN DOUBLE!', 'T-SPIN TRIPLE!'][cl] || 'T-SPIN!'; go = [0, 2, 4, 6][cl] || 0; }
-        else if (cl > 0) { pts = LS[cl] * this.level; lbl = ['', 'SINGLE', 'DOUBLE', 'TRIPLE', 'TETRIS!!'][cl]; go = [0, 0, 1, 2, 4][cl] || 0; }
-        if (sp && cl > 0) { if (this.b2b) { pts = Math.floor(pts * 1.5); go += 1; lbl += '\nBACK-TO-BACK!'; } this.b2b = true; }
-        else if (cl > 0 && !ts) this.b2b = false;
-        if (cl > 0) { this.combo++; if (this.combo > 1) { pts += 50 * (this.combo - 1) * this.level; go += Math.floor(this.combo / 2); lbl += (lbl ? '\n' : '') + 'COMBO x' + this.combo + '!'; } } else this.combo = 0;
-        this.score += pts;
-        if (cl > 0) { this.lines += cl; this.level = Math.floor(this.lines / 10) + 1; this.spd = Math.max(50, 800 - (this.level - 1) * 70); if (cl === 4) playSound('tetris'); else playSound('clear1'); } else playSound('lock');
-        if (this.pendGarb > 0) { const cn = Math.min(go, this.pendGarb); go -= cn; this.pendGarb -= cn; if (this.pendGarb > 0) { this._addGarb(this.pendGarb); this.pendGarb = 0; } }
-        this.waiting = true; this.nextTs = performance.now() + 200;
-        this.canHold = true; this.lockTm = null; this.lockRst = 0; this.onGnd = false; this.lastAct = null;
-        this.results.push({ cleared: cl, garbageOut: go, actionLabel: lbl });
-        return { cleared: cl, garbageOut: go, actionLabel: lbl };
-      }
-      _clearLines() { let n = 0; for (let r = ROWS - 1; r >= 0; r--) { if (this.board[r + 2].every(c => c !== null)) { this.board.splice(r + 2, 1); this.board.unshift(Array(COLS).fill(null)); n++; r++; this.dirty = true; } } return n; }
-      _addGarb(n) { if (n <= 0) return; const h = Math.floor(Math.random() * COLS); for (let i = 0; i < n; i++) { this.board.shift(); const r = Array(COLS).fill('G'); r[h] = null; this.board.push(r); } this.dirty = true; }
-      hold() {
-        if (!this.canHold || this.waiting) return false;
-        const name = this.current.name;
-        if (this.held) this.current = mkP(this.held); else this.current = mkP(this.bag.next());
-        this.held = name; this.canHold = false; this.lockTm = null; this.lockRst = 0; this.onGnd = false;
-        this.lastDrop = performance.now(); playSound('move'); return true;
-      }
-      update(ts) {
-        if (this.over) return null;
-        if (this.waiting) {
-          if (ts >= this.nextTs) { this.waiting = false; this.current = mkP(this.bag.next()); while (!this.valid(this.current) && this.current.y > -4) this.current.y--; if (!this.valid(this.current)) this.over = true; }
-          return null;
+    function renderGame(g, canvases) {
+      const { my: cv, hold: hv, next: nv } = canvases;
+      const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, cv.width, cv.height);
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.5;
+      for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++)ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
+      const s = g.serialize();
+      s.board.forEach((row, r) => row.forEach((cell, c) => {
+        if (cell) {
+          const col = cell === 'G' ? '#888888' : COLORS[cell];
+          ctx.fillStyle = col + 'dd'; ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
+          ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, 3);
         }
-        const og = !this.valid(this.current, 0, 1);
-        if (og) { if (!this.onGnd || this.lockTm === null) { this.onGnd = true; this.lockTm = ts; } if (ts - this.lockTm >= LOCK_DELAY) { this.onGnd = false; return this._lock(); } }
-        else { this.onGnd = false; this.lockTm = null; if (ts - this.lastDrop >= this.spd) { this.lastDrop = ts; this.current.y++; } }
-        return null;
+      }));
+      if (!g.waiting && !g.over) {
+        const pColor = COLORS[g.current.name];
+        const gy = s.ghostY;
+        g.mat().forEach((row, r) => row.forEach((cell, c) => {
+          if (cell && (gy + r) >= 0) {
+            const bx = (g.current.x + c) * CELL, by = (gy + r) * CELL;
+            ctx.fillStyle = pColor + '40'; ctx.fillRect(bx + 1, by + 1, CELL - 2, CELL - 2);
+            ctx.strokeStyle = pColor + 'a0'; ctx.lineWidth = 1; ctx.strokeRect(bx + 1.5, by + 1.5, CELL - 3, CELL - 3);
+          }
+        }));
+        g.mat().forEach((row, r) => row.forEach((cell, c) => {
+          if (cell && (g.current.y + r) >= 0) {
+            const bx = (g.current.x + c) * CELL, by = (g.current.y + r) * CELL;
+            ctx.fillStyle = pColor + 'dd'; ctx.fillRect(bx + 1, by + 1, CELL - 2, CELL - 2);
+            ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(bx + 1, by + 1, CELL - 2, 3);
+          }
+        }));
       }
-      draw() {
-        const ctx = this.ctx; ctx.clearRect(0, 0, this.cvs.width, this.cvs.height);
-        ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.5;
-        for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++)ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
-        for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++) { const cell = this.board[r + 2][c]; if (cell) this._dc(ctx, c, r, cell === 'G' ? '#888888' : COLORS[cell]); }
-        if (!this.waiting) {
-          const gy = this.ghostY();
-          const pColor = COLORS[this.current.name];
-          this.mat().forEach((row, r) => row.forEach((cell, c) => {
-            if (cell) {
-              const py = gy + r;
-              if (py >= 0) {
-                const bx = (this.current.x + c) * CELL, by = py * CELL;
-                ctx.fillStyle = pColor + '59';
-                ctx.fillRect(bx + 1, by + 1, CELL - 2, CELL - 2);
-                ctx.strokeStyle = pColor + 'd9';
-                ctx.lineWidth = 1.5;
-                ctx.strokeRect(bx + 1.5, by + 1.5, CELL - 3, CELL - 3);
-                ctx.fillStyle = 'rgba(255,255,255,0.18)';
-                ctx.fillRect(bx + 2, by + 2, CELL - 4, 2);
-              }
-            }
-          }));
-          if (this.onGnd && this.lockTm !== null) { const pct = 1 - Math.min(1, (performance.now() - this.lockTm) / LOCK_DELAY); const cells = this.cells(); const maxY = Math.max(...cells.map(c => c[1])); cells.filter(([, cy]) => cy === maxY && cy >= 0).forEach(([cx, cy]) => { ctx.fillStyle = `rgba(255,255,255,${0.4 * pct})`; ctx.fillRect(cx * CELL + 1, cy * CELL + CELL - 3, Math.floor((CELL - 2) * pct), 2); }); }
-          this.mat().forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = this.current.y + r; if (py >= 0) this._dc(ctx, this.current.x + c, py, COLORS[this.current.name]); } }));
-        }
-        if (this.over) { ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(0, 0, this.cvs.width, this.cvs.height); ctx.fillStyle = '#ff0080'; ctx.font = 'bold 13px "Press Start 2P"'; ctx.textAlign = 'center'; ctx.fillText('GAME', this.cvs.width / 2, this.cvs.height / 2 - 14); ctx.fillText('OVER', this.cvs.width / 2, this.cvs.height / 2 + 10); }
-        if (this.nCtx) this._dm(this.nCtx, mkP(this.bag.peek(1)[0]));
-        if (this.hCtx) { this.hCtx.clearRect(0, 0, 80, 80); if (this.held) this._dm(this.hCtx, mkP(this.held), this.canHold ? 1 : .4); }
+      if (g.over) { ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(0, 0, cv.width, cv.height); ctx.fillStyle = '#ff0080'; ctx.font = 'bold 13px "Press Start 2P"'; ctx.textAlign = 'center'; ctx.fillText('GAME OVER', cv.width / 2, cv.height / 2); }
+      if (nv) drawPiecePreview(nv.getContext('2d'), s.next, nv.width);
+      if (hv) drawPiecePreview(hv.getContext('2d'), s.held, hv.width, g.canHold ? 1 : 0.4);
+    }
+
+    function drawOpp(canvas, data) {
+      if (!data || !data.board) return;
+      const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.5;
+      for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++)ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
+      data.board.forEach((row, r) => row.forEach((cell, c) => {
+        if (!cell) return; const color = cell === 'G' ? '#888888' : (COLORS[cell] || '#888');
+        ctx.fillStyle = color + 'cc'; ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
+      }));
+      if (data.cur && !data.gameOver && PIECES[data.cur.name]) {
+        const p = data.cur, m = PIECES[p.name][p.rot || 0];
+        m.forEach((row, r) => row.forEach((cell, c) => {
+          if (cell && (p.y + r) >= 0) {
+            ctx.fillStyle = (COLORS[p.name] || '#fff') + '99';
+            ctx.fillRect((p.x + c) * CELL + 1, (p.y + r) * CELL + 1, CELL - 2, CELL - 2);
+          }
+        }));
       }
-      _dc(ctx, x, y, color) { ctx.fillStyle = color + 'dd'; ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2); ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, 3); ctx.fillRect(x * CELL + 1, y * CELL + 1, 3, CELL - 2); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x * CELL + 3, y * CELL + CELL - 3, CELL - 3, 2); ctx.fillRect(x * CELL + CELL - 3, y * CELL + 3, 2, CELL - 3); }
-      _dm(ctx, piece, alpha = 1) { const cs = 16, s = 80; ctx.clearRect(0, 0, s, s); ctx.globalAlpha = alpha; const m = PIECES[piece.name][0]; const ox = Math.floor((4 - m[0].length) / 2), oy = Math.floor((4 - m.length) / 2); m.forEach((row, r) => row.forEach((cell, c) => { if (cell) { ctx.fillStyle = COLORS[piece.name] + 'dd'; ctx.fillRect((ox + c) * cs + 1, (oy + r) * cs + 1, cs - 2, cs - 2); ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect((ox + c) * cs + 1, (oy + r) * cs + 1, cs - 2, 3); } })); ctx.globalAlpha = 1; }
-      static drawOpp(canvas, data) {
-        if (!data || !data.board) return;
-        const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 0.5;
-        for (let r = 0; r < ROWS; r++)for (let c = 0; c < COLS; c++)ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
-        data.board.forEach((row, r) => row.forEach((cell, c) => { if (!cell) return; const color = cell === 'G' ? '#888888' : (COLORS[cell] || '#888'); ctx.fillStyle = color + 'cc'; ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2); ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, 3); }));
-        if (data.cur && PIECES[data.cur.name]) { const m = PIECES[data.cur.name][data.cur.rot || 0]; const color = COLORS[data.cur.name] || '#888'; m.forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = data.cur.y + r; if (py >= 0) { ctx.fillStyle = color + '99'; ctx.fillRect((data.cur.x + c) * CELL + 1, py * CELL + 1, CELL - 2, CELL - 2); } } })); }
-        if (data.over) { ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#ff0080'; ctx.font = 'bold 11px "Press Start 2P"'; ctx.textAlign = 'center'; ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2); }
-      }
+      if (data.gameOver) { ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#ff0080'; ctx.font = 'bold 11px "Press Start 2P"'; ctx.textAlign = 'center'; ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2); }
     }
 
     // ═══ BOT AI ═══
@@ -1816,18 +1745,17 @@
     }
 
     // ═══ GAME STATE ═══
-    let game = null, botGame = null, botCtrl = null, gameRunning = false, animId = null, endedOnce = false;
+    let game = null, inputHandler = null, botGame = null, botCtrl = null, gameRunning = false, animId = null, endedOnce = false;
     let statMaxCombo = 0, statAtkSent = 0, statAtkRecv = 0, statTetris = 0;
-    let softDropInterval = null;
     let _prevScore = 0, _prevCombo = -1;
     const uiCache = { score: -1, level: -1, lines: -1, combo: -1, b2b: null, sent: -1, recv: -1, pg: -1 };
 
     function resetState() {
       gameRunning = false; endedOnce = false;
       if (animId) { cancelAnimationFrame(animId); animId = null; }
+      if (inputHandler) { inputHandler.detach(); inputHandler = null; }
       _removeBotSession().catch(() => {});
       game = null; botGame = null; botCtrl = null;
-      dasStop(); clearInterval(softDropInterval); softDropInterval = null;
       _prevScore = 0; _prevCombo = -1;
     }
 
@@ -1864,28 +1792,34 @@
       const aborted = await countdown();
       if (aborted) return;
 
-      game = new TetrisGame('myCanvas', 'holdCanvas', 'nextCanvas');
-      botGame = new TetrisGame('opponentCanvas', null, null);
+      game = new TetrisGame();
+      inputHandler = new InputHandler(game);
+      inputHandler.attach();
+      botGame = new TetrisGame();
       botCtrl = new BotController(botGame, difficulty);
       gameRunning = true; endedOnce = false;
 
-      // RTDBセッション開始
       _startBotSession(name, botName, difficulty).catch(() => {});
 
       const loop = ts => {
         if (!gameRunning) return;
-        game.update(ts); game.draw();
+        game.update(ts);
+        renderGame(game, { my: document.getElementById('myCanvas'), hold: document.getElementById('holdCanvas'), next: document.getElementById('nextCanvas') });
         botCtrl.tick(ts); botGame.update(ts);
 
-        // Botの描画（serialize→drawOpp方式でゴースト非表示）
-        const bd = { board: botGame.board.slice(2).map(r => r.map(c => c || '')), cur: { name: botGame.current.name, rot: botGame.current.rot, x: botGame.current.x, y: botGame.current.y }, over: botGame.over };
-        TetrisGame.drawOpp(document.getElementById('opponentCanvas'), bd);
+        const bd = botGame.serialize();
+        drawOpp(document.getElementById('opponentCanvas'), bd);
 
         while (game.results.length > 0) {
           const res = game.results.shift();
-          if (res.garbageOut > 0) { statAtkSent += res.garbageOut; botGame.pendGarb += res.garbageOut; }
-          if (res.cleared === 4) statTetris++;
-          if (res.actionLabel) showActionPopup(res.actionLabel);
+          if (res.type === 'lock') {
+            if (res.garbageOut > 0) { statAtkSent += res.garbageOut; botGame.pendGarb += res.garbageOut; }
+            if (res.cleared === 4) statTetris++;
+            if (res.actionLabel) {
+              showActionPopup(res.actionLabel);
+              if (res.cleared > 0) playSound(res.cleared === 4 ? 'tetris' : 'clear1'); else playSound('lock');
+            }
+          }
         }
         while (botGame.results.length > 0) {
           const res = botGame.results.shift();
@@ -1901,7 +1835,7 @@
         updateGameUI();
         document.getElementById('botNameTag').textContent = `${botName} (${botGame.score})`;
 
-        if (game.over && botGame.over && !endedOnce) { endGame('DRAW'); return; } // 同時判定を最優先
+        if (game.over && botGame.over && !endedOnce) { endGame('DRAW'); return; }
         if (game.over && !endedOnce) { endGame('LOSE'); return; }
         if (botGame.over && !endedOnce) { endGame('WIN'); return; }
         _syncBotSession().catch(() => {});
@@ -1999,64 +1933,15 @@
       });
     }
 
-    // ═══ INPUT ═══
-    const DAS = 167, ARR = 33;
-    const keys = new Set();
-    let dasTimer = null, dasDir = 0, arrTimer = null;
-    function dasStart(dir) { if (dasDir === dir) return; dasStop(); dasDir = dir; game?.move(dir); dasTimer = setTimeout(() => { arrTimer = setInterval(() => { game?.move(dir); }, ARR); }, DAS); }
-    function dasStop() { clearTimeout(dasTimer); clearInterval(arrTimer); dasTimer = null; arrTimer = null; dasDir = 0; }
-
-    document.addEventListener('keydown', e => {
-      // ゲーム画面中はスクロール系キーを常時ブロック
-      const gameActive = document.getElementById('gameScreen')?.classList.contains('active');
-      if (gameActive && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) {
-        e.preventDefault();
-      }
-      if (keys.has(e.code)) return; keys.add(e.code);
-      if (!game || !gameRunning) return;
-      switch (e.code) {
-        case 'ArrowLeft': dasStart(-1); break;
-        case 'ArrowRight': dasStart(1); break;
-        case 'ArrowUp': game.rotate(1); break;
-        case 'KeyX': e.preventDefault(); game.rotate(1); break;
-        case 'KeyZ': e.preventDefault(); game.rotate(-1); break;
-        case 'ArrowDown':
-          if (!softDropInterval) { game.softDrop(); softDropInterval = setInterval(() => { if (game && gameRunning) game.softDrop(); }, 50); }
-          break;
-        case 'Space':
-          // waiting中（次ミノ出現待ち）はハードドロップを無視して連打バグを防ぐ
-          if (game && !game.waiting) game.hardDrop();
-          break;
-        case 'KeyC': case 'ShiftLeft': case 'ShiftRight': case 'Shift':
-          e.preventDefault(); game.hold(); break;
-      }
-    });
-    document.addEventListener('keyup', e => {
-      keys.delete(e.code);
-      if (e.code === 'ArrowLeft' && dasDir === -1) dasStop();
-      if (e.code === 'ArrowRight' && dasDir === 1) dasStop();
-      if (e.code === 'ArrowDown') { clearInterval(softDropInterval); softDropInterval = null; }
-    });
-
-    function setupMobile(id, fn, repeatMs = false) {
-      const btn = document.getElementById(id); if (!btn) return;
-      let iv = null, dasT = null;
-      const start = e => {
-        e.preventDefault(); if (!game || !gameRunning) return; fn();
-        if (repeatMs) { if (id === 'btnLeft' || id === 'btnRight') { dasT = setTimeout(() => { iv = setInterval(() => { if (game && gameRunning) fn(); }, ARR); }, DAS); } else { iv = setInterval(() => { if (game && gameRunning) fn(); }, repeatMs); } }
-      };
-      const stop = () => { clearTimeout(dasT); clearInterval(iv); dasT = null; iv = null; };
-      btn.addEventListener('touchstart', start, { passive: false }); btn.addEventListener('touchend', stop, { passive: true });
-      btn.addEventListener('touchcancel', stop, { passive: true }); btn.addEventListener('mousedown', start);
-      btn.addEventListener('mouseup', stop); btn.addEventListener('mouseleave', stop);
-    }
-    setupMobile('btnLeft', () => game?.move(-1), ARR);
-    setupMobile('btnRight', () => game?.move(1), ARR);
-    setupMobile('btnDown', () => game?.softDrop(), 50);
-    setupMobile('btnRotate', () => game?.rotate(1), false);
-    setupMobile('btnRotateL', () => game?.rotate(-1), false);
-    setupMobile('btnHardDrop', () => { if (game && !game.waiting) game.hardDrop(); }, false);
-    setupMobile('btnHold', () => game?.hold(), false);
+    // ── MOBILE INPUT SETUP ──
+    const setupM = (id, act) => {
+      const b = document.getElementById(id); if(!b) return;
+      b.addEventListener('touchstart', e => { e.preventDefault(); inputHandler?.handleTouchStart(act); }, {passive:false});
+      b.addEventListener('touchend', e => { e.preventDefault(); inputHandler?.handleTouchEnd(act); }, {passive:true});
+    };
+    setupM('btnLeft', 'left'); setupM('btnRight', 'right'); setupM('btnDown', 'down');
+    setupM('btnRotate', 'rotateR'); setupM('btnRotateL', 'rotateL');
+    setupM('btnHardDrop', 'hard'); setupM('btnHold', 'hold');
 
     (function () {
       let tx0 = 0, ty0 = 0; const cvs = document.getElementById('myCanvas');

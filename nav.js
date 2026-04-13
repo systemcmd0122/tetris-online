@@ -286,8 +286,6 @@ export function mountNav(opts = {}) {
   // 認証状態でPROFILEリンクを強調
   _watchAuthForNav();
 
-  // スマホ非対応オーバーレイを表示
-  _mountMobileWall();
 }
 
 async function _watchAuthForNav() {
@@ -307,52 +305,6 @@ async function _watchAuthForNav() {
 }
 
 
-// ═══ MOBILE NOT SUPPORTED WALL ═══
-
-function _isMobile() {
-  // タッチデバイスかつ画面幅 768px 未満をモバイルと判定
-  const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  const isNarrow = window.innerWidth < 768;
-  return hasTouch && isNarrow;
-}
-
-function _mountMobileWall() {
-  if (!_isMobile()) return;
-
-  const wall = document.createElement('div');
-  wall.id = 'tb-mobile-wall';
-  wall.setAttribute('aria-live', 'polite');
-  wall.innerHTML = `
-    <div class="tb-mw-scanlines" aria-hidden="true"></div>
-    <div class="tb-mw-blocks" aria-hidden="true">
-      <div class="tb-mw-block"></div>
-      <div class="tb-mw-block"></div>
-      <div class="tb-mw-block"></div>
-      <div class="tb-mw-block"></div>
-      <div class="tb-mw-block"></div>
-    </div>
-    <div class="tb-mw-logo">TETRIS BATTLE</div>
-    <div class="tb-mw-sub">ONLINE MULTIPLAYER</div>
-    <div class="tb-mw-badge" aria-hidden="true">&#x1F5A5;</div>
-    <div class="tb-mw-title">PC 専用</div>
-    <div class="tb-mw-desc">
-      このゲームは<b>PC・デスクトップブラウザ</b>専用です。<br>
-      スマートフォン・タブレットには<br>
-      現在対応していません。<br><br>
-      <b>PCからアクセス</b>してお楽しみください。
-    </div>
-  `;
-  document.body.appendChild(wall);
-  requestAnimationFrame(() => wall.classList.add('show'));
-
-  window.addEventListener('resize', () => {
-    if (_isMobile()) {
-      wall.classList.add('show');
-    } else {
-      wall.classList.remove('show');
-    }
-  });
-}
 
 // ═══ NOTIFICATION SYSTEM ═══
 

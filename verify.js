@@ -15,15 +15,16 @@ const { chromium } = require('playwright');
 
   console.log('Verifying tetris-battle.html (VS BOT)...');
   await page.goto('http://localhost:8080/tetris-battle.html');
-  await page.waitForSelector('.diff-easy');
+  await page.click('button:has-text("VS BOT")');
+  await page.waitForSelector('.diff-easy', { state: 'visible' });
   console.log('Difficulty buttons found.');
 
   console.log('Verifying admin.html...');
   await page.goto('http://localhost:8080/admin.html');
   await page.fill('#pwIn', 'Runa1124');
   await page.click('button:has-text("ログイン")');
-  await page.waitForSelector('#panel-feedback');
-  console.log('Admin feedback panel found.');
+  await page.waitForSelector('#panel-dashboard', { state: 'visible' });
+  console.log('Admin dashboard panel found.');
 
   console.log('Verifying status.html for duplicate IDs...');
   await page.goto('http://localhost:8080/status.html');
