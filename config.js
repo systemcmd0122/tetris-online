@@ -2,13 +2,13 @@ export const APP_VERSION = "3.5.0";
 
 /** Firebase設定 — auth.js / db.js / フィードバックウィジェットで共有 */
 export const FB_CONFIG = {
-  apiKey:            'AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw',
-  authDomain:        'tetris-online-9c827.firebaseapp.com',
-  databaseURL:       'https://tetris-online-9c827-default-rtdb.firebaseio.com',
-  projectId:         'tetris-online-9c827',
-  storageBucket:     'tetris-online-9c827.firebasestorage.app',
+  apiKey: 'AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw',
+  authDomain: 'tetris-online-9c827.firebaseapp.com',
+  databaseURL: 'https://tetris-online-9c827-default-rtdb.firebaseio.com',
+  projectId: 'tetris-online-9c827',
+  storageBucket: 'tetris-online-9c827.firebasestorage.app',
   messagingSenderId: '1045054992314',
-  appId:             '1:1045054992314:web:7fea20b9be543d7cab3783',
+  appId: '1:1045054992314:web:7fea20b9be543d7cab3783',
 };
 
 export const UPDATE_LOG = [
@@ -172,7 +172,6 @@ export const UPDATE_LOG = [
       "管理コンソールのFirebase参照パスを'rooms/'から正しい'multi/'に修正。ルーム一覧・強制停止・観戦・ブロードキャストが実際に機能するようになりました。",
       "管理コンソールのブロードキャストメッセージがゲーム中プレイヤーのトーストに表示されるようになりました（sysMsgTs連携）。",
       "ボット対戦で自分とボットが同時にゲームオーバーになった際、DRAWと正しく判定されるよう修正しました（従来はLOSEと誤表示）。",
-      "shell.htmlのページ離脱時（タブ閉じ・ページ移動）にyt_nowplaying localStorage を自動削除するよう修正。マルチ対戦で古い曲名が表示され続けるバグを解消しました。",
       "管理コンソールのルーム監視が正しく動作するよう修正。ルーム一覧が実際のゲームデータを反映するようになりました。"
     ]
   },
@@ -222,15 +221,14 @@ export const UPDATE_LOG = [
       "Firebase RTDB で .info/connected が false → true の順に発火する仕様に対応し、true になるまで待機するよう修正しました。",
       "Firestore の unsubscribe 処理を Modular SDK v10 の正しい方法に修正しました。",
       "Google Fonts チェックを fetch 優先・<link>タグフォールバックの2段構えに変更しました。",
-      "YouTube IFrame API チェックを fetch（CORS拒否で誤エラー）から <script> タグの onload/onerror に変更し、正確に確認できるようになりました。",
-      "YouTube Data API チェックで APIキーが未設定の場合は no-cors モードでサーバー到達性のみ確認するよう改善しました。"
+
     ]
   },
   {
     version: "1.8.0",
     title: "システムステータスページ追加",
     changes: [
-      "status.htmlを新たに追加しました。Firebase Realtime DB・Firestore・Google Fonts・YouTube IFrame API・YouTube Data APIの死活監視をリアルタイムで確認できます。",
+      "status.htmlを新たに追加しました。Firebase Realtime DB・Firestore・Google Fontsの死活監視をリアルタイムで確認できます。",
       "各サービスのレスポンスタイム（ms）と直近30回分のチェック履歴をバーグラフで表示します。",
       "60秒ごとに自動再チェックし、タブ復帰時にも即座に更新されます。",
       "index.htmlのメニュー下部に「ステータス」リンクを追加しました。"
@@ -248,22 +246,10 @@ export const UPDATE_LOG = [
     ]
   },
   {
-    version: "1.6.0",
-    title: "クラウドプレイリスト・対戦中音楽表示強化",
-    changes: [
-      "プレイリストをFirebase Realtime Databaseに移行し、全ユーザーでリアルタイム共有できるようになりました。",
-      "プレイリスト作成・編集・削除がクラウドに即時反映され、ページ再読み込み後も保持されます。",
-      "プレイリストパネルにクラウド接続ステータス（CLOUD SYNC ON）を表示するようになりました。",
-      "プレイリストから再生中の場合、対戦相手の画面にプレイリスト名と曲名が表示されるようになりました。",
-      "マルチ対戦・ボット対戦どちらでも相手の「♪ [プレイリスト名] 曲名」が表示されます。"
-    ]
-  },
-  {
     version: "1.5.0",
     title: "UI刷新・音楽共有機能追加",
     changes: [
       "全ての絵文字をSVGアイコンまたはテキスト記号に変更し、クリーンなUIに統一しました。",
-      "対戦中に相手がBGMを再生している場合、曲名がゲーム画面に表示されるようになりました（shell.html経由）。",
       "マルチ対戦でも自分の再生中の曲が対戦相手に見えるようにしました。",
       "サウンドボタンをSVGアイコンに変更し、視認性を向上させました。"
     ]

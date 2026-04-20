@@ -872,31 +872,7 @@
       position: relative
     }
 
-    .sound-btn {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--dim);
-      font-family: 'Orbitron', monospace;
-      font-size: 8px;
-      letter-spacing: 1px;
-      padding: 5px 10px;
-      border-radius: 2px;
-      cursor: pointer;
-      transition: all .2s
-    }
 
-    .sound-btn.on {
-      border-color: var(--accent3);
-      color: var(--accent3)
-    }
-
-    .sound-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent)
-    }
 
     .board-with-garb {
       display: flex;
@@ -1245,18 +1221,6 @@
     <div class="game-header">
       <span class="game-title">TETRIS BATTLE — BOT</span>
       <div class="game-header-right">
-        <button class="sound-btn on" id="soundBtn" onclick="toggleSound()">
-          <svg id="soundIconOn" width="13" height="13" viewBox="0 0 12 12" fill="currentColor">
-            <path d="M1 4h2l3-3v10L3 8H1z" />
-            <path d="M8 3.5A3.5 3.5 0 0 1 8 8.5" stroke="currentColor" stroke-width="1.2" fill="none" />
-            <path d="M9.5 2A5 5 0 0 1 9.5 10" stroke="currentColor" stroke-width="1.2" fill="none" />
-          </svg>
-          <svg id="soundIconOff" width="13" height="13" viewBox="0 0 12 12" fill="currentColor" style="display:none">
-            <path d="M1 4h2l3-3v10L3 8H1z" />
-            <line x1="8" y1="4" x2="11" y2="8" stroke="currentColor" stroke-width="1.5" />
-            <line x1="11" y1="4" x2="8" y2="8" stroke="currentColor" stroke-width="1.5" />
-          </svg>
-          <span id="soundLabel">ON</span>
         </button>
         <button class="btn btn-secondary" style="width:auto;padding:6px 14px;font-size:9px;margin-top:0;"
           onclick="quitGame()">QUIT</button>
@@ -1457,7 +1421,7 @@
           result: null,
           game: {
             player: { board: null, cur: null, score: 0, level: 1, lines: 0, atk: 0, over: false },
-            bot:    { board: null, cur: null, score: 0, level: 1, lines: 0, atk: 0, over: false }
+            bot: { board: null, cur: null, score: 0, level: 1, lines: 0, atk: 0, over: false }
           }
         });
         // 切断時に自動削除
@@ -1508,7 +1472,7 @@
         await update(ref(db, 'bot_sessions/' + sid), { status: 'ended', result: result });
         // 10秒後に削除（管理者が結果を確認できるように）
         setTimeout(async () => {
-          try { await remove(ref(db, 'bot_sessions/' + sid)); } catch (e) {}
+          try { await remove(ref(db, 'bot_sessions/' + sid)); } catch (e) { }
         }, 10000);
       } catch (e) { /* silent */ }
       _botSid = null;
@@ -1567,38 +1531,8 @@
       return (inp?.value.trim() || 'PLAYER').toUpperCase().slice(0, 12);
     }
 
-    // ═══ SOUND ENGINE ═══
-    let audioCtx = null, soundEnabled = true;
-    function getAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
-    function playSound(type) {
-      if (!soundEnabled) return;
-      try {
-        const ctx = getAudioCtx(), g = ctx.createGain(); g.connect(ctx.destination);
-        const o = ctx.createOscillator(); o.connect(g); const now = ctx.currentTime;
-        switch (type) {
-          case 'move': o.frequency.setValueAtTime(220, now); g.gain.setValueAtTime(.03, now); g.gain.exponentialRampToValueAtTime(.001, now + .05); o.start(now); o.stop(now + .05); break;
-          case 'rotate': o.frequency.setValueAtTime(330, now); o.frequency.exponentialRampToValueAtTime(440, now + .06); g.gain.setValueAtTime(.05, now); g.gain.exponentialRampToValueAtTime(.001, now + .06); o.start(now); o.stop(now + .06); break;
-          case 'lock': o.type = 'square'; o.frequency.setValueAtTime(180, now); g.gain.setValueAtTime(.06, now); g.gain.exponentialRampToValueAtTime(.001, now + .08); o.start(now); o.stop(now + .08); break;
-          case 'clear1': o.type = 'sawtooth'; o.frequency.setValueAtTime(440, now); o.frequency.exponentialRampToValueAtTime(880, now + .15); g.gain.setValueAtTime(.08, now); g.gain.exponentialRampToValueAtTime(.001, now + .15); o.start(now); o.stop(now + .15); break;
-          case 'tetris': [440, 554, 659, 880].forEach((f, i) => { const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.frequency.setValueAtTime(f, now + i * .07); g2.gain.setValueAtTime(.1, now + i * .07); g2.gain.exponentialRampToValueAtTime(.001, now + i * .07 + .15); o2.start(now + i * .07); o2.stop(now + i * .07 + .15); }); break;
-          case 'harddrop': o.type = 'square'; o.frequency.setValueAtTime(160, now); o.frequency.exponentialRampToValueAtTime(80, now + .1); g.gain.setValueAtTime(.12, now); g.gain.exponentialRampToValueAtTime(.001, now + .1); o.start(now); o.stop(now + .1); break;
-          case 'attack': o.type = 'sawtooth'; o.frequency.setValueAtTime(660, now); o.frequency.exponentialRampToValueAtTime(110, now + .25); g.gain.setValueAtTime(.15, now); g.gain.exponentialRampToValueAtTime(.001, now + .25); o.start(now); o.stop(now + .25); break;
-          case 'win': [523, 659, 784, 1047].forEach((f, i) => { const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.type = 'triangle'; o2.frequency.setValueAtTime(f, now + i * .12); g2.gain.setValueAtTime(.12, now + i * .12); g2.gain.exponentialRampToValueAtTime(.001, now + i * .12 + .3); o2.start(now + i * .12); o2.stop(now + i * .12 + .3); }); break;
-          case 'countdown': o.type = 'triangle'; o.frequency.setValueAtTime(880, now); g.gain.setValueAtTime(.15, now); g.gain.exponentialRampToValueAtTime(.001, now + .2); o.start(now); o.stop(now + .2); break;
-          case 'go': [880, 1320].forEach((f, i) => { const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.type = 'triangle'; o2.frequency.setValueAtTime(f, now + i * .08); g2.gain.setValueAtTime(.18, now + i * .08); g2.gain.exponentialRampToValueAtTime(.001, now + i * .08 + .25); o2.start(now + i * .08); o2.stop(now + i * .08 + .25); }); break;
-        }
-      } catch (e) { }
-    }
-    window.toggleSound = () => {
-      soundEnabled = !soundEnabled;
-      const btn = document.getElementById('soundBtn');
-      document.getElementById('soundIconOn').style.display = soundEnabled ? '' : 'none';
-      document.getElementById('soundIconOff').style.display = soundEnabled ? 'none' : '';
-      document.getElementById('soundLabel').textContent = soundEnabled ? 'ON' : 'OFF';
-      btn.className = soundEnabled ? 'sound-btn on' : 'sound-btn';
-    };
-
     // ═══ TETRIS ENGINE ═══
+    const playSound = () => { }; // Dummy function - sound disabled
     const COLS = 10, ROWS = 20, CELL = 20;
     const COLORS = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800', GHOST: 'rgba(255,255,255,0.10)' };
     const PIECES = {
@@ -1760,7 +1694,7 @@
         const m = PIECES[pName][rot]; if (!m) return null;
         for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) { if (m[r][c] && (sx + c < 0 || sx + c >= COLS)) return null; }
         let py = -2;
-        dropLoop: for (;;) { py++; if (py > ROWS) return null; for (let r = 0; r < m.length; r++) { for (let c = 0; c < m[r].length; c++) { if (!m[r][c]) continue; const ny = py + r, nx = sx + c; if (ny >= ROWS || (ny >= 0 && board[ny][nx])) { py--; break dropLoop; } } } }
+        dropLoop: for (; ;) { py++; if (py > ROWS) return null; for (let r = 0; r < m.length; r++) { for (let c = 0; c < m[r].length; c++) { if (!m[r][c]) continue; const ny = py + r, nx = sx + c; if (ny >= ROWS || (ny >= 0 && board[ny][nx])) { py--; break dropLoop; } } } }
         const nb = board.map(r => [...r]);
         for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) { if (m[r][c]) { const ny = py + r, nx = sx + c; if (ny < 0 || ny >= ROWS) return null; nb[ny][nx] = pName; } }
         const filt = nb.filter(row => !row.every(c => c !== null)); const cleared = ROWS - filt.length; while (filt.length < ROWS) filt.unshift(new Array(COLS).fill(null));
@@ -1829,7 +1763,7 @@
     function resetState() {
       gameRunning = false; endedOnce = false;
       if (animId) { cancelAnimationFrame(animId); animId = null; }
-      _removeBotSession().catch(() => {});
+      _removeBotSession().catch(() => { });
       game = null; botGame = null; botCtrl = null;
       dasStop(); clearInterval(softDropInterval); softDropInterval = null;
       _prevScore = 0; _prevCombo = -1;
@@ -1874,7 +1808,7 @@
       gameRunning = true; endedOnce = false;
 
       // RTDBセッション開始
-      _startBotSession(name, botName, difficulty).catch(() => {});
+      _startBotSession(name, botName, difficulty).catch(() => { });
 
       const loop = ts => {
         if (!gameRunning) return;
@@ -1909,7 +1843,7 @@
         if (game.over && botGame.over && !endedOnce) { endGame('DRAW'); return; } // 同時判定を最優先
         if (game.over && !endedOnce) { endGame('LOSE'); return; }
         if (botGame.over && !endedOnce) { endGame('WIN'); return; }
-        _syncBotSession().catch(() => {});
+        _syncBotSession().catch(() => { });
         animId = requestAnimationFrame(loop);
       };
       animId = requestAnimationFrame(loop);
@@ -1926,7 +1860,7 @@
       if (endedOnce) return;
       endedOnce = true; gameRunning = false;
       if (animId) { cancelAnimationFrame(animId); animId = null; }
-      _endBotSession(result).catch(() => {});
+      _endBotSession(result).catch(() => { });
       const title = document.getElementById('resultTitle');
       const score = game?.score || 0, lvl = game?.level || 1, lines = game?.lines || 0;
       if (result === 'WIN') { title.className = 'overlay-title win'; title.textContent = 'YOU WIN!'; playSound('win'); }

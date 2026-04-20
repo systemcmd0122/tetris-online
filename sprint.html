@@ -887,28 +887,6 @@
       letter-spacing: 2px
     }
 
-    /* SOUND BTN */
-    .sound-btn {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--dim);
-      font-family: 'Orbitron', monospace;
-      font-size: 8px;
-      letter-spacing: 1px;
-      padding: 5px 10px;
-      border-radius: 2px;
-      cursor: pointer;
-      transition: all .2s
-    }
-
-    .sound-btn.on {
-      border-color: var(--acc3);
-      color: var(--acc3)
-    }
-
     /* GAME HEADER */
     .game-header {
       width: 100%;
@@ -1031,13 +1009,6 @@
     <div class="game-header">
       <div class="game-title">SPRINT — 40 LINES</div>
       <div class="game-header-right">
-        <button class="sound-btn" id="soundBtn" onclick="toggleSound()">
-          <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
-            <path
-              d="M11 3L6 7H3a1 1 0 00-1 1v4a1 1 0 001 1h3l5 4V3zm4.07 1.93a9 9 0 010 12.74M15.54 6.46a5 5 0 010 7.07" />
-          </svg>
-          SE
-        </button>
         <button
           style="background:transparent;border:1px solid var(--dim);color:var(--dim);font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;padding:5px 10px;border-radius:2px;cursor:pointer"
           onclick="quitGame()">QUIT</button>
@@ -1185,26 +1156,9 @@
       return _fstore;
     }
 
-    // ══ SOUND ══
-    let _audioCtx = null, _soundOn = true;
-    function getACtx() { if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return _audioCtx; }
-    function playSound(type) {
-      if (!_soundOn) return;
-      try {
-        const ac = getACtx(); const now = ac.currentTime;
-        const osc = ac.createOscillator(), gain = ac.createGain(); osc.connect(gain); gain.connect(ac.destination);
-        const cfg = { move: [200, .04, 'square', .06], rotate: [260, .04, 'square', .06], harddrop: [120, .18, 'sawtooth', .12], lock: [160, .1, 'square', .08], clear1: [440, .25, 'sine', .15], tetris: [880, .4, 'sine', .3], go: [660, .5, 'square', .2], countdown: [330, .3, 'square', .15], complete: [1047, .7, 'sine', .5], fail: [80, .4, 'sawtooth', .3] };
-        const c = cfg[type]; if (!c) return;
-        osc.type = c[2]; osc.frequency.setValueAtTime(c[0], now);
-        if (type === 'complete') { osc.frequency.exponentialRampToValueAtTime(c[0] * 2, now + c[1]); }
-        if (type === 'fail') { osc.frequency.exponentialRampToValueAtTime(c[0] * 0.5, now + c[1]); }
-        gain.gain.setValueAtTime(c[3], now); gain.gain.exponentialRampToValueAtTime(0.001, now + c[1]);
-        osc.start(now); osc.stop(now + c[1]);
-      } catch (e) { }
-    }
-    function toggleSound() { _soundOn = !_soundOn; const btn = document.getElementById('soundBtn'); btn.classList.toggle('on', _soundOn); }
-
     // ══ BG CANVAS ══
+    const playSound = () => { }; // Dummy function - sound disabled
+    const toggleSound = () => { }; // Dummy function - sound disabled
     (function () {
       const c = document.getElementById('bgCanvas'); if (!c) return;
       const ctx = c.getContext('2d'); const CS = 24;
@@ -1679,7 +1633,6 @@
       const saved = localStorage.getItem('sprint_playerName');
       if (saved) document.getElementById('playerName').value = saved;
       updatePBDisplay();
-      document.getElementById('soundBtn')?.classList.toggle('on', _soundOn);
       // Page loader
       const loader = document.getElementById('pageLoader'), bar = document.getElementById('plBar'), txt = document.getElementById('plText');
       if (!loader || !bar) return;

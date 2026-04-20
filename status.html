@@ -1,818 +1,1007 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>システムステータス — TETRIS BATTLE</title>
-<meta name="description" content="TETRIS BATTLEのシステム稼働状況。Firebase・YouTube API・Google Fontsなど各サービスのリアルタイム死活監視。">
-<meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#04060f">
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>システムステータス — TETRIS BATTLE</title>
+  <meta name="description" content="TETRIS BATTLEのシステム稼働状況。Firebase・Google Fontsなど各サービスのリアルタイム死活監視。">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#04060f">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
 
-  :root {
-    --bg:       #04060f;
-    --s0:       #080d18;
-    --s1:       #0d1525;
-    --border:   #1a2540;
-    --acc:      #00f5ff;
-    --acc2:     #ff0080;
-    --acc3:     #aaff00;
-    --warn:     #ffaa00;
-    --red:      #ff3355;
-    --tx:       #e0f0ff;
-    --dim:      #4a6080;
-  }
+    :root {
+      --bg: #04060f;
+      --s0: #080d18;
+      --s1: #0d1525;
+      --border: #1a2540;
+      --acc: #00f5ff;
+      --acc2: #ff0080;
+      --acc3: #aaff00;
+      --warn: #ffaa00;
+      --red: #ff3355;
+      --tx: #e0f0ff;
+      --dim: #4a6080;
+    }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  html, body {
-    background: var(--bg);
-    color: var(--tx);
-    font-family: 'Orbitron', monospace;
-    min-height: 100vh;
-  }
+    html,
+    body {
+      background: var(--bg);
+      color: var(--tx);
+      font-family: 'Orbitron', monospace;
+      min-height: 100vh;
+    }
 
-  /* ── SCANLINES ── */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background: repeating-linear-gradient(0deg,
-      transparent, transparent 2px,
-      rgba(0,0,0,.14) 2px, rgba(0,0,0,.14) 4px);
-  }
+    /* ── SCANLINES ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(0deg,
+          transparent, transparent 2px,
+          rgba(0, 0, 0, .14) 2px, rgba(0, 0, 0, .14) 4px);
+    }
 
-  /* ── SCAN BEAM ── */
-  body::after {
-    content: '';
-    position: fixed; left: 0; right: 0; height: 120px; z-index: 0; pointer-events: none;
-    background: linear-gradient(180deg,
-      transparent,
-      rgba(0,245,255,.04) 40%,
-      rgba(0,245,255,.07) 50%,
-      rgba(0,245,255,.04) 60%,
-      transparent);
-    animation: scanBeam 8s linear infinite;
-  }
-  @keyframes scanBeam { 0%{ top:-120px } 100%{ top:100vh } }
+    /* ── SCAN BEAM ── */
+    body::after {
+      content: '';
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 120px;
+      z-index: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg,
+          transparent,
+          rgba(0, 245, 255, .04) 40%,
+          rgba(0, 245, 255, .07) 50%,
+          rgba(0, 245, 255, .04) 60%,
+          transparent);
+      animation: scanBeam 8s linear infinite;
+    }
 
-  /* ── LAYOUT ── */
-  .page {
-    position: relative; z-index: 1;
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 40px 20px 80px;
-  }
+    @keyframes scanBeam {
+      0% {
+        top: -120px
+      }
 
-  /* ── HEADER ── */
-  .header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 36px;
-  }
-  .logo-wrap { display: flex; flex-direction: column; gap: 6px; }
-  .logo-sub {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    color: var(--acc2);
-    letter-spacing: 3px;
-    text-shadow: 0 0 12px rgba(255,0,128,.6);
-  }
-  .logo {
-    font-family: 'Press Start 2P', monospace;
-    font-size: clamp(16px, 3.5vw, 26px);
-    color: var(--acc);
-    letter-spacing: 5px;
-    text-shadow: 0 0 10px rgba(0,245,255,.8), 0 0 40px rgba(0,245,255,.3);
-    animation: logoFlicker 6s ease-in-out infinite;
-  }
-  @keyframes logoFlicker {
-    0%,92%,100%{ opacity:1 }
-    93%{ opacity:.75 }
-    95%{ opacity:1 }
-    97%{ opacity:.85 }
-  }
+      100% {
+        top: 100vh
+      }
+    }
 
-  /* ── OVERALL BADGE ── */
-  .overall-badge {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 18px;
-    border-radius: 3px;
-    border: 2px solid;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    transition: all .3s;
-  }
-  .overall-badge.ok    { border-color: var(--acc3); color: var(--acc3); background: rgba(170,255,0,.07); box-shadow: 0 0 20px rgba(170,255,0,.2); }
-  .overall-badge.warn  { border-color: var(--warn);  color: var(--warn);  background: rgba(255,170,0,.07); box-shadow: 0 0 20px rgba(255,170,0,.2); }
-  .overall-badge.error { border-color: var(--red);   color: var(--red);   background: rgba(255,51,85,.07); box-shadow: 0 0 20px rgba(255,51,85,.2); }
-  .overall-badge.checking { border-color: var(--dim); color: var(--dim); background: transparent; }
+    /* ── LAYOUT ── */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
 
-  .badge-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .overall-badge.ok    .badge-dot { background: var(--acc3); box-shadow: 0 0 8px var(--acc3); animation: dotPulse 1.8s ease-in-out infinite; }
-  .overall-badge.warn  .badge-dot { background: var(--warn);  box-shadow: 0 0 8px var(--warn);  animation: dotPulse 1s ease-in-out infinite; }
-  .overall-badge.error .badge-dot { background: var(--red);   box-shadow: 0 0 8px var(--red);   animation: dotPulse .6s ease-in-out infinite; }
-  .overall-badge.checking .badge-dot { background: var(--dim); animation: dotSpin .8s linear infinite; }
-  @keyframes dotPulse { 0%,100%{ transform:scale(1); opacity:1 } 50%{ transform:scale(1.4); opacity:.6 } }
-  @keyframes dotSpin  { 0%{ box-shadow: 2px 0 0 var(--dim) } 25%{ box-shadow: 0 2px 0 var(--dim) } 50%{ box-shadow: -2px 0 0 var(--dim) } 75%{ box-shadow: 0 -2px 0 var(--dim) } }
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 36px;
+    }
 
-  /* ── LAST UPDATED ── */
-  .last-updated {
-    font-size: 10px;
-    color: var(--dim);
-    letter-spacing: 1px;
-    margin-bottom: 28px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .refresh-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--dim);
-    font-family: 'Orbitron', monospace;
-    font-size: 9px;
-    padding: 3px 10px;
-    border-radius: 2px;
-    cursor: pointer;
-    letter-spacing: 1px;
-    transition: all .2s;
-  }
-  .refresh-btn:hover { border-color: var(--acc); color: var(--acc); }
-  .refresh-btn:active { transform: scale(.95); }
-  .refresh-btn.spinning { animation: btnSpin .6s linear infinite; }
-  @keyframes btnSpin { from{ opacity:1 } 50%{ opacity:.4 } to{ opacity:1 } }
+    .logo-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
 
-  /* ── SECTION ── */
-  .section { margin-bottom: 32px; }
-  .section-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    color: var(--dim);
-    letter-spacing: 3px;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .section-title::before {
-    content: '';
-    display: inline-block;
-    width: 3px; height: 12px;
-    background: var(--acc);
-    box-shadow: 0 0 6px var(--acc);
-    flex-shrink: 0;
-  }
+    .logo-sub {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      color: var(--acc2);
+      letter-spacing: 3px;
+      text-shadow: 0 0 12px rgba(255, 0, 128, .6);
+    }
 
-  /* ── SERVICE CARD ── */
-  .services { display: flex; flex-direction: column; gap: 8px; }
+    .logo {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(16px, 3.5vw, 26px);
+      color: var(--acc);
+      letter-spacing: 5px;
+      text-shadow: 0 0 10px rgba(0, 245, 255, .8), 0 0 40px rgba(0, 245, 255, .3);
+      animation: logoFlicker 6s ease-in-out infinite;
+    }
 
-  .svc {
-    display: grid;
-    grid-template-columns: 36px 1fr auto auto;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 18px;
-    background: var(--s0);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color .3s;
-  }
-  .svc::before {
-    content: '';
-    position: absolute; top: 0; left: 0; bottom: 0;
-    width: 3px;
-    background: var(--border);
-    transition: background .3s, box-shadow .3s;
-  }
-  .svc.ok::before    { background: var(--acc3); box-shadow: 0 0 8px var(--acc3); }
-  .svc.warn::before  { background: var(--warn);  box-shadow: 0 0 8px var(--warn); }
-  .svc.error::before { background: var(--red);   box-shadow: 0 0 8px var(--red); }
-  .svc.ok    { border-color: rgba(170,255,0,.2); }
-  .svc.warn  { border-color: rgba(255,170,0,.2); }
-  .svc.error { border-color: rgba(255,51,85,.2); }
+    @keyframes logoFlicker {
 
-  /* icon */
-  .svc-icon {
-    width: 36px; height: 36px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 6px;
-    background: var(--s1);
-    border: 1px solid var(--border);
-    flex-shrink: 0;
-  }
+      0%,
+      92%,
+      100% {
+        opacity: 1
+      }
 
-  /* info */
-  .svc-info { min-width: 0; }
-  .svc-name {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    color: var(--tx);
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-  }
-  .svc-desc {
-    font-size: 11px;
-    color: var(--dim);
-    letter-spacing: .5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .svc-detail {
-    font-size: 10px;
-    color: var(--dim);
-    margin-top: 3px;
-    letter-spacing: .5px;
-    transition: color .3s;
-  }
-  .svc.ok    .svc-detail { color: rgba(170,255,0,.7); }
-  .svc.warn  .svc-detail { color: rgba(255,170,0,.7); }
-  .svc.error .svc-detail { color: rgba(255,51,85,.7); }
+      93% {
+        opacity: .75
+      }
 
-  /* latency */
-  .svc-latency {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    color: var(--dim);
-    letter-spacing: 1px;
-    text-align: right;
-    flex-shrink: 0;
-    min-width: 60px;
-  }
-  .svc.ok    .svc-latency { color: var(--acc3); }
-  .svc.warn  .svc-latency { color: var(--warn); }
-  .svc.error .svc-latency { color: var(--red); }
+      95% {
+        opacity: 1
+      }
 
-  /* status pill */
-  .svc-status {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 8px;
-    padding: 4px 8px;
-    border-radius: 2px;
-    letter-spacing: 1px;
-    border: 1px solid;
-    flex-shrink: 0;
-    min-width: 72px;
-    text-align: center;
-    transition: all .3s;
-  }
-  .svc-status.ok      { border-color: var(--acc3); color: var(--acc3); background: rgba(170,255,0,.06); }
-  .svc-status.warn    { border-color: var(--warn);  color: var(--warn);  background: rgba(255,170,0,.06); }
-  .svc-status.error   { border-color: var(--red);   color: var(--red);   background: rgba(255,51,85,.06); }
-  .svc-status.checking{ border-color: var(--dim);   color: var(--dim);   background: transparent; animation: blink 1s step-end infinite; }
-  @keyframes blink { 0%,100%{ opacity:1 } 50%{ opacity:.3 } }
+      97% {
+        opacity: .85
+      }
+    }
 
-  @media(max-width:560px) {
-    .svc { grid-template-columns: 28px 1fr auto; gap: 10px; }
-    .svc-latency { display: none; }
-    .svc-icon { width: 28px; height: 28px; }
-  }
+    /* ── OVERALL BADGE ── */
+    .overall-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-radius: 3px;
+      border: 2px solid;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      transition: all .3s;
+    }
 
-  /* ── UPTIME BAR ── */
-  .uptime-section { margin-top: 6px; }
-  .uptime-label {
-    font-size: 9px;
-    color: var(--dim);
-    letter-spacing: 2px;
-    margin-bottom: 6px;
-  }
-  .uptime-bars {
-    display: flex;
-    gap: 2px;
-    align-items: flex-end;
-    height: 30px;
-  }
-  .uptime-bar {
-    flex: 1;
-    border-radius: 1px;
-    background: var(--s1);
-    transition: background .2s, height .3s;
-    cursor: default;
-    position: relative;
-  }
-  .uptime-bar.ok    { background: rgba(170,255,0,.5); }
-  .uptime-bar.warn  { background: rgba(255,170,0,.6); }
-  .uptime-bar.error { background: rgba(255,51,85,.7); }
-  .uptime-bar:hover::after {
-    content: attr(data-tip);
-    position: absolute;
-    bottom: 110%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--s0);
-    border: 1px solid var(--border);
-    color: var(--tx);
-    font-size: 9px;
-    padding: 3px 7px;
-    border-radius: 2px;
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 10;
-  }
+    .overall-badge.ok {
+      border-color: var(--acc3);
+      color: var(--acc3);
+      background: rgba(170, 255, 0, .07);
+      box-shadow: 0 0 20px rgba(170, 255, 0, .2);
+    }
 
-  /* ── INFO CARDS ── */
-  .info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 10px;
-    margin-bottom: 32px;
-  }
-  .info-card {
-    background: var(--s0);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 14px 16px;
-    position: relative;
-    overflow: hidden;
-  }
-  .info-card::after {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, var(--acc), var(--acc2));
-    opacity: .5;
-  }
-  .info-card-label {
-    font-size: 9px;
-    color: var(--dim);
-    letter-spacing: 2px;
-    margin-bottom: 6px;
-  }
-  .info-card-val {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
-    color: var(--acc);
-    letter-spacing: 2px;
-  }
-  .info-card-val.green { color: var(--acc3); }
-  .info-card-val.pink  { color: var(--acc2); }
+    .overall-badge.warn {
+      border-color: var(--warn);
+      color: var(--warn);
+      background: rgba(255, 170, 0, .07);
+      box-shadow: 0 0 20px rgba(255, 170, 0, .2);
+    }
 
-  /* ── FOOTER ── */
-  .footer {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background: var(--s0);
-    border-top: 1px solid var(--border);
-    padding: 6px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 10px;
-    color: var(--dim);
-    letter-spacing: 1px;
-    z-index: 10;
-  }
-  .footer a {
-    color: var(--dim);
-    text-decoration: none;
-    transition: color .2s;
-  }
-  .footer a:hover { color: var(--acc); }
+    .overall-badge.error {
+      border-color: var(--red);
+      color: var(--red);
+      background: rgba(255, 51, 85, .07);
+      box-shadow: 0 0 20px rgba(255, 51, 85, .2);
+    }
 
-  /* ── NOTICE BANNER ── */
-  .notice {
-    display: none;
-    background: rgba(255,170,0,.08);
-    border: 1px solid rgba(255,170,0,.35);
-    border-radius: 3px;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    font-size: 11px;
-    color: var(--warn);
-    letter-spacing: .5px;
-    line-height: 1.7;
-    animation: noticeIn .3s ease;
-  }
-  .notice.show { display: block; }
-  @keyframes noticeIn { from{ opacity:0; transform:translateY(-6px) } to{ opacity:1; transform:none } }
-</style>
+    .overall-badge.checking {
+      border-color: var(--dim);
+      color: var(--dim);
+      background: transparent;
+    }
+
+    .badge-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .overall-badge.ok .badge-dot {
+      background: var(--acc3);
+      box-shadow: 0 0 8px var(--acc3);
+      animation: dotPulse 1.8s ease-in-out infinite;
+    }
+
+    .overall-badge.warn .badge-dot {
+      background: var(--warn);
+      box-shadow: 0 0 8px var(--warn);
+      animation: dotPulse 1s ease-in-out infinite;
+    }
+
+    .overall-badge.error .badge-dot {
+      background: var(--red);
+      box-shadow: 0 0 8px var(--red);
+      animation: dotPulse .6s ease-in-out infinite;
+    }
+
+    .overall-badge.checking .badge-dot {
+      background: var(--dim);
+      animation: dotSpin .8s linear infinite;
+    }
+
+    @keyframes dotPulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1
+      }
+
+      50% {
+        transform: scale(1.4);
+        opacity: .6
+      }
+    }
+
+    @keyframes dotSpin {
+      0% {
+        box-shadow: 2px 0 0 var(--dim)
+      }
+
+      25% {
+        box-shadow: 0 2px 0 var(--dim)
+      }
+
+      50% {
+        box-shadow: -2px 0 0 var(--dim)
+      }
+
+      75% {
+        box-shadow: 0 -2px 0 var(--dim)
+      }
+    }
+
+    /* ── LAST UPDATED ── */
+    .last-updated {
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .refresh-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      font-family: 'Orbitron', monospace;
+      font-size: 9px;
+      padding: 3px 10px;
+      border-radius: 2px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all .2s;
+    }
+
+    .refresh-btn:hover {
+      border-color: var(--acc);
+      color: var(--acc);
+    }
+
+    .refresh-btn:active {
+      transform: scale(.95);
+    }
+
+    .refresh-btn.spinning {
+      animation: btnSpin .6s linear infinite;
+    }
+
+    @keyframes btnSpin {
+      from {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .4
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    /* ── SECTION ── */
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 3px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      display: inline-block;
+      width: 3px;
+      height: 12px;
+      background: var(--acc);
+      box-shadow: 0 0 6px var(--acc);
+      flex-shrink: 0;
+    }
+
+    /* ── SERVICE CARD ── */
+    .services {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .svc {
+      display: grid;
+      grid-template-columns: 36px 1fr auto auto;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      background: var(--s0);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .3s;
+    }
+
+    .svc::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--border);
+      transition: background .3s, box-shadow .3s;
+    }
+
+    .svc.ok::before {
+      background: var(--acc3);
+      box-shadow: 0 0 8px var(--acc3);
+    }
+
+    .svc.warn::before {
+      background: var(--warn);
+      box-shadow: 0 0 8px var(--warn);
+    }
+
+    .svc.error::before {
+      background: var(--red);
+      box-shadow: 0 0 8px var(--red);
+    }
+
+    .svc.ok {
+      border-color: rgba(170, 255, 0, .2);
+    }
+
+    .svc.warn {
+      border-color: rgba(255, 170, 0, .2);
+    }
+
+    .svc.error {
+      border-color: rgba(255, 51, 85, .2);
+    }
+
+    /* icon */
+    .svc-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      background: var(--s1);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* info */
+    .svc-info {
+      min-width: 0;
+    }
+
+    .svc-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      color: var(--tx);
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .svc-desc {
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: .5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .svc-detail {
+      font-size: 10px;
+      color: var(--dim);
+      margin-top: 3px;
+      letter-spacing: .5px;
+      transition: color .3s;
+    }
+
+    .svc.ok .svc-detail {
+      color: rgba(170, 255, 0, .7);
+    }
+
+    .svc.warn .svc-detail {
+      color: rgba(255, 170, 0, .7);
+    }
+
+    .svc.error .svc-detail {
+      color: rgba(255, 51, 85, .7);
+    }
+
+    /* latency */
+    .svc-latency {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      text-align: right;
+      flex-shrink: 0;
+      min-width: 60px;
+    }
+
+    .svc.ok .svc-latency {
+      color: var(--acc3);
+    }
+
+    .svc.warn .svc-latency {
+      color: var(--warn);
+    }
+
+    .svc.error .svc-latency {
+      color: var(--red);
+    }
+
+    /* status pill */
+    .svc-status {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      padding: 4px 8px;
+      border-radius: 2px;
+      letter-spacing: 1px;
+      border: 1px solid;
+      flex-shrink: 0;
+      min-width: 72px;
+      text-align: center;
+      transition: all .3s;
+    }
+
+    .svc-status.ok {
+      border-color: var(--acc3);
+      color: var(--acc3);
+      background: rgba(170, 255, 0, .06);
+    }
+
+    .svc-status.warn {
+      border-color: var(--warn);
+      color: var(--warn);
+      background: rgba(255, 170, 0, .06);
+    }
+
+    .svc-status.error {
+      border-color: var(--red);
+      color: var(--red);
+      background: rgba(255, 51, 85, .06);
+    }
+
+    .svc-status.checking {
+      border-color: var(--dim);
+      color: var(--dim);
+      background: transparent;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .3
+      }
+    }
+
+    @media(max-width:560px) {
+      .svc {
+        grid-template-columns: 28px 1fr auto;
+        gap: 10px;
+      }
+
+      .svc-latency {
+        display: none;
+      }
+
+      .svc-icon {
+        width: 28px;
+        height: 28px;
+      }
+    }
+
+    /* ── UPTIME BAR ── */
+    .uptime-section {
+      margin-top: 6px;
+    }
+
+    .uptime-label {
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .uptime-bars {
+      display: flex;
+      gap: 2px;
+      align-items: flex-end;
+      height: 30px;
+    }
+
+    .uptime-bar {
+      flex: 1;
+      border-radius: 1px;
+      background: var(--s1);
+      transition: background .2s, height .3s;
+      cursor: default;
+      position: relative;
+    }
+
+    .uptime-bar.ok {
+      background: rgba(170, 255, 0, .5);
+    }
+
+    .uptime-bar.warn {
+      background: rgba(255, 170, 0, .6);
+    }
+
+    .uptime-bar.error {
+      background: rgba(255, 51, 85, .7);
+    }
+
+    .uptime-bar:hover::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--s0);
+      border: 1px solid var(--border);
+      color: var(--tx);
+      font-size: 9px;
+      padding: 3px 7px;
+      border-radius: 2px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* ── INFO CARDS ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .info-card {
+      background: var(--s0);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .info-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--acc), var(--acc2));
+      opacity: .5;
+    }
+
+    .info-card-label {
+      font-size: 9px;
+      color: var(--dim);
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .info-card-val {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 14px;
+      color: var(--acc);
+      letter-spacing: 2px;
+    }
+
+    .info-card-val.green {
+      color: var(--acc3);
+    }
+
+    .info-card-val.pink {
+      color: var(--acc2);
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--s0);
+      border-top: 1px solid var(--border);
+      padding: 6px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      z-index: 10;
+    }
+
+    .footer a {
+      color: var(--dim);
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    .footer a:hover {
+      color: var(--acc);
+    }
+
+    /* ── NOTICE BANNER ── */
+    .notice {
+      display: none;
+      background: rgba(255, 170, 0, .08);
+      border: 1px solid rgba(255, 170, 0, .35);
+      border-radius: 3px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 11px;
+      color: var(--warn);
+      letter-spacing: .5px;
+      line-height: 1.7;
+      animation: noticeIn .3s ease;
+    }
+
+    .notice.show {
+      display: block;
+    }
+
+    @keyframes noticeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="page">
+  <div class="page">
 
-  <!-- HEADER -->
-  <div class="header">
-    <div class="logo-wrap">
-      <div class="logo-sub">▶ SYSTEM MONITOR</div>
-      <div class="logo">STATUS</div>
+    <!-- HEADER -->
+    <div class="header">
+      <div class="logo-wrap">
+        <div class="logo-sub">▶ SYSTEM MONITOR</div>
+        <div class="logo">STATUS</div>
+      </div>
+      <div class="overall-badge checking" id="overallBadge">
+        <div class="badge-dot"></div>
+        <span id="overallText">CHECKING...</span>
+      </div>
     </div>
-    <div class="overall-badge checking" id="overallBadge">
-      <div class="badge-dot"></div>
-      <span id="overallText">CHECKING...</span>
+
+    <!-- LAST UPDATED -->
+    <div class="last-updated">
+      <span id="lastUpdated">—</span>
+      <button class="refresh-btn" id="refreshBtn" onclick="runChecks()">↺ 再チェック</button>
     </div>
+
+    <!-- NOTICE -->
+    <div class="notice" id="noticeBanner"></div>
+
+    <!-- INFO GRID -->
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-label">APP VERSION</div>
+        <div class="info-card-val pink" id="infoVersion">---</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">SERVICES</div>
+        <div class="info-card-val green" id="infoServices">—/—</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">LAST CHECK</div>
+        <div class="info-card-val" id="infoTime">—</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">RESPONSE AVG</div>
+        <div class="info-card-val green" id="infoAvgMs">— ms</div>
+      </div>
+    </div>
+
+    <!-- CORE SERVICES -->
+    <div class="section">
+      <div class="section-title">CORE SERVICES</div>
+      <div class="services" id="coreServices"></div>
+    </div>
+
+    <!-- EXTERNAL APIs -->
+    <div class="section">
+      <div class="section-title">EXTERNAL APIs</div>
+      <div class="services" id="externalServices"></div>
+    </div>
+
+    <!-- UPTIME (SIMULATED HISTORY) -->
+    <div class="section uptime-section">
+      <div class="section-title">CHECK HISTORY（直近 30 回）</div>
+      <div class="uptime-label" id="uptimeLabel">LOADING...</div>
+      <div class="uptime-bars" id="uptimeBars"></div>
+    </div>
+
   </div>
 
-  <!-- LAST UPDATED -->
-  <div class="last-updated">
-    <span id="lastUpdated">—</span>
-    <button class="refresh-btn" id="refreshBtn" onclick="runChecks()">↺ 再チェック</button>
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>TETRIS BATTLE ONLINE — SYSTEM STATUS</span>
+    <a href="index.html">← メニューに戻る</a>
   </div>
 
-  <!-- NOTICE -->
-  <div class="notice" id="noticeBanner"></div>
-
-  <!-- INFO GRID -->
-  <div class="info-grid">
-    <div class="info-card">
-      <div class="info-card-label">APP VERSION</div>
-      <div class="info-card-val pink" id="infoVersion">---</div>
-    </div>
-    <div class="info-card">
-      <div class="info-card-label">SERVICES</div>
-      <div class="info-card-val green" id="infoServices">—/—</div>
-    </div>
-    <div class="info-card">
-      <div class="info-card-label">LAST CHECK</div>
-      <div class="info-card-val" id="infoTime">—</div>
-    </div>
-    <div class="info-card">
-      <div class="info-card-label">RESPONSE AVG</div>
-      <div class="info-card-val green" id="infoAvgMs">— ms</div>
-    </div>
-  </div>
-
-  <!-- CORE SERVICES -->
-  <div class="section">
-    <div class="section-title">CORE SERVICES</div>
-    <div class="services" id="coreServices"></div>
-  </div>
-
-  <!-- EXTERNAL APIs -->
-  <div class="section">
-    <div class="section-title">EXTERNAL APIs</div>
-    <div class="services" id="externalServices"></div>
-  </div>
-
-  <!-- UPTIME (SIMULATED HISTORY) -->
-  <div class="section uptime-section">
-    <div class="section-title">CHECK HISTORY（直近 30 回）</div>
-    <div class="uptime-label" id="uptimeLabel">LOADING...</div>
-    <div class="uptime-bars" id="uptimeBars"></div>
-  </div>
-
-</div>
-
-<!-- FOOTER -->
-<div class="footer">
-  <span>TETRIS BATTLE ONLINE — SYSTEM STATUS</span>
-  <a href="index.html">← メニューに戻る</a>
-</div>
-
-<script type="module">
+  <script type="module">
     import { mountNav } from './nav.js';
     mountNav();
 
-import { APP_VERSION } from './config.js';
-document.getElementById('infoVersion').textContent = APP_VERSION;
+    import { APP_VERSION } from './config.js';
+    document.getElementById('infoVersion').textContent = APP_VERSION;
 
-// ══════════════════════════════════════════════════════════
-// CHECK HISTORY (sessionStorage)
-// ══════════════════════════════════════════════════════════
-const HISTORY_KEY = 'status_history';
-const MAX_HISTORY = 30;
-function loadHistory() {
-  try { return JSON.parse(sessionStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
-}
-function saveHistory(arr) {
-  try { sessionStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-MAX_HISTORY))); } catch {}
-}
+    // ══════════════════════════════════════════════════════════
+    // CHECK HISTORY (sessionStorage)
+    // ══════════════════════════════════════════════════════════
+    const HISTORY_KEY = 'status_history';
+    const MAX_HISTORY = 30;
+    function loadHistory() {
+      try { return JSON.parse(sessionStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+    }
+    function saveHistory(arr) {
+      try { sessionStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(-MAX_HISTORY))); } catch { }
+    }
 
-// ══════════════════════════════════════════════════════════
-// FIREBASE CONFIG（アプリと共通）
-// ══════════════════════════════════════════════════════════
-const FB_CFG = {
-  apiKey:        "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
-  authDomain:    "tetris-online-9c827.firebaseapp.com",
-  databaseURL:   "https://tetris-online-9c827-default-rtdb.firebaseio.com",
-  projectId:     "tetris-online-9c827",
-  storageBucket: "tetris-online-9c827.firebasestorage.app",
-  messagingSenderId: "1045054992314",
-  appId:         "1:1045054992314:web:7fea20b9be543d7cab3783"
-};
-
-// ── キャッシュ済み Firebase インスタンス ──
-let _fbApp = null, _fbDb = null, _fbFs = null;
-
-async function getFirebaseApp() {
-  if (_fbApp) return _fbApp;
-  const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-  _fbApp = getApps().length ? getApps()[0] : initializeApp(FB_CFG);
-  return _fbApp;
-}
-async function getFirebaseDB() {
-  if (_fbDb) return _fbDb;
-  const app = await getFirebaseApp();
-  const { getDatabase } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-  _fbDb = getDatabase(app);
-  return _fbDb;
-}
-async function getFirebaseFS() {
-  if (_fbFs) return _fbFs;
-  const app = await getFirebaseApp();
-  const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-  _fbFs = getFirestore(app);
-  return _fbFs;
-}
-
-// ══════════════════════════════════════════════════════════
-// SERVICE DEFINITIONS
-// ══════════════════════════════════════════════════════════
-const CORE_SERVICES = [
-  {
-    id: 'firebase-rtdb',
-    name: 'FIREBASE RTDB',
-    desc: 'リアルタイム対戦 / プレイリスト同期',
-    icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="#ff9800"><path d="M3 17L6.5 3l4.5 8.5L14.5 7 17 17H3z" opacity=".7"/><path d="M6.5 3L11 11.5 8.5 13 6.5 3z"/></svg>`,
-    check: checkFirebaseRTDB,
-  },
-  {
-    id: 'firebase-firestore',
-    name: 'FIREBASE FIRESTORE',
-    desc: 'サイトログ / 管理コンソール',
-    icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="#ff9800"><rect x="3" y="3" width="14" height="4" rx="1" opacity=".5"/><rect x="3" y="9" width="14" height="4" rx="1" opacity=".75"/><rect x="3" y="15" width="14" height="2" rx="1"/></svg>`,
-    check: checkFirebaseFirestore,
-  },
-  {
-    id: 'google-fonts',
-    name: 'GOOGLE FONTS',
-    desc: 'UI フォント（Orbitron / Press Start 2P）',
-    icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#4285f4" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><path d="M10 3v14M3 10h14"/></svg>`,
-    check: checkGoogleFonts,
-  },
-];
-
-const EXTERNAL_SERVICES = [
-  {
-    id: 'youtube-iframe',
-    name: 'YOUTUBE IFRAME API',
-    desc: 'BGM プレーヤー（shell.html）',
-    icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="#ff0000"><rect x="1" y="5" width="18" height="10" rx="3"/><polygon points="8,8 8,12 13,10" fill="white"/></svg>`,
-    check: checkYouTubeIframe,
-  },
-  {
-    id: 'youtube-api',
-    name: 'YOUTUBE DATA API',
-    desc: '楽曲検索機能',
-    icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#ff0000" stroke-width="1.6"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="12.5" y1="12.5" x2="17" y2="17"/></svg>`,
-    check: checkYouTubeDataAPI,
-  },
-];
-
-// ══════════════════════════════════════════════════════════
-// INDIVIDUAL CHECKS
-// ══════════════════════════════════════════════════════════
-
-// ── Firebase RTDB ──
-// Firebase SDK の .info/connected を購読して WebSocket 接続状態を確認する。
-// .info/connected は接続確立時に true になる。初回は false が来てから true になるため
-// true になるまで最大 8 秒待ち続ける。
-async function checkFirebaseRTDB() {
-  const t0 = performance.now();
-  return new Promise(async (resolve) => {
-    let resolved = false;
-    let unsub = null;
-
-    const done = (result) => {
-      if (resolved) return;
-      resolved = true;
-      if (unsub) { try { unsub(); } catch {} }
-      resolve(result);
+    // ══════════════════════════════════════════════════════════
+    // FIREBASE CONFIG（アプリと共通）
+    // ══════════════════════════════════════════════════════════
+    const FB_CFG = {
+      apiKey: "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
+      authDomain: "tetris-online-9c827.firebaseapp.com",
+      databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com",
+      projectId: "tetris-online-9c827",
+      storageBucket: "tetris-online-9c827.firebasestorage.app",
+      messagingSenderId: "1045054992314",
+      appId: "1:1045054992314:web:7fea20b9be543d7cab3783"
     };
 
-    const timer = setTimeout(() => {
-      done({ status: 'warn', ms: null, detail: '接続タイムアウト（8秒）—ネットワーク確認を' });
-    }, 8000);
+    // ── キャッシュ済み Firebase インスタンス ──
+    let _fbApp = null, _fbDb = null, _fbFs = null;
 
-    try {
-      const db = await getFirebaseDB();
-      const { ref, onValue } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-      const connRef = ref(db, '.info/connected');
-
-      // onValue の戻り値が unsubscribe 関数（Modular SDK v10）
-      unsub = onValue(connRef, (snap) => {
-        const ms = Math.round(performance.now() - t0);
-        if (snap.val() === true) {
-          clearTimeout(timer);
-          done({ status: 'ok', ms, detail: 'WebSocket 接続確立・正常' });
-        }
-        // false の場合は接続中なのでそのまま待ち続ける（タイムアウトに任せる）
-      }, (err) => {
-        clearTimeout(timer);
-        const ms = Math.round(performance.now() - t0);
-        done({ status: 'error', ms, detail: err.message?.slice(0, 50) || 'SDK エラー' });
-      });
-    } catch(e) {
-      clearTimeout(timer);
-      done({ status: 'error', ms: null, detail: 'SDK 初期化失敗: ' + (e.message?.slice(0, 40) || '') });
+    async function getFirebaseApp() {
+      if (_fbApp) return _fbApp;
+      const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      _fbApp = getApps().length ? getApps()[0] : initializeApp(FB_CFG);
+      return _fbApp;
     }
-  });
-}
-
-// ── Firebase Firestore ──
-// SDK を使って site_logs コレクションへの読み取りを試みる。
-// セキュリティルールで拒否される場合でも「接続できた」ことがわかる。
-async function checkFirebaseFirestore() {
-  const t0 = performance.now();
-  try {
-    const fs = await getFirebaseFS();
-    const { collection, getDocs, query, limit } =
-      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    // limit(1) で最小限のデータのみ取得
-    const q = query(collection(fs, 'site_logs'), limit(1));
-    await getDocs(q);
-    const ms = Math.round(performance.now() - t0);
-    return { status: 'ok', ms, detail: 'Firestore 接続・読み取り 正常' };
-  } catch(e) {
-    const ms = Math.round(performance.now() - t0);
-    const msg = e.message || '';
-    const code = e.code || '';
-    // permission-denied = 接続はできているがルールで拒否 → サービス自体は正常
-    if (code === 'permission-denied' || msg.includes('permission-denied') || msg.includes('PERMISSION_DENIED')) {
-      return { status: 'ok', ms, detail: 'Firestore 接続正常（セキュリティルール適用中）' };
+    async function getFirebaseDB() {
+      if (_fbDb) return _fbDb;
+      const app = await getFirebaseApp();
+      const { getDatabase } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+      _fbDb = getDatabase(app);
+      return _fbDb;
     }
-    // missing collection は OK（コレクションが空なだけ）
-    if (code === 'not-found' || msg.includes('not-found')) {
-      return { status: 'ok', ms, detail: 'Firestore 接続正常（コレクションなし）' };
+    async function getFirebaseFS() {
+      if (_fbFs) return _fbFs;
+      const app = await getFirebaseApp();
+      const { getFirestore } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      _fbFs = getFirestore(app);
+      return _fbFs;
     }
-    // ネットワーク・サービス障害
-    if (code === 'unavailable' || msg.includes('unavailable') || msg.includes('Failed to fetch') || msg.includes('network')) {
-      return { status: 'error', ms: ms || null, detail: 'Firestore 到達不可: ' + msg.slice(0, 40) };
-    }
-    return { status: 'warn', ms, detail: (msg.slice(0, 50) || 'Firestore 警告') };
-  }
-}
 
-// ── Google Fonts ──
-// Google Fonts の CSS エンドポイントは CORS ヘッダーを返すため fetch が使える。
-// fetch を先に試し、CORS エラーが出た場合は <link> タグの onload で確認する。
-function checkGoogleFonts() {
-  return new Promise((resolve) => {
-    const t0 = performance.now();
-    const url = 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400&display=swap';
+    // ══════════════════════════════════════════════════════════
+    // SERVICE DEFINITIONS
+    // ══════════════════════════════════════════════════════════
+    const CORE_SERVICES = [
+      {
+        id: 'firebase-rtdb',
+        name: 'FIREBASE RTDB',
+        desc: 'リアルタイム対戦 / プレイリスト同期',
+        icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="#ff9800"><path d="M3 17L6.5 3l4.5 8.5L14.5 7 17 17H3z" opacity=".7"/><path d="M6.5 3L11 11.5 8.5 13 6.5 3z"/></svg>`,
+        check: checkFirebaseRTDB,
+      },
+      {
+        id: 'firebase-firestore',
+        name: 'FIREBASE FIRESTORE',
+        desc: 'サイトログ / 管理コンソール',
+        icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="#ff9800"><rect x="3" y="3" width="14" height="4" rx="1" opacity=".5"/><rect x="3" y="9" width="14" height="4" rx="1" opacity=".75"/><rect x="3" y="15" width="14" height="2" rx="1"/></svg>`,
+        check: checkFirebaseFirestore,
+      },
+      {
+        id: 'google-fonts',
+        name: 'GOOGLE FONTS',
+        desc: 'UI フォント（Orbitron / Press Start 2P）',
+        icon: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#4285f4" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><path d="M10 3v14M3 10h14"/></svg>`,
+        check: checkGoogleFonts,
+      },
+    ];
 
-    // fetch を優先（CORS対応済みのため通常は動作する）
-    fetch(url, { cache: 'no-store', credentials: 'omit' })
-      .then(res => {
-        const ms = Math.round(performance.now() - t0);
-        if (res.ok) {
-          resolve({ status: 'ok', ms, detail: 'Google Fonts 配信 正常' });
-        } else {
-          resolve({ status: 'warn', ms, detail: `HTTP ${res.status}` });
-        }
-      })
-      .catch(() => {
-        // CORS エラーやネットワークエラー時は <link> タグで再確認
-        const link = document.createElement('link');
-        link.rel  = 'stylesheet';
-        link.href = url + '&t=' + Date.now(); // キャッシュ回避
+    const EXTERNAL_SERVICES = [
+    ];
+
+    // ══════════════════════════════════════════════════════════
+    // INDIVIDUAL CHECKS
+    // ══════════════════════════════════════════════════════════
+
+    // ── Firebase RTDB ──
+    // Firebase SDK の .info/connected を購読して WebSocket 接続状態を確認する。
+    // .info/connected は接続確立時に true になる。初回は false が来てから true になるため
+    // true になるまで最大 8 秒待ち続ける。
+    async function checkFirebaseRTDB() {
+      const t0 = performance.now();
+      return new Promise(async (resolve) => {
+        let resolved = false;
+        let unsub = null;
+
+        const done = (result) => {
+          if (resolved) return;
+          resolved = true;
+          if (unsub) { try { unsub(); } catch { } }
+          resolve(result);
+        };
 
         const timer = setTimeout(() => {
-          link.remove();
-          resolve({ status: 'warn', ms: null, detail: 'Google Fonts タイムアウト（6秒）' });
-        }, 6000);
+          done({ status: 'warn', ms: null, detail: '接続タイムアウト（8秒）—ネットワーク確認を' });
+        }, 8000);
 
-        link.onload = () => {
+        try {
+          const db = await getFirebaseDB();
+          const { ref, onValue } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+          const connRef = ref(db, '.info/connected');
+
+          // onValue の戻り値が unsubscribe 関数（Modular SDK v10）
+          unsub = onValue(connRef, (snap) => {
+            const ms = Math.round(performance.now() - t0);
+            if (snap.val() === true) {
+              clearTimeout(timer);
+              done({ status: 'ok', ms, detail: 'WebSocket 接続確立・正常' });
+            }
+            // false の場合は接続中なのでそのまま待ち続ける（タイムアウトに任せる）
+          }, (err) => {
+            clearTimeout(timer);
+            const ms = Math.round(performance.now() - t0);
+            done({ status: 'error', ms, detail: err.message?.slice(0, 50) || 'SDK エラー' });
+          });
+        } catch (e) {
           clearTimeout(timer);
-          const ms = Math.round(performance.now() - t0);
-          link.remove();
-          resolve({ status: 'ok', ms, detail: 'Google Fonts 配信 正常（リンクタグ確認）' });
-        };
-        link.onerror = () => {
-          clearTimeout(timer);
-          const ms = Math.round(performance.now() - t0);
-          link.remove();
-          resolve({ status: 'error', ms, detail: 'Google Fonts サーバー 到達不可' });
-        };
-        document.head.appendChild(link);
+          done({ status: 'error', ms: null, detail: 'SDK 初期化失敗: ' + (e.message?.slice(0, 40) || '') });
+        }
       });
-  });
-}
-
-// ── YouTube IFrame API ──
-// fetchではなく <script> タグを動的生成して onload/onerror で確認。
-// すでに読み込み済みの場合はスキップして即 OK を返す。
-function checkYouTubeIframe() {
-  return new Promise((resolve) => {
-    const t0 = performance.now();
-
-    // 既にロード済みなら即OK
-    if (typeof YT !== 'undefined' && YT.Player) {
-      resolve({ status: 'ok', ms: 0, detail: 'IFrame API 読み込み済み・正常' });
-      return;
     }
 
-    const timer = setTimeout(() => {
-      resolve({ status: 'warn', ms: null, detail: 'スクリプトロードタイムアウト（6秒）' });
-    }, 6000);
-
-    const script = document.createElement('script');
-    script.src = 'https://www.youtube.com/iframe_api';
-    script.id  = '_yt_probe_' + Date.now();
-
-    script.onload = () => {
-      clearTimeout(timer);
-      const ms = Math.round(performance.now() - t0);
-      resolve({ status: 'ok', ms, detail: 'IFrame API スクリプト ロード正常' });
-    };
-    script.onerror = () => {
-      clearTimeout(timer);
-      const ms = Math.round(performance.now() - t0);
-      resolve({ status: 'error', ms, detail: 'YouTube スクリプトサーバー 到達不可' });
-    };
-
-    document.head.appendChild(script);
-  });
-}
-
-// ── YouTube Data API v3 ──
-// googleapis.com は CORS ヘッダーを返すため fetch(mode:'cors') が使える。
-// 実際の API キーを使って /videos エンドポイントを叩き、200 または 400（keyエラー）で正常と判断。
-// ※ APIキーが無効・制限超過の場合は 403 が返るため別途判定する。
-async function checkYouTubeDataAPI() {
-  const t0 = performance.now();
-  // yt_api_key を localStorage に保存している場合はそれを使う（shell.html と共通）
-  let apiKey = '';
-  try {
-    apiKey = localStorage.getItem('yt_api_key') || '';
-  } catch {}
-
-  // キーがある場合: 実リクエスト
-  if (apiKey) {
-    try {
-      const url = `https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&key=${encodeURIComponent(apiKey)}`;
-      const res = await Promise.race([
-        fetch(url, { cache: 'no-store' }),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 7000))
-      ]);
-      const ms = Math.round(performance.now() - t0);
-      if (res.ok) return { status: 'ok', ms, detail: 'Data API 正常（キー有効）' };
-      if (res.status === 403) {
-        const body = await res.json().catch(() => ({}));
-        const reason = body?.error?.errors?.[0]?.reason || '';
-        if (reason === 'quotaExceeded') return { status: 'warn', ms, detail: 'APIクォータ超過' };
-        if (reason === 'keyInvalid')    return { status: 'warn', ms, detail: 'APIキーが無効' };
-        return { status: 'warn', ms, detail: `403 Forbidden (${reason || 'アクセス拒否'})` };
+    // ── Firebase Firestore ──
+    // SDK を使って site_logs コレクションへの読み取りを試みる。
+    // セキュリティルールで拒否される場合でも「接続できた」ことがわかる。
+    async function checkFirebaseFirestore() {
+      const t0 = performance.now();
+      try {
+        const fs = await getFirebaseFS();
+        const { collection, getDocs, query, limit } =
+          await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+        // limit(1) で最小限のデータのみ取得
+        const q = query(collection(fs, 'site_logs'), limit(1));
+        await getDocs(q);
+        const ms = Math.round(performance.now() - t0);
+        return { status: 'ok', ms, detail: 'Firestore 接続・読み取り 正常' };
+      } catch (e) {
+        const ms = Math.round(performance.now() - t0);
+        const msg = e.message || '';
+        const code = e.code || '';
+        // permission-denied = 接続はできているがルールで拒否 → サービス自体は正常
+        if (code === 'permission-denied' || msg.includes('permission-denied') || msg.includes('PERMISSION_DENIED')) {
+          return { status: 'ok', ms, detail: 'Firestore 接続正常（セキュリティルール適用中）' };
+        }
+        // missing collection は OK（コレクションが空なだけ）
+        if (code === 'not-found' || msg.includes('not-found')) {
+          return { status: 'ok', ms, detail: 'Firestore 接続正常（コレクションなし）' };
+        }
+        // ネットワーク・サービス障害
+        if (code === 'unavailable' || msg.includes('unavailable') || msg.includes('Failed to fetch') || msg.includes('network')) {
+          return { status: 'error', ms: ms || null, detail: 'Firestore 到達不可: ' + msg.slice(0, 40) };
+        }
+        return { status: 'warn', ms, detail: (msg.slice(0, 50) || 'Firestore 警告') };
       }
-      if (res.status === 400) return { status: 'ok', ms, detail: 'Data API 到達正常（リクエストエラー）' };
-      return { status: 'warn', ms, detail: `HTTP ${res.status}` };
-    } catch(e) {
-      const ms = Math.round(performance.now() - t0);
-      return { status: 'error', ms: ms || null, detail: e.message?.slice(0, 50) || 'タイムアウト' };
     }
-  }
 
-  // キーがない場合: no-cors モードでサーバー到達性のみ確認
-  // opaqueレスポンス（type==='opaque'）が返れば Google サーバーには届いている証拠
-  try {
-    const res = await Promise.race([
-      fetch('https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ', {
-        mode: 'no-cors', cache: 'no-store'
-      }),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 7000))
-    ]);
-    const ms = Math.round(performance.now() - t0);
-    // no-cors では status=0, type='opaque' → サーバーには届いた
-    if (res.type === 'opaque' || res.status === 0) {
-      return { status: 'ok', ms, detail: 'Data API サーバー 到達確認（APIキー未設定）' };
+    // ── Google Fonts ──
+    // Google Fonts の CSS エンドポイントは CORS ヘッダーを返すため fetch が使える。
+    // fetch を先に試し、CORS エラーが出た場合は <link> タグの onload で確認する。
+    function checkGoogleFonts() {
+      return new Promise((resolve) => {
+        const t0 = performance.now();
+        const url = 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400&display=swap';
+
+        // fetch を優先（CORS対応済みのため通常は動作する）
+        fetch(url, { cache: 'no-store', credentials: 'omit' })
+          .then(res => {
+            const ms = Math.round(performance.now() - t0);
+            if (res.ok) {
+              resolve({ status: 'ok', ms, detail: 'Google Fonts 配信 正常' });
+            } else {
+              resolve({ status: 'warn', ms, detail: `HTTP ${res.status}` });
+            }
+          })
+          .catch(() => {
+            // CORS エラーやネットワークエラー時は <link> タグで再確認
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = url + '&t=' + Date.now(); // キャッシュ回避
+
+            const timer = setTimeout(() => {
+              link.remove();
+              resolve({ status: 'warn', ms: null, detail: 'Google Fonts タイムアウト（6秒）' });
+            }, 6000);
+
+            link.onload = () => {
+              clearTimeout(timer);
+              const ms = Math.round(performance.now() - t0);
+              link.remove();
+              resolve({ status: 'ok', ms, detail: 'Google Fonts 配信 正常（リンクタグ確認）' });
+            };
+            link.onerror = () => {
+              clearTimeout(timer);
+              const ms = Math.round(performance.now() - t0);
+              link.remove();
+              resolve({ status: 'error', ms, detail: 'Google Fonts サーバー 到達不可' });
+            };
+            document.head.appendChild(link);
+          });
+      });
     }
-    return { status: 'ok', ms, detail: `Data API 到達正常 (HTTP ${res.status})` };
-  } catch(e) {
-    const ms = Math.round(performance.now() - t0);
-    return { status: 'error', ms: ms || null, detail: 'Google API サーバー 到達不可' };
-  }
-}
 
-// ══════════════════════════════════════════════════════════
-// RENDER HELPERS
-// ══════════════════════════════════════════════════════════
-function statusLabel(s) {
-  if (s === 'ok')    return 'ONLINE';
-  if (s === 'warn')  return 'DEGRADED';
-  if (s === 'error') return 'OFFLINE';
-  return 'CHECKING';
-}
+    // ══════════════════════════════════════════════════════════
+    // RENDER HELPERS
+    // ══════════════════════════════════════════════════════════
+    function statusLabel(s) {
+      if (s === 'ok') return 'ONLINE';
+      if (s === 'warn') return 'DEGRADED';
+      if (s === 'error') return 'OFFLINE';
+      return 'CHECKING';
+    }
 
-function renderService(svc, containerId) {
-  const container = document.getElementById(containerId);
-  const existing  = document.getElementById('svc-' + svc.id);
-  const el = existing || document.createElement('div');
-  el.id        = 'svc-' + svc.id;
-  el.className = 'svc checking';
-  el.innerHTML = `
+    function renderService(svc, containerId) {
+      const container = document.getElementById(containerId);
+      const existing = document.getElementById('svc-' + svc.id);
+      const el = existing || document.createElement('div');
+      el.id = 'svc-' + svc.id;
+      el.className = 'svc checking';
+      el.innerHTML = `
     <div class="svc-icon">${svc.icon}</div>
     <div class="svc-info">
       <div class="svc-name">${svc.name}</div>
@@ -822,124 +1011,125 @@ function renderService(svc, containerId) {
     <div class="svc-latency" id="svc-latency-${svc.id}">—</div>
     <div class="svc-status checking" id="svc-status-${svc.id}">CHECKING</div>
   `;
-  if (!existing) container.appendChild(el);
-}
-
-function updateService(svc, result) {
-  const el      = document.getElementById('svc-' + svc.id);
-  const status  = document.getElementById('svc-status-'  + svc.id);
-  const latency = document.getElementById('svc-latency-' + svc.id);
-  const detail  = document.getElementById('svc-detail-'  + svc.id);
-  if (!el) return;
-  el.className       = `svc ${result.status}`;
-  status.className   = `svc-status ${result.status}`;
-  status.textContent = statusLabel(result.status);
-  latency.textContent = result.ms !== null && result.ms !== undefined ? `${result.ms} ms` : '— ms';
-  detail.textContent  = result.detail || '';
-}
-
-// ══════════════════════════════════════════════════════════
-// UPTIME BARS
-// ══════════════════════════════════════════════════════════
-function renderUptimeBars(history) {
-  const container = document.getElementById('uptimeBars');
-  const label     = document.getElementById('uptimeLabel');
-  container.innerHTML = '';
-  if (history.length === 0) {
-    label.textContent = 'データなし（初回チェック実行後に記録されます）';
-    for (let i = 0; i < MAX_HISTORY; i++) {
-      const b = document.createElement('div');
-      b.className = 'uptime-bar'; b.style.height = '14px';
-      b.setAttribute('data-tip', '未計測'); container.appendChild(b);
+      if (!existing) container.appendChild(el);
     }
-    return;
-  }
-  const okCount = history.filter(h => h.overall === 'ok').length;
-  const pct = Math.round((okCount / history.length) * 100);
-  label.textContent = `稼働率 ${pct}%  （直近 ${history.length} 回 / 正常 ${okCount} 回）`;
-  const padded = [...Array(MAX_HISTORY - history.length).fill(null), ...history];
-  padded.forEach(h => {
-    const b = document.createElement('div');
-    b.className = 'uptime-bar ' + (h ? h.overall : '');
-    b.style.height = (h ? (h.overall === 'ok' ? 30 : h.overall === 'warn' ? 20 : 12) : 14) + 'px';
-    b.setAttribute('data-tip', h ? `${h.time}  ${statusLabel(h.overall)}  avg ${h.avgMs ?? '?'}ms` : '未計測');
-    container.appendChild(b);
-  });
-}
 
-// ══════════════════════════════════════════════════════════
-// MAIN CHECK RUNNER
-// ══════════════════════════════════════════════════════════
-let isRunning = false;
+    function updateService(svc, result) {
+      const el = document.getElementById('svc-' + svc.id);
+      const status = document.getElementById('svc-status-' + svc.id);
+      const latency = document.getElementById('svc-latency-' + svc.id);
+      const detail = document.getElementById('svc-detail-' + svc.id);
+      if (!el) return;
+      el.className = `svc ${result.status}`;
+      status.className = `svc-status ${result.status}`;
+      status.textContent = statusLabel(result.status);
+      latency.textContent = result.ms !== null && result.ms !== undefined ? `${result.ms} ms` : '— ms';
+      detail.textContent = result.detail || '';
+    }
 
-window.runChecks = async function() {
-  if (isRunning) return;
-  isRunning = true;
-  const btn = document.getElementById('refreshBtn');
-  btn.classList.add('spinning'); btn.disabled = true;
-  const badge = document.getElementById('overallBadge');
-  const badgeText = document.getElementById('overallText');
-  badge.className = 'overall-badge checking';
-  badgeText.textContent = 'CHECKING...';
+    // ══════════════════════════════════════════════════════════
+    // UPTIME BARS
+    // ══════════════════════════════════════════════════════════
+    function renderUptimeBars(history) {
+      const container = document.getElementById('uptimeBars');
+      const label = document.getElementById('uptimeLabel');
+      container.innerHTML = '';
+      if (history.length === 0) {
+        label.textContent = 'データなし（初回チェック実行後に記録されます）';
+        for (let i = 0; i < MAX_HISTORY; i++) {
+          const b = document.createElement('div');
+          b.className = 'uptime-bar'; b.style.height = '14px';
+          b.setAttribute('data-tip', '未計測'); container.appendChild(b);
+        }
+        return;
+      }
+      const okCount = history.filter(h => h.overall === 'ok').length;
+      const pct = Math.round((okCount / history.length) * 100);
+      label.textContent = `稼働率 ${pct}%  （直近 ${history.length} 回 / 正常 ${okCount} 回）`;
+      const padded = [...Array(MAX_HISTORY - history.length).fill(null), ...history];
+      padded.forEach(h => {
+        const b = document.createElement('div');
+        b.className = 'uptime-bar ' + (h ? h.overall : '');
+        b.style.height = (h ? (h.overall === 'ok' ? 30 : h.overall === 'warn' ? 20 : 12) : 14) + 'px';
+        b.setAttribute('data-tip', h ? `${h.time}  ${statusLabel(h.overall)}  avg ${h.avgMs ?? '?'}ms` : '未計測');
+        container.appendChild(b);
+      });
+    }
 
-  CORE_SERVICES.forEach(s => renderService(s, 'coreServices'));
-  EXTERNAL_SERVICES.forEach(s => renderService(s, 'externalServices'));
+    // ══════════════════════════════════════════════════════════
+    // MAIN CHECK RUNNER
+    // ══════════════════════════════════════════════════════════
+    let isRunning = false;
 
-  const allSvcs = [...CORE_SERVICES, ...EXTERNAL_SERVICES];
-  const results = await Promise.all(
-    allSvcs.map(s => s.check().catch(e => ({ status:'error', ms:null, detail: e.message || 'エラー' })))
-  );
-  results.forEach((r, i) => updateService(allSvcs[i], r));
+    window.runChecks = async function () {
+      if (isRunning) return;
+      isRunning = true;
+      const btn = document.getElementById('refreshBtn');
+      btn.classList.add('spinning'); btn.disabled = true;
+      const badge = document.getElementById('overallBadge');
+      const badgeText = document.getElementById('overallText');
+      badge.className = 'overall-badge checking';
+      badgeText.textContent = 'CHECKING...';
 
-  const statuses   = results.map(r => r.status);
-  const errorCount = statuses.filter(s => s === 'error').length;
-  const warnCount  = statuses.filter(s => s === 'warn').length;
-  const okCount    = statuses.filter(s => s === 'ok').length;
-  const overall    = errorCount > 0 ? 'error' : warnCount > 0 ? 'warn' : 'ok';
-  badge.className = `overall-badge ${overall}`;
-  badgeText.textContent = { ok:'ALL SYSTEMS GO', warn:'PARTIAL OUTAGE', error:'SERVICE DOWN' }[overall];
+      CORE_SERVICES.forEach(s => renderService(s, 'coreServices'));
+      EXTERNAL_SERVICES.forEach(s => renderService(s, 'externalServices'));
 
-  const validMs = results.map(r => r.ms).filter(ms => ms !== null && ms !== undefined);
-  const avgMs = validMs.length ? Math.round(validMs.reduce((a,b) => a+b, 0) / validMs.length) : null;
+      const allSvcs = [...CORE_SERVICES, ...EXTERNAL_SERVICES];
+      const results = await Promise.all(
+        allSvcs.map(s => s.check().catch(e => ({ status: 'error', ms: null, detail: e.message || 'エラー' })))
+      );
+      results.forEach((r, i) => updateService(allSvcs[i], r));
 
-  document.getElementById('infoServices').textContent = `${okCount}/${allSvcs.length}`;
-  document.getElementById('infoAvgMs').textContent    = avgMs !== null ? `${avgMs} ms` : '— ms';
+      const statuses = results.map(r => r.status);
+      const errorCount = statuses.filter(s => s === 'error').length;
+      const warnCount = statuses.filter(s => s === 'warn').length;
+      const okCount = statuses.filter(s => s === 'ok').length;
+      const overall = errorCount > 0 ? 'error' : warnCount > 0 ? 'warn' : 'ok';
+      badge.className = `overall-badge ${overall}`;
+      badgeText.textContent = { ok: 'ALL SYSTEMS GO', warn: 'PARTIAL OUTAGE', error: 'SERVICE DOWN' }[overall];
 
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-  document.getElementById('infoTime').textContent    = timeStr;
-  document.getElementById('lastUpdated').textContent = `最終確認: ${now.toLocaleDateString('ja-JP')} ${timeStr}`;
+      const validMs = results.map(r => r.ms).filter(ms => ms !== null && ms !== undefined);
+      const avgMs = validMs.length ? Math.round(validMs.reduce((a, b) => a + b, 0) / validMs.length) : null;
 
-  const notice = document.getElementById('noticeBanner');
-  if (overall !== 'ok') {
-    notice.innerHTML = '⚠ ' + results.map((r, i) => r.status !== 'ok' ? `${allSvcs[i].name}: ${r.detail}` : null).filter(Boolean).join('<br>⚠ ');
-    notice.classList.add('show');
-  } else {
-    notice.classList.remove('show');
-  }
+      document.getElementById('infoServices').textContent = `${okCount}/${allSvcs.length}`;
+      document.getElementById('infoAvgMs').textContent = avgMs !== null ? `${avgMs} ms` : '— ms';
 
-  const history = loadHistory();
-  history.push({ time: timeStr, overall, avgMs });
-  saveHistory(history);
-  renderUptimeBars(history);
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('infoTime').textContent = timeStr;
+      document.getElementById('lastUpdated').textContent = `最終確認: ${now.toLocaleDateString('ja-JP')} ${timeStr}`;
 
-  btn.classList.remove('spinning'); btn.disabled = false;
-  isRunning = false;
-};
+      const notice = document.getElementById('noticeBanner');
+      if (overall !== 'ok') {
+        notice.innerHTML = '⚠ ' + results.map((r, i) => r.status !== 'ok' ? `${allSvcs[i].name}: ${r.detail}` : null).filter(Boolean).join('<br>⚠ ');
+        notice.classList.add('show');
+      } else {
+        notice.classList.remove('show');
+      }
 
-// ── Auto-refresh 60秒 / タブ復帰時 ──
-let autoTimer = null;
-function startAutoRefresh() {
-  clearInterval(autoTimer);
-  autoTimer = setInterval(() => { if (!document.hidden) runChecks(); }, 60_000);
-}
+      const history = loadHistory();
+      history.push({ time: timeStr, overall, avgMs });
+      saveHistory(history);
+      renderUptimeBars(history);
 
-CORE_SERVICES.forEach(s => renderService(s, 'coreServices'));
-EXTERNAL_SERVICES.forEach(s => renderService(s, 'externalServices'));
-renderUptimeBars(loadHistory());
-runChecks();
-startAutoRefresh();
-document.addEventListener('visibilitychange', () => { if (!document.hidden) runChecks(); });
-</script>
+      btn.classList.remove('spinning'); btn.disabled = false;
+      isRunning = false;
+    };
+
+    // ── Auto-refresh 60秒 / タブ復帰時 ──
+    let autoTimer = null;
+    function startAutoRefresh() {
+      clearInterval(autoTimer);
+      autoTimer = setInterval(() => { if (!document.hidden) runChecks(); }, 60_000);
+    }
+
+    CORE_SERVICES.forEach(s => renderService(s, 'coreServices'));
+    EXTERNAL_SERVICES.forEach(s => renderService(s, 'externalServices'));
+    renderUptimeBars(loadHistory());
+    runChecks();
+    startAutoRefresh();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) runChecks(); });
+  </script>
 </body>
+
 </html>

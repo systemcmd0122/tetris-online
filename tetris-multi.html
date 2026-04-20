@@ -1474,32 +1474,6 @@
       color: var(--accent3)
     }
 
-    .sound-btn {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--dim);
-      font-family: 'Orbitron', monospace;
-      font-size: 8px;
-      letter-spacing: 1px;
-      padding: 4px 8px;
-      border-radius: 2px;
-      cursor: pointer;
-      transition: all .2s
-    }
-
-    .sound-btn.on {
-      border-color: var(--accent3);
-      color: var(--accent3)
-    }
-
-    .sound-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent)
-    }
-
     body.game-active #tb-nav {
       display: none !important;
     }
@@ -1638,32 +1612,7 @@
   <div class="screen" id="gameScreen">
     <div class="game-header">
       <span class="game-title">TETRIS MULTI BATTLE</span>
-      <div id="myMusicBanner"
-        style="display:none;align-items:center;gap:5px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.3);border-radius:3px;padding:4px 9px;flex:1;margin:0 8px;min-width:0;overflow:hidden;">
-        <svg width="11" height="11" viewBox="0 0 10 10" fill="#aaff00" style="flex-shrink:0">
-          <path d="M2 8V3l7-1.5v5" />
-          <circle cx="1.5" cy="8" r="1.5" />
-          <circle cx="7.5" cy="6.5" r="1.5" />
-        </svg>
-        <span
-          style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(170,255,0,0.7);flex-shrink:0;letter-spacing:1px;">YOU:</span>
-        <span id="myMusicTitle"
-          style="font-size:11px;color:#aaff00;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:1px;min-width:0;font-weight:700;"></span>
-      </div>
       <div class="game-header-right">
-        <button class="sound-btn on" id="soundBtn" onclick="toggleSound()">
-          <svg id="soundIconOn" width="13" height="13" viewBox="0 0 12 12" fill="currentColor">
-            <path d="M1 4h2l3-3v10L3 8H1z" />
-            <path d="M8 3.5A3.5 3.5 0 0 1 8 8.5" stroke="currentColor" stroke-width="1.2" fill="none" />
-            <path d="M9.5 2A5 5 0 0 1 9.5 10" stroke="currentColor" stroke-width="1.2" fill="none" />
-          </svg>
-          <svg id="soundIconOff" width="13" height="13" viewBox="0 0 12 12" fill="currentColor" style="display:none">
-            <path d="M1 4h2l3-3v10L3 8H1z" />
-            <line x1="8" y1="4" x2="11" y2="8" stroke="currentColor" stroke-width="1.5" />
-            <line x1="11" y1="4" x2="8" y2="8" stroke="currentColor" stroke-width="1.5" />
-          </svg>
-          <span id="soundLabel">ON</span>
-        </button>
         <button class="btn btn-secondary" style="width:auto;padding:6px 12px;font-size:9px;"
           onclick="leaveRoom()">QUIT</button>
       </div>
@@ -1875,34 +1824,8 @@
       } catch (e) { }
     })();
 
-    // ── SOUND ──
-    let audioCtx = null, soundEnabled = true;
-    function getACtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
-    function playSound(type) {
-      if (!soundEnabled) return;
-      try {
-        const ctx = getACtx(), g = ctx.createGain(), o = ctx.createOscillator(), now = ctx.currentTime;
-        g.connect(ctx.destination); o.connect(g);
-        if (type === 'move') { o.frequency.setValueAtTime(220, now); g.gain.setValueAtTime(.03, now); g.gain.exponentialRampToValueAtTime(.001, now + .05); o.start(now); o.stop(now + .05); }
-        else if (type === 'rotate') { o.frequency.setValueAtTime(330, now); o.frequency.exponentialRampToValueAtTime(440, now + .06); g.gain.setValueAtTime(.05, now); g.gain.exponentialRampToValueAtTime(.001, now + .06); o.start(now); o.stop(now + .06); }
-        else if (type === 'lock') { o.type = 'square'; o.frequency.setValueAtTime(180, now); g.gain.setValueAtTime(.06, now); g.gain.exponentialRampToValueAtTime(.001, now + .08); o.start(now); o.stop(now + .08); }
-        else if (type === 'clear1') { o.type = 'sawtooth'; o.frequency.setValueAtTime(440, now); o.frequency.exponentialRampToValueAtTime(880, now + .15); g.gain.setValueAtTime(.08, now); g.gain.exponentialRampToValueAtTime(.001, now + .15); o.start(now); o.stop(now + .15); }
-        else if (type === 'tetris') { [440, 554, 659, 880].forEach((f, i) => { const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.frequency.setValueAtTime(f, now + i * .07); g2.gain.setValueAtTime(.1, now + i * .07); g2.gain.exponentialRampToValueAtTime(.001, now + i * .07 + .15); o2.start(now + i * .07); o2.stop(now + i * .07 + .15); }); }
-        else if (type === 'harddrop') { o.type = 'square'; o.frequency.setValueAtTime(160, now); o.frequency.exponentialRampToValueAtTime(80, now + .1); g.gain.setValueAtTime(.12, now); g.gain.exponentialRampToValueAtTime(.001, now + .1); o.start(now); o.stop(now + .1); }
-        else if (type === 'attack') { o.type = 'sawtooth'; o.frequency.setValueAtTime(660, now); o.frequency.exponentialRampToValueAtTime(110, now + .25); g.gain.setValueAtTime(.15, now); g.gain.exponentialRampToValueAtTime(.001, now + .25); o.start(now); o.stop(now + .25); }
-        else if (type === 'win') { [523, 659, 784, 1047].forEach((f, i) => { const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.type = 'triangle'; o2.frequency.setValueAtTime(f, now + i * .12); g2.gain.setValueAtTime(.12, now + i * .12); g2.gain.exponentialRampToValueAtTime(.001, now + i * .12 + .3); o2.start(now + i * .12); o2.stop(now + i * .12 + .3); }); }
-        else if (type === 'countdown') { o.type = 'triangle'; o.frequency.setValueAtTime(880, now); g.gain.setValueAtTime(.15, now); g.gain.exponentialRampToValueAtTime(.001, now + .2); o.start(now); o.stop(now + .2); }
-        else if (type === 'go') { [880, 1320].forEach((f, i) => { const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.connect(g2); g2.connect(ctx.destination); o2.type = 'triangle'; o2.frequency.setValueAtTime(f, now + i * .08); g2.gain.setValueAtTime(.18, now + i * .08); g2.gain.exponentialRampToValueAtTime(.001, now + i * .08 + .25); o2.start(now + i * .08); o2.stop(now + i * .08 + .25); }); }
-        else if (type === 'elim') { o.type = 'sawtooth'; o.frequency.setValueAtTime(440, now); o.frequency.exponentialRampToValueAtTime(55, now + .4); g.gain.setValueAtTime(.2, now); g.gain.exponentialRampToValueAtTime(.001, now + .4); o.start(now); o.stop(now + .4); }
-      } catch (e) { }
-    }
-    window.toggleSound = () => {
-      soundEnabled = !soundEnabled; const btn = document.getElementById('soundBtn'); document.getElementById('soundIconOn').style.display = soundEnabled ? '' : 'none';
-      document.getElementById('soundIconOff').style.display = soundEnabled ? 'none' : '';
-      document.getElementById('soundLabel').textContent = soundEnabled ? 'ON' : 'OFF'; btn.className = soundEnabled ? 'sound-btn on' : 'sound-btn';
-    };
-
     // ── TETRIS ENGINE ──
+    const playSound = () => { }; // Dummy function - sound disabled
     const COLS = 10, ROWS = 20, CELL = 20;
     const COLORS = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800', GHOST: 'rgba(255,255,255,0.10)' };
     const PIECES = { I: [[[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]], [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]], O: [[[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]]], T: [[[0, 1, 0], [1, 1, 1], [0, 0, 0]], [[0, 1, 0], [0, 1, 1], [0, 1, 0]], [[0, 0, 0], [1, 1, 1], [0, 1, 0]], [[0, 1, 0], [1, 1, 0], [0, 1, 0]]], S: [[[0, 1, 1], [1, 1, 0], [0, 0, 0]], [[0, 1, 0], [0, 1, 1], [0, 0, 1]], [[0, 0, 0], [0, 1, 1], [1, 1, 0]], [[1, 0, 0], [1, 1, 0], [0, 1, 0]]], Z: [[[1, 1, 0], [0, 1, 1], [0, 0, 0]], [[0, 0, 1], [0, 1, 1], [0, 1, 0]], [[0, 0, 0], [1, 1, 0], [0, 1, 1]], [[0, 1, 0], [1, 1, 0], [1, 0, 0]]], J: [[[1, 0, 0], [1, 1, 1], [0, 0, 0]], [[0, 1, 1], [0, 1, 0], [0, 1, 0]], [[0, 0, 0], [1, 1, 1], [0, 0, 1]], [[0, 1, 0], [0, 1, 0], [1, 1, 0]]], L: [[[0, 0, 1], [1, 1, 1], [0, 0, 0]], [[0, 1, 0], [0, 1, 0], [0, 1, 1]], [[0, 0, 0], [1, 1, 1], [1, 0, 0]], [[1, 1, 0], [0, 1, 0], [0, 1, 0]]] };
@@ -2508,7 +2431,6 @@
       ['myCanvas', 'holdCanvas', 'nextCanvas'].forEach(id => { const el = document.getElementById(id); if (el) { const ctx = el.getContext('2d'); ctx.clearRect(0, 0, el.width, el.height); } });
       document.getElementById('scoreDisplay').textContent = '0'; document.getElementById('levelDisplay').textContent = '1'; document.getElementById('linesDisplay').textContent = '0'; document.getElementById('comboDisplay').textContent = '0'; document.getElementById('b2bBadge').className = 'b2b-badge off'; document.getElementById('atkSentDisplay').textContent = '0'; document.getElementById('pendGarbDisplay').textContent = '0'; document.getElementById('pendGarbCells').innerHTML = ''; document.getElementById('garbBar').innerHTML = ''; document.getElementById('attackBadge').classList.remove('show'); document.getElementById('rankDisplay').textContent = '?'; document.getElementById('aliveDisplay').textContent = '?'; statAtkSent = 0; myFinalRank = null;
       Object.keys(uiC).forEach(k => { uiC[k] = -1 }); uiC.b2b = null;
-      const mb = document.getElementById('myMusicBanner'); if (mb) mb.style.display = 'none';
       // リマッチボタンをリセット
       const rb = document.getElementById('rematchBtn'); if (rb) rb.disabled = false;
       const rs = document.getElementById('rematchStatus'); if (rs) rs.textContent = '';
@@ -2534,13 +2456,8 @@
         const dead = document.createElement('div'); dead.className = 'opp-dead-overlay'; dead.id = 'oppDead_' + sk; dead.textContent = 'OUT';
         // Score tag
         const stag = document.createElement('div'); stag.className = 'opp-score-tag'; stag.id = 'oppScore_' + sk; stag.textContent = '0';
-        // Music tag — full width, 2-line display
-        const musicTag = document.createElement('div');
-        musicTag.id = 'oppMusic_' + sk;
-        musicTag.style.cssText = `max-width:${W}px;width:${W}px;overflow:hidden;display:none;margin-top:3px;background:rgba(170,255,0,0.07);border:1px solid rgba(170,255,0,0.25);border-radius:2px;padding:3px 7px;`;
-        musicTag.innerHTML = `<div id="oppMusicNote_${sk}" style="font-size:8px;color:#aaff00;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div><div id="oppMusicTitle_${sk}" style="font-size:10px;color:#e0f0ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;margin-top:2px;"></div>`;
         wrap.appendChild(cvs); wrap.appendChild(dead);
-        sec.appendChild(lb); sec.appendChild(nt); sec.appendChild(wrap); sec.appendChild(stag); sec.appendChild(musicTag);
+        sec.appendChild(lb); sec.appendChild(nt); sec.appendChild(wrap); sec.appendChild(stag);
         area.appendChild(sec);
         oppInfo[sk] = { canvas: cvs, W, H, alive: true };
       });
@@ -2826,7 +2743,6 @@
       const code = roomCode, slot = mySlot, wasBot = _qmIsBot;
       document.getElementById('resultOverlay').classList.remove('show');
       document.getElementById('countdownOverlay').classList.remove('show');
-      const mb = document.getElementById('myMusicBanner'); if (mb) mb.style.display = 'none';
       _qmBotStop(); _qmIsBot = false;
       resetState();
       if (!wasBot && code && slot && db) {
@@ -2892,19 +2808,6 @@
           const oc = oppInfo[sk]; if (oc) TetrisGame.drawOpp(oc.canvas, od, oc.W, oc.H);
           const ns = document.getElementById('oppName_' + sk); if (ns) ns.textContent = (d[sk]?.name || sk) + ' (' + od.score + ')';
           const sc = document.getElementById('oppScore_' + sk); if (sc) sc.textContent = od.score + ' pts';
-          // Show opponent music
-          const mn = document.getElementById('oppMusic_' + sk);
-          if (mn) {
-            if (od.music || od.musicPlaylist) {
-              mn.style.display = 'block';
-              const noteEl = document.getElementById('oppMusicNote_' + sk);
-              const titleEl = document.getElementById('oppMusicTitle_' + sk);
-              if (noteEl) noteEl.textContent = od.musicPlaylist ? '♪ [' + od.musicPlaylist + ']' : '♪ NOW PLAYING';
-              if (titleEl) titleEl.textContent = od.music || '';
-            } else {
-              mn.style.display = 'none';
-            }
-          }
           if (od.gameOver && oc && oc.alive) {
             oc.alive = false;
             const dd = document.getElementById('oppDead_' + sk); if (dd) dd.classList.add('show');
@@ -2944,36 +2847,17 @@
       game = new TetrisGame('myCanvas', 'holdCanvas', 'nextCanvas');
       gameRunning = true; endedOnce = false;
 
-      const PUSH = 50; let lastPush = 0, pendOut = 0, lastMusicCheck = 0;
+      const PUSH = 50; let lastPush = 0, pendOut = 0;
       const loop = ts => {
         if (!gameRunning) return;
         game._lastTs = ts;
         game.update(ts); game.draw();
         while (game.results.length > 0) { const res = game.results.shift(); if (res.garbageOut > 0) { statAtkSent += res.garbageOut; pendOut += res.garbageOut; } if (res.actionLabel) showAP(res.actionLabel); }
         updateUI();
-        // Update own music banner
-        if (ts - lastMusicCheck > 2000) {
-          lastMusicCheck = ts;
-          try {
-            const np = localStorage.getItem('yt_nowplaying');
-            const banner = document.getElementById('myMusicBanner');
-            const titleEl = document.getElementById('myMusicTitle');
-            if (np && banner && titleEl) {
-              const m = JSON.parse(np);
-              const label = m.playlist ? `[${m.playlist}] ${m.title || ''}` : (m.title || '');
-              titleEl.textContent = label;
-              banner.style.display = m.title ? 'flex' : 'none';
-            } else if (banner) { banner.style.display = 'none'; }
-          } catch (e) { }
-        }
+
         if (ts - lastPush > PUSH) {
           lastPush = ts;
           const gd = game.serialize();
-          try {
-            const np = localStorage.getItem('yt_nowplaying');
-            if (np) { const m = JSON.parse(np); gd.music = m.title || ''; gd.musicPlaylist = m.playlist || ''; }
-            else { gd.music = ''; gd.musicPlaylist = ''; }
-          } catch (e) { gd.music = ''; gd.musicPlaylist = ''; }
           set(ref(db, 'multi/' + roomCode + '/game/' + mySlot), gd).catch(() => { });
           if (pendOut > 0) {
             const gn = pendOut; pendOut = 0;
@@ -3004,7 +2888,6 @@
       if (endedOnce) return; endedOnce = true; gameRunning = false; myFinalRank = rank;
       // ゲーム終了と同時にFirebaseリスナーを全解除（staleコールバック防止）
       offAll();
-      const _mb = document.getElementById('myMusicBanner'); if (_mb) _mb.style.display = 'none';
       if (animId) { cancelAnimationFrame(animId); animId = null; }
       const score = game?.score || 0, lvl = game?.level || 1, lines = game?.lines || 0;
       rank = Math.max(1, Math.min(totalPlayers, rank));
