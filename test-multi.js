@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
 
   console.log('--- Testing Multiplayer Logic (Mock Simulation) ---');
 
-  await page.goto('http://localhost:8080/tetris-multi.html');
+  await page.goto('http://localhost:3000/tetris-multi.html');
   await page.waitForTimeout(2000);
 
   const title = await page.title();
