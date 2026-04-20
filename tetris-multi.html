@@ -1140,6 +1140,45 @@
       display: flex
     }
 
+    .opp-target-indicator {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--red);
+      color: #fff;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      padding: 3px 8px;
+      border-radius: 2px;
+      white-space: nowrap;
+      z-index: 10;
+      box-shadow: 0 0 10px rgba(255, 51, 85, .6);
+      display: none;
+      animation: targetPulse 1s ease-in-out infinite alternate;
+    }
+
+    @keyframes targetPulse {
+      from {
+        opacity: .7;
+        transform: translateX(-50%) scale(.95);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(-50%) scale(1.05);
+      }
+    }
+
+    .opp-target-indicator.show {
+      display: block;
+    }
+
+    .opp-canvas-wrap.is-targeted canvas {
+      border-color: var(--red) !important;
+      box-shadow: 0 0 20px rgba(255, 51, 85, .5) !important;
+    }
+
     .opp-score-tag {
       font-size: 9px;
       color: var(--dim);
@@ -1963,6 +2002,7 @@
 
     // ── GAME STATE ──
     let roomCode = null, mySlot = null, game = null, gameRunning = false, animId = null;
+    let currentTargetSlot = null;
     let _rematchActive = false; // 非ホストのリマッチ待機中フラグ
     let endedOnce = false, _maxPlayers = 3, totalPlayers = 0, myFinalRank = null, statAtkSent = 0;
     const oppInfo = {};
@@ -2389,6 +2429,7 @@
       _rematchActive = false; // リマッチ待機をキャンセル
       if (animId) { cancelAnimationFrame(animId); animId = null; }
       roomCode = null; mySlot = null; game = null; myFinalRank = null; totalPlayers = 0; statAtkSent = 0;
+      currentTargetSlot = null;
       Object.keys(oppInfo).forEach(k => delete oppInfo[k]);
       dasStop(); clearInterval(sdi); sdi = null;
       Object.keys(uiC).forEach(k => uiC[k] = -1); uiC.b2b = null;
@@ -2445,18 +2486,27 @@
         const idx = parseInt(sk.replace('p', ''));
         const sec = document.createElement('div');
         sec.className = 'opp-section'; sec.id = 'oppSec_' + sk;
+        sec.style.cursor = 'pointer';
+        sec.onclick = () => { if (gameRunning && !game.over && oppInfo[sk]?.alive) setTarget(sk); };
+
         // Label + name
         const lb = document.createElement('div'); lb.className = `player-label ${SLCLS[idx] || 'lp2'}`; lb.textContent = 'P' + idx; lb.id = 'oppLabel_' + sk;
         const nt = document.createElement('div'); nt.className = 'player-name-tag'; nt.id = 'oppName_' + sk; nt.textContent = '...';
         // Canvas wrap
-        const wrap = document.createElement('div'); wrap.className = 'opp-canvas-wrap'; wrap.style.position = 'relative';
+        const wrap = document.createElement('div'); wrap.className = 'opp-canvas-wrap'; wrap.id = 'oppWrap_' + sk; wrap.style.position = 'relative';
         const cvs = document.createElement('canvas');
         cvs.id = 'oppCvs_' + sk; cvs.width = W; cvs.height = H;
         cvs.style.cssText = `border:1px solid ${SBORDER[idx] || '#ff0080'};box-shadow:0 0 12px ${SGLOW[idx] || 'rgba(255,0,128,.3)'};display:block;image-rendering:pixelated`;
         const dead = document.createElement('div'); dead.className = 'opp-dead-overlay'; dead.id = 'oppDead_' + sk; dead.textContent = 'OUT';
+
+        const targetInd = document.createElement('div');
+        targetInd.className = 'opp-target-indicator';
+        targetInd.id = 'oppTarget_' + sk;
+        targetInd.textContent = '◀ TARGET ▶';
+
         // Score tag
         const stag = document.createElement('div'); stag.className = 'opp-score-tag'; stag.id = 'oppScore_' + sk; stag.textContent = '0';
-        wrap.appendChild(cvs); wrap.appendChild(dead);
+        wrap.appendChild(cvs); wrap.appendChild(dead); wrap.appendChild(targetInd);
         sec.appendChild(lb); sec.appendChild(nt); sec.appendChild(wrap); sec.appendChild(stag);
         area.appendChild(sec);
         oppInfo[sk] = { canvas: cvs, W, H, alive: true };
@@ -2496,6 +2546,40 @@
 
     window.setMaxPlayers = (n) => { _maxPlayers = n;[2, 3, 4].forEach(x => { const b = document.getElementById('maxBtn' + x); if (b) b.className = 'max-btn' + (x === n ? ' sel' : ''); }); };
     window.copyRoomCode = () => { if (!roomCode) return; navigator.clipboard?.writeText(roomCode).then(() => showToast('コードをコピーしました！', 'ok')).catch(() => showToast('コード: ' + roomCode)); };
+
+    function setTarget(slot) {
+      if (!gameRunning || game.over) return;
+      if (currentTargetSlot === slot) return;
+      // UI Reset
+      Object.keys(oppInfo).forEach(s => {
+        const wrap = document.getElementById('oppWrap_' + s);
+        const ind = document.getElementById('oppTarget_' + s);
+        if (wrap) wrap.classList.remove('is-targeted');
+        if (ind) ind.classList.remove('show');
+      });
+      // Set new target
+      if (slot && oppInfo[slot] && oppInfo[slot].alive) {
+        currentTargetSlot = slot;
+        const wrap = document.getElementById('oppWrap_' + slot);
+        const ind = document.getElementById('oppTarget_' + slot);
+        if (wrap) wrap.classList.add('is-targeted');
+        if (ind) ind.classList.add('show');
+      } else {
+        currentTargetSlot = null;
+      }
+    }
+
+    function autoSelectTarget(activeSlots) {
+      const aliveOpps = (activeSlots || []).filter(s => s !== mySlot && oppInfo[s]?.alive);
+      if (aliveOpps.length > 0) {
+        // もし現在のターゲットが死んだか未設定なら、新しいターゲットを選択
+        if (!currentTargetSlot || !oppInfo[currentTargetSlot]?.alive) {
+          setTarget(aliveOpps[Math.floor(Math.random() * aliveOpps.length)]);
+        }
+      } else {
+        setTarget(null);
+      }
+    }
 
     // ── CREATE ROOM ──
     window.createRoom = async () => {
@@ -2629,17 +2713,33 @@
       const prevSlot = mySlot;
       const prevName = (document.getElementById('myNameTag')?.textContent || 'PLAYER').split(' ')[0] || 'PLAYER';
 
-      // ゲーム状態クリア（Firebaseリスナーは止めるがルームは消さない）
-      offAll();
-      gameRunning = false; endedOnce = false;
-      if (animId) { cancelAnimationFrame(animId); animId = null; }
-      game = null; myFinalRank = null; totalPlayers = 0; statAtkSent = 0;
-      Object.keys(oppInfo).forEach(k => delete oppInfo[k]);
-      dasStop(); clearInterval(sdi); sdi = null;
-      Object.keys(uiC).forEach(k => uiC[k] = -1); uiC.b2b = null;
-
       try {
         if (prevSlot === 'p1') {
+          // 他のプレイヤーがまだプレイ中か確認
+          const roomSnap = await get(ref(db, 'multi/' + prevCode));
+          const roomVal = roomSnap.val();
+          if (roomVal && roomVal.status === 'started') {
+            const alive = roomVal.alive || {};
+            const othersAlive = Object.entries(alive).some(([s, isAlive]) => s !== 'p1' && isAlive);
+            if (othersAlive) {
+              if (!confirm('まだ対戦中のプレイヤーがいますが、リセットしてよろしいですか？')) {
+                btn.disabled = false;
+                if (statusEl) statusEl.textContent = '';
+                return;
+              }
+            }
+          }
+
+          // ゲーム状態クリア（Firebaseリスナーは止めるがルームは消さない）
+          offAll();
+          gameRunning = false; endedOnce = false;
+          if (animId) { cancelAnimationFrame(animId); animId = null; }
+          game = null; myFinalRank = null; totalPlayers = 0; statAtkSent = 0;
+          currentTargetSlot = null;
+          Object.keys(oppInfo).forEach(k => delete oppInfo[k]);
+          dasStop(); clearInterval(sdi); sdi = null;
+          Object.keys(uiC).forEach(k => uiC[k] = -1); uiC.b2b = null;
+
           // ══ ホスト ══
           // ① 前のゲームデータを削除 & ルームをatomicにリセット：status=waiting、非p1スロットをnull
           const rSnap = await get(ref(db, 'multi/' + prevCode));
@@ -2671,6 +2771,16 @@
 
         } else {
           // ══ 非ホスト ══
+          // ゲーム状態クリア
+          offAll();
+          gameRunning = false; endedOnce = false;
+          if (animId) { cancelAnimationFrame(animId); animId = null; }
+          game = null; myFinalRank = null; totalPlayers = 0; statAtkSent = 0;
+          currentTargetSlot = null;
+          Object.keys(oppInfo).forEach(k => delete oppInfo[k]);
+          dasStop(); clearInterval(sdi); sdi = null;
+          Object.keys(uiC).forEach(k => uiC[k] = -1); uiC.b2b = null;
+
           // ホストがリセットするまでFirebaseをリアルタイム監視（最大30秒）
           _rematchActive = true;
           if (statusEl) statusEl.textContent = 'ホストのリマッチを待っています...';
@@ -2798,6 +2908,7 @@
       _addSub('alive', onValue(aliveRef, snap => {
         const av = snap.val() || {};
         active.filter(s => s !== mySlot).forEach(s => { if (oppInfo[s]) oppInfo[s].alive = av[s] === true; });
+        if (gameRunning) autoSelectTarget(active);
       }));
 
       // Watch opponent boards
@@ -2861,12 +2972,12 @@
           set(ref(db, 'multi/' + roomCode + '/game/' + mySlot), gd).catch(() => { });
           if (pendOut > 0) {
             const gn = pendOut; pendOut = 0;
-            const aliveOpps = active.filter(s => s !== mySlot && oppInfo[s]?.alive);
-            if (aliveOpps.length > 0) {
-              const tgt = aliveOpps[Math.floor(Math.random() * aliveOpps.length)];
-              const tRef = ref(db, 'multi/' + roomCode + '/garb/' + tgt);
-              // runTransactionでアトミックに加算（同時攻撃の競合を防ぐ）
-              runTransaction(tRef, cur => { const prev = (cur && cur.n) || 0; return { n: prev + gn }; }).catch(() => { });
+            if (gameRunning && !game.over) {
+              autoSelectTarget(active);
+              if (currentTargetSlot) {
+                const tRef = ref(db, 'multi/' + roomCode + '/garb/' + currentTargetSlot);
+                runTransaction(tRef, cur => { const prev = (cur && cur.n) || 0; return { n: prev + gn }; }).catch(() => { });
+              }
             }
           }
         }
