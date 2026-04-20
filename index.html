@@ -805,16 +805,16 @@
     </div>
   </div>
 
-  <script>
-    // Dummy functions - music/sound disabled
-    const playSE = () => { };
-    const toggleSE = () => { };
-
-    <script type="module">
+  <script type="module">
       import {mountNav} from './nav.js';
-      mountNav();
       import {APP_VERSION, UPDATE_LOG, FB_CONFIG} from './config.js';
       import {mountAuthWidget, onAuthReady, getCachedProfile} from './auth.js';
+
+      // Dummy functions - music/sound disabled
+      const playSE = () => { };
+      const toggleSE = () => { };
+
+      mountNav();
 
       // マウント auth ウィジェット（ログイン/ログアウトのみ。名前連携なし）
       mountAuthWidget('authWidget');
