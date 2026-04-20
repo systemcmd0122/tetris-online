@@ -1809,11 +1809,11 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, set, get, onValue, off, update, remove, onDisconnect, runTransaction }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-    import { APP_VERSION } from './config.js';
+    import { APP_VERSION, FB_CONFIG } from './config.js';
     import { onAuthReady, getCachedProfile, mountAuthWidget, getCurrentUser } from './auth.js';
     import { saveMultiResult, upsertUserProfile } from './db.js';
 
-    const fbApp = initializeApp({ apiKey: "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw", authDomain: "tetris-online-9c827.firebaseapp.com", databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com", projectId: "tetris-online-9c827", storageBucket: "tetris-online-9c827.firebasestorage.app", messagingSenderId: "1045054992314", appId: "1:1045054992314:web:7fea20b9be543d7cab3783" });
+    const fbApp = initializeApp(FB_CONFIG);
     const db = getDatabase(fbApp);
     let serverTimeOffset = 0;
     onValue(ref(db, '.info/serverTimeOffset'), snap => { serverTimeOffset = snap.val() || 0; });
@@ -2065,7 +2065,7 @@
         const m = PIECES[pName][rot]; if (!m) return null;
         for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) { if (m[r][c] && (sx + c < 0 || sx + c >= COLS)) return null; }
         let py = -2;
-        dropLoop: for (;;) { py++; if (py > ROWS) return null; for (let r = 0; r < m.length; r++) { for (let c = 0; c < m[r].length; c++) { if (!m[r][c]) continue; const ny = py + r, nx = sx + c; if (ny >= ROWS || (ny >= 0 && board[ny][nx])) { py--; break dropLoop; } } } }
+        dropLoop: for (; ;) { py++; if (py > ROWS) return null; for (let r = 0; r < m.length; r++) { for (let c = 0; c < m[r].length; c++) { if (!m[r][c]) continue; const ny = py + r, nx = sx + c; if (ny >= ROWS || (ny >= 0 && board[ny][nx])) { py--; break dropLoop; } } } }
         const nb = board.map(r => [...r]);
         for (let r = 0; r < m.length; r++)for (let c = 0; c < m[r].length; c++) { if (m[r][c]) { const ny = py + r, nx = sx + c; if (ny < 0 || ny >= ROWS) return null; nb[ny][nx] = pName; } }
         const filt = nb.filter(row => !row.every(c => c !== null)); const cleared = ROWS - filt.length; while (filt.length < ROWS) filt.unshift(new Array(COLS).fill(null));

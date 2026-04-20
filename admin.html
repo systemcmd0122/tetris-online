@@ -991,37 +991,43 @@
       gap: 6px;
       align-items: flex-start;
     }
+
     .spec-side-panel {
       display: flex;
       flex-direction: column;
       gap: 6px;
       min-width: 54px;
     }
+
     .spec-mini-box {
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 3px;
       padding: 4px;
       text-align: center;
     }
+
     .spec-mini-label {
       font-size: 6px;
       color: var(--dim);
       letter-spacing: 1px;
       margin-bottom: 3px;
     }
+
     canvas.spec-mini-cv {
       image-rendering: pixelated;
       display: block;
       margin: 0 auto;
     }
+
     .spec-stat-box {
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 3px;
       padding: 5px 4px;
       font-size: 8px;
     }
+
     .spec-stat-row {
       display: flex;
       justify-content: space-between;
@@ -1030,10 +1036,12 @@
       letter-spacing: 1px;
       font-size: 7px;
     }
+
     .spec-stat-row .sv {
       color: var(--acc);
       font-weight: 700;
     }
+
     .spec-b2b-badge {
       font-size: 6px;
       padding: 2px 5px;
@@ -1042,29 +1050,36 @@
       text-align: center;
       margin-top: 2px;
     }
+
     .spec-b2b-badge.on {
-      background: rgba(255,170,0,.15);
-      border: 1px solid rgba(255,170,0,.5);
+      background: rgba(255, 170, 0, .15);
+      border: 1px solid rgba(255, 170, 0, .5);
       color: #ffaa00;
     }
+
     .spec-b2b-badge.off {
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(255, 255, 255, .08);
       color: var(--dim);
     }
+
     .spec-garb-bar {
       display: flex;
       flex-direction: column;
       gap: 1px;
       min-height: 20px;
     }
+
     .spec-garb-cell {
       height: 4px;
       border-radius: 1px;
       background: #ff3355;
       transition: background .2s;
     }
-    .spec-garb-cell.warn { background: #ff8800; }
+
+    .spec-garb-cell.warn {
+      background: #ff8800;
+    }
 
     .vs-txt {
       font-family: 'Press Start 2P', monospace;
@@ -1991,7 +2006,8 @@
               </div>
               <button class="sbtn" onclick="refreshBotSessions()">↻ 更新</button>
             </div>
-            <div style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <div
+              style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
               <div class="live-dot"></div>Firebase RTDB: <span id="botListenStatus" style="color:var(--acc3)">監視中</span>
             </div>
             <div class="tbl-wrap">
@@ -2009,7 +2025,9 @@
                   </tr>
                 </thead>
                 <tbody id="botTbody">
-                  <tr><td class="empty-td" colspan="8">アクティブなボット対戦なし</td></tr>
+                  <tr>
+                    <td class="empty-td" colspan="8">アクティブなボット対戦なし</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -2020,7 +2038,9 @@
             <div class="ph">
               <div class="ph-left">
                 <div style="display:flex;align-items:center;gap:10px">
-                  <div class="live-label"><div class="live-dot"></div>LIVE</div>
+                  <div class="live-label">
+                    <div class="live-dot"></div>LIVE
+                  </div>
                   <div class="ph-title" style="font-size:10px">BOT GAME — <span id="botSpecPlayerName">---</span></div>
                 </div>
                 <div class="ph-sub" id="botSpecTimer">--:--</div>
@@ -2060,7 +2080,8 @@
               </div>
               <!-- Bot slot -->
               <div class="spec-col" id="botSpecColBot">
-                <div class="spec-badge p2" style="background:rgba(204,0,255,.15);border-color:rgba(204,0,255,.5);color:#cc00ff">BOT</div>
+                <div class="spec-badge p2"
+                  style="background:rgba(204,0,255,.15);border-color:rgba(204,0,255,.5);color:#cc00ff">BOT</div>
                 <div class="spec-name" id="botSpecNameBot">BOT</div>
                 <div class="spec-game-wrap">
                   <div class="spec-side-panel">
@@ -2462,16 +2483,8 @@
     import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot, deleteDoc, doc, getDocs, serverTimestamp, writeBatch, updateDoc }
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    import { APP_VERSION } from './config.js';
-    const fbApp = initializeApp({
-      apiKey: "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw",
-      authDomain: "tetris-online-9c827.firebaseapp.com",
-      databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com",
-      projectId: "tetris-online-9c827",
-      storageBucket: "tetris-online-9c827.firebasestorage.app",
-      messagingSenderId: "1045054992314",
-      appId: "1:1045054992314:web:7fea20b9be543d7cab3783"
-    });
+    import { APP_VERSION, FB_CONFIG } from './config.js';
+    const fbApp = initializeApp(FB_CONFIG);
     const db = getDatabase(fbApp);
     const fs = getFirestore(fbApp);
 
@@ -2797,12 +2810,12 @@
       arena.innerHTML = '';
       addLog(`観戦開始: ROOM ${code}`, 'info');
 
-      const COLORS_A = ['#00f5ff','#ff0080','#aaff00','#ff8800'];
+      const COLORS_A = ['#00f5ff', '#ff0080', '#aaff00', '#ff8800'];
       const slots = ['p1', 'p2', 'p3', 'p4'];
       slots.forEach(s => {
         if (!r[s]) return;
         const idx = parseInt(s.slice(1));
-        const borderCol = COLORS_A[idx-1] || '#00f5ff';
+        const borderCol = COLORS_A[idx - 1] || '#00f5ff';
         const col = document.createElement('div');
         col.className = 'spec-col'; col.id = 'oppSec_' + s;
         col.innerHTML = `
@@ -3019,9 +3032,9 @@
         const d = snap.val();
         if (!d) return;
         const cvPlayer = document.getElementById('botSpecCvPlayer');
-        const cvBot    = document.getElementById('botSpecCvBot');
+        const cvBot = document.getElementById('botSpecCvBot');
         if (cvPlayer && d.game?.player) drawBoard(cvPlayer, d.game.player);
-        if (cvBot    && d.game?.bot)    drawBoard(cvBot,    d.game.bot);
+        if (cvBot && d.game?.bot) drawBoard(cvBot, d.game.bot);
 
         const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
         const setB2B = (id, on) => { const el = document.getElementById(id); if (el) el.className = 'spec-b2b-badge ' + (on ? 'on' : 'off'); };
@@ -3033,24 +3046,24 @@
         };
 
         const gp = d.game?.player || {};
-        setEl('botSpecSP',     (gp.score || 0).toLocaleString());
-        setEl('botSpecLP',     gp.level || 1);
+        setEl('botSpecSP', (gp.score || 0).toLocaleString());
+        setEl('botSpecLP', gp.level || 1);
         setEl('botSpecLinesP', gp.lines || 0);
-        setEl('botSpecAtkP',   gp.atk   || 0);
+        setEl('botSpecAtkP', gp.atk || 0);
         setEl('botSpecComboP', gp.combo > 1 ? 'x' + gp.combo : '-');
-        setEl('botSpecPGP',    gp.pendGarb || 0);
+        setEl('botSpecPGP', gp.pendGarb || 0);
         setB2B('botSpecB2BP', gp.b2b);
         setGarb('botSpecGarbP', gp.pendGarb);
         drawMini(document.getElementById('botSpecHoldP'), gp.held || null, false);
         drawMini(document.getElementById('botSpecNextP'), gp.next || null, false);
 
         const gb = d.game?.bot || {};
-        setEl('botSpecSB',     (gb.score || 0).toLocaleString());
-        setEl('botSpecLB',     gb.level || 1);
+        setEl('botSpecSB', (gb.score || 0).toLocaleString());
+        setEl('botSpecLB', gb.level || 1);
         setEl('botSpecLinesB', gb.lines || 0);
-        setEl('botSpecAtkB',   gb.atk   || 0);
+        setEl('botSpecAtkB', gb.atk || 0);
         setEl('botSpecComboB', gb.combo > 1 ? 'x' + gb.combo : '-');
-        setEl('botSpecPGB',    gb.pendGarb || 0);
+        setEl('botSpecPGB', gb.pendGarb || 0);
         setB2B('botSpecB2BB', gb.b2b);
         setGarb('botSpecGarbB', gb.pendGarb);
         drawMini(document.getElementById('botSpecHoldB'), gb.held || null, false);
@@ -3072,7 +3085,7 @@
     };
 
     window.stopBotSpec = () => {
-      if (botSpecUnsub) { try { botSpecUnsub(); } catch (e) {} botSpecUnsub = null; }
+      if (botSpecUnsub) { try { botSpecUnsub(); } catch (e) { } botSpecUnsub = null; }
       if (botSpecTimerIv) { clearInterval(botSpecTimerIv); botSpecTimerIv = null; }
       if (botSpecSid) addLog('Bot観戦終了', 'info');
       botSpecSid = null;
