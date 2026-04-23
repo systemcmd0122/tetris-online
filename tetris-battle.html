@@ -285,7 +285,7 @@
       color: var(--text);
       font-family: 'Orbitron', monospace;
       font-size: 13px;
-      padding: 11px 14px;
+      padding: 4px 12px;
       outline: none;
       transition: border-color .2s, box-shadow .2s
     }
@@ -382,7 +382,7 @@
 
     .diff-btn {
       flex: 1;
-      padding: 12px 6px;
+      padding: 4px 12px;
       border: 1px solid;
       border-radius: 2px;
       cursor: pointer;
@@ -481,7 +481,7 @@
     .player-label {
       font-size: 11px;
       letter-spacing: 3px;
-      padding: 3px 12px;
+      padding: 4px 12px;
       border-radius: 2px
     }
 
@@ -547,8 +547,8 @@
     .panel-box {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 2px;
-      padding: 10px
+      border-radius: 4px;
+      padding: 10px;
     }
 
     .panel-box-title {
@@ -560,7 +560,7 @@
 
     .score-value {
       font-family: 'Press Start 2P', monospace;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--accent3);
       text-shadow: 0 0 15px rgba(170, 255, 0, .5);
       word-break: break-all
@@ -575,7 +575,7 @@
 
     .lines-value {
       font-family: 'Press Start 2P', monospace;
-      font-size: 14px;
+      font-size: 16px;
       color: var(--text)
     }
 
@@ -608,7 +608,7 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 2px;
-      padding: 2px 6px;
+      padding: 4px 12px;
       font-size: 11px;
       color: var(--text);
       font-family: monospace
@@ -620,7 +620,7 @@
       left: 50%;
       transform: translateX(-50%);
       font-family: 'Press Start 2P', monospace;
-      font-size: 9px;
+      font-size: 10px;
       color: var(--accent3);
       text-shadow: 0 0 10px rgba(170, 255, 0, .8);
       pointer-events: none;
@@ -697,11 +697,11 @@
       }
 
       .score-value {
-        font-size: 10px
+        font-size: 14px;
       }
 
       .panel-box {
-        padding: 7px
+        padding: 10px;
       }
     }
 
@@ -806,7 +806,7 @@
       right: 0;
       background: var(--surface);
       border-top: 1px solid var(--border);
-      padding: 5px 14px;
+      padding: 4px 12px;
       font-size: 11px;
       color: var(--dim);
       letter-spacing: 2px;
@@ -825,7 +825,7 @@
       color: var(--accent2);
       font-size: 12px;
       letter-spacing: 2px;
-      padding: 9px 18px;
+      padding: 4px 12px;
       border-radius: 2px;
       z-index: 200;
       display: none;
@@ -924,7 +924,7 @@
       color: #fff;
       font-family: 'Press Start 2P', monospace;
       font-size: 7px;
-      padding: 3px 5px;
+      padding: 4px 12px;
       border-radius: 2px;
       letter-spacing: 1px;
       opacity: 0;
@@ -955,7 +955,7 @@
 
     .combo-value {
       font-family: 'Press Start 2P', monospace;
-      font-size: 22px;
+      font-size: 24px;
       color: var(--accent3);
       text-shadow: 0 0 20px rgba(170, 255, 0, .8);
       transition: transform .1s;
@@ -988,7 +988,7 @@
       display: inline-block;
       font-size: 8px;
       letter-spacing: 1px;
-      padding: 3px 6px;
+      padding: 4px 12px;
       border-radius: 2px;
       border: 1px solid;
       margin-top: 4px;
@@ -1072,7 +1072,7 @@
       animation: pgWarn .3s ease-in-out infinite alternate
     }
 
-    .burst-gauge-wrap {
+    .burst-gauge-wrap { height: 12px; border-radius: 4px;
       width: 100%;
       height: 8px;
       background: rgba(0, 0, 0, .4);
@@ -1306,6 +1306,10 @@
             <div class="atk-row"><span class="atk-label">! NEXT</span><span class="atk-val recv"
                 id="pendGarbDisplay">0</span></div>
             <div class="pending-garb-row" id="pendGarbCells"></div>
+          </div>
+          <div class="panel-box log-box" style="margin-top: 6px; flex: 1; min-height: 100px; display: flex; flex-direction: column;">
+            <div class="panel-box-title" style="margin-bottom:4px;">GAME LOG</div>
+            <div id="gameLog" style="font-size: 9px; color: var(--dim); overflow: hidden; line-height: 1.4; display: flex; flex-direction: column-reverse; flex: 1; gap: 2px;"></div>
           </div>
         </div>
       </div>
@@ -1875,14 +1879,21 @@
 
         while (game.results.length > 0) {
           const res = game.results.shift();
-          if (res.garbageOut > 0) { statAtkSent += res.garbageOut; botGame.pendGarb += res.garbageOut; }
+          if (res.garbageOut > 0) {
+            statAtkSent += res.garbageOut; botGame.pendGarb += res.garbageOut;
+            pushLog('ATTACK +' + res.garbageOut, 'var(--accent3)');
+          }
           if (res.cleared === 4) statTetris++;
-          if (res.actionLabel) showActionPopup(res.actionLabel);
+          if (res.actionLabel) {
+            showActionPopup(res.actionLabel);
+            pushLog(res.actionLabel.replace('\n', ' '), 'var(--accent)');
+          }
         }
         while (botGame.results.length > 0) {
           const res = botGame.results.shift();
           if (res.garbageOut > 0) {
             game.pendGarb += res.garbageOut; statAtkRecv += res.garbageOut;
+            pushLog('INCOMING +' + res.garbageOut, 'var(--red)');
             const badge = document.getElementById('attackBadge');
             badge.textContent = `+${res.garbageOut} !`; badge.classList.remove('show'); void badge.offsetWidth; badge.classList.add('show');
             setTimeout(() => badge.classList.remove('show'), 1200);
@@ -2073,6 +2084,7 @@
       if (atk > 0) {
         statAtkSent += atk;
         botGame.pendGarb += atk;
+        pushLog('NEON BURST!!', 'var(--accent)');
         const bf = document.createElement('div'); bf.style.cssText = 'position:fixed;inset:0;background:rgba(0,245,255,0.25);z-index:30;pointer-events:none;';
         document.body.appendChild(bf); setTimeout(() => bf.remove(), 400);
         const bw = document.querySelector('.board-wrap');
@@ -2088,6 +2100,16 @@
     function flashAttack() { const f = document.getElementById('attackFlash'); f.classList.add('show'); setTimeout(() => f.classList.remove('show'), 280); const bw = document.querySelector('.board-wrap'); if (bw) { bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(() => bw.classList.remove('shake'), 260); } }
     function showActionPopup(label) { const p = document.getElementById('actionPopup'); p.textContent = label.replace('\n', ' / '); p.classList.remove('show'); p.offsetHeight; p.classList.add('show'); }
 
+    function pushLog(msg, color) {
+      const log = document.getElementById('gameLog');
+      if (!log) return;
+      const div = document.createElement('div');
+      div.textContent = msg;
+      if (color) div.style.color = color;
+      log.insertBefore(div, log.firstChild);
+      while (log.children.length > 6) log.removeChild(log.lastChild);
+    }
+
     function updateGameUI() {
       if (!game) return;
       const bg = game.burstGauge || 0;
@@ -2095,6 +2117,7 @@
       if (bg !== uiCache.burst || canB !== uiCache.canBurst) {
         const bar = document.getElementById('burstGaugeBar');
         if (bar) bar.style.width = bg + '%';
+        if (canB && !uiCache.canBurst) pushLog('BURST READY!!', 'var(--accent)');
         document.getElementById('burstReadyText').style.display = canB ? 'block' : 'none';
         const btnB = document.getElementById('btnBurst');
         if (btnB) btnB.style.display = canB ? 'flex' : 'none';
