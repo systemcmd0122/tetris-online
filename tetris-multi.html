@@ -1683,6 +1683,10 @@
               </div>
               <div id="burstReadyText" style="font-family:'Press Start 2P', monospace; font-size:7px; color:var(--accent); animation: plBlink 1s step-end infinite; margin-top:5px; display:none;">READY!! (V)</div>
             </div>
+            <div class="panel-box log-box" style="margin-top: 6px; flex: 1; min-height: 100px; display: flex; flex-direction: column;">
+              <div class="panel-box-title" style="margin-bottom:4px;">GAME LOG</div>
+              <div id="gameLog" style="font-size: 9px; color: var(--dim); overflow: hidden; line-height: 1.4; display: flex; flex-direction: column-reverse; flex: 1; gap: 2px;"></div>
+            </div>
             <div class="rank-panel">
               <div class="panel-box-title">RANK</div>
               <div class="rank-val" id="rankDisplay">?</div>
@@ -2413,7 +2417,7 @@
           while (game.results.length > 0) {
             const res = game.results.shift();
             if (res.garbageOut > 0) { statAtkSent += res.garbageOut; _qmBotGame.pendGarb += res.garbageOut; }
-            if (res.actionLabel) showAP(res.actionLabel);
+            if (res.actionLabel) { showAP(res.actionLabel); pushLog(res.actionLabel.replace("\n", " "), "var(--accent)"); }
           }
           // BOTの結果処理
           while (_qmBotGame.results.length > 0) {
@@ -2460,6 +2464,16 @@
     function showToast(msg, type = '') { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast' + (type ? ' ' + type : ''); t.classList.remove('show'); t.offsetHeight; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
     function flashAttack() { const f = document.getElementById('attackFlash'); f.classList.add('show'); setTimeout(() => f.classList.remove('show'), 280); const bw = document.querySelector('.board-wrap'); if (bw) { bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(() => bw.classList.remove('shake'), 260); } }
     function showAP(lbl) { const p = document.getElementById('actionPopup'); p.textContent = lbl.replace('\n', ' / '); p.classList.remove('show'); p.offsetHeight; p.classList.add('show'); }
+
+    function pushLog(msg, color) {
+      const log = document.getElementById("gameLog");
+      if (!log) return;
+      const div = document.createElement("div");
+      div.textContent = msg;
+      if (color) div.style.color = color;
+      log.insertBefore(div, log.firstChild);
+      while (log.children.length > 6) log.removeChild(log.lastChild);
+    }
 
     function triggerBurst() {
       if (!game || !gameRunning || game.over) return;
@@ -2973,7 +2987,7 @@
         if (v.n > 0) {
           const toAdd = v.n;
           runTransaction(myGRef, cur => cur && cur.n > 0 ? { n: 0 } : cur).catch(() => { });
-          game.pendGarb += toAdd;
+          game.pendGarb += toAdd; pushLog("INCOMING +" + toAdd, "var(--red)");
           const badge = document.getElementById('attackBadge'); badge.textContent = '+' + v.n + ' !'; badge.classList.remove('show'); void badge.offsetWidth; badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 1200);
           flashAttack(); playSound('attack');
         }
@@ -3000,7 +3014,7 @@
         if (!gameRunning) return;
         game._lastTs = ts;
         game.update(ts); game.draw();
-        while (game.results.length > 0) { const res = game.results.shift(); if (res.garbageOut > 0) { statAtkSent += res.garbageOut; pendOut += res.garbageOut; } if (res.actionLabel) showAP(res.actionLabel); }
+        while (game.results.length > 0) { const res = game.results.shift(); if (res.garbageOut > 0) { statAtkSent += res.garbageOut; pendOut += res.garbageOut; pushLog("ATTACK +" + res.garbageOut, "var(--accent3)"); } if (res.actionLabel) { showAP(res.actionLabel); pushLog(res.actionLabel.replace("\n", " "), "var(--accent)"); } }
         updateUI();
 
         if (ts - lastPush > PUSH) {
