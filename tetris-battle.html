@@ -1072,6 +1072,24 @@
       animation: pgWarn .3s ease-in-out infinite alternate
     }
 
+    .burst-gauge-wrap {
+      width: 100%;
+      height: 8px;
+      background: rgba(0, 0, 0, .4);
+      border: 1px solid #1a2540;
+      border-radius: 1px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .burst-gauge-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0080ff, var(--accent));
+      transition: width .2s ease-out;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
     .score-value {
       transition: color .1s
     }
@@ -1272,6 +1290,13 @@
             <div class="combo-label-inline">× COMBO</div>
             <div class="b2b-badge off" id="b2bBadge">BACK-TO-BACK</div>
           </div>
+          <div class="panel-box" style="border-color:var(--accent);">
+            <div class="panel-box-title">BURST</div>
+            <div class="burst-gauge-wrap">
+              <div class="burst-gauge-bar" id="burstGaugeBar"></div>
+            </div>
+            <div id="burstReadyText" style="font-family:'Press Start 2P', monospace; font-size:7px; color:var(--accent); animation: plBlink 1s step-end infinite; margin-top:5px; display:none;">READY!! (V)</div>
+          </div>
           <div class="panel-box atk-box">
             <div class="panel-box-title">ATTACK</div>
             <div class="atk-row"><span class="atk-label">SENT</span><span class="atk-val sent"
@@ -1312,6 +1337,7 @@
       </div>
       <div class="mobile-row">
         <div class="mobile-btn" id="btnHardDrop" style="width:116px;font-size:11px;letter-spacing:1px;">▼ DROP</div>
+        <div class="mobile-btn" id="btnBurst" style="width:116px;font-size:11px;display:none;background:rgba(0,245,255,0.15);border-color:var(--accent);color:var(--accent);">BURST (V)</div>
       </div>
     </div>
   </div>
@@ -1572,6 +1598,14 @@
         this.held = null; this.canHold = true; this.score = 0; this.lines = 0; this.level = 1; this.combo = 0; this.b2b = false;
         this.over = false; this.spd = 800; this.lastDrop = 0; this.lockTm = null; this.lockRst = 0; this._lockRstPnd = false; this.onGnd = false;
         this.waiting = false; this.nextTs = 0; this.dirty = true; this.lastAct = null; this.pendGarb = 0; this.results = [];
+        this.burstGauge = 0; this.lastGarbHole = -1;
+      }
+      canBurst() { return this.burstGauge >= 100; }
+      useBurst() {
+        if (!this.canBurst()) return 0;
+        this.burstGauge = 0; this.pendGarb = 0;
+        for (let i = 0; i < 4; i++) { this.board.pop(); this.board.unshift(Array(COLS).fill(null)); }
+        this.dirty = true; playSound('tetris'); return 5;
       }
       _get(x, y) { if (x < 0 || x >= COLS || y < -2 || y >= ROWS) return y >= ROWS ? 'W' : null; return this.board[y + 2][x]; }
       _set(x, y, v) { if (y < -2 || y >= ROWS || x < 0 || x >= COLS) return; this.board[y + 2][x] = v; this.dirty = true; }
@@ -1611,14 +1645,31 @@
         if (cl > 0) { this.combo++; if (this.combo > 1) { pts += 50 * (this.combo - 1) * this.level; go += Math.floor(this.combo / 2); lbl += (lbl ? '\n' : '') + 'COMBO x' + this.combo + '!'; } } else this.combo = 0;
         this.score += pts;
         if (cl > 0) { this.lines += cl; this.level = Math.floor(this.lines / 10) + 1; this.spd = Math.max(50, 800 - (this.level - 1) * 70); if (cl === 4) playSound('tetris'); else playSound('clear1'); } else playSound('lock');
-        if (this.pendGarb > 0) { const cn = Math.min(go, this.pendGarb); go -= cn; this.pendGarb -= cn; if (this.pendGarb > 0) { this._addGarb(this.pendGarb); this.pendGarb = 0; } }
+
+        // NEON BURST Gauge update
+        let gg = 0;
+        if (ts) gg = [0, 10, 20, 30][cl] || 0;
+        else if (cl > 0) gg = [0, 2, 5, 10, 20][cl] || 0;
+        if (this.combo > 1) gg += (this.combo - 1) * 2;
+        if (this.b2b && cl > 0) gg = Math.floor(gg * 1.5);
+        this.burstGauge = Math.min(100, this.burstGauge + gg);
+
+        if (this.pendGarb > 0 && go > 0) { const cn = Math.min(go, this.pendGarb); go -= cn; this.pendGarb -= cn; }
+        if (cl === 0 && this.pendGarb > 0) { this._addGarb(this.pendGarb); this.pendGarb = 0; }
         this.waiting = true; this.nextTs = (this._lastTs || performance.now()) + 200;
         this.canHold = true; this.lockTm = null; this.lockRst = 0; this.onGnd = false; this.lastAct = null;
         this.results.push({ cleared: cl, garbageOut: go, actionLabel: lbl });
         return { cleared: cl, garbageOut: go, actionLabel: lbl };
       }
       _clearLines() { let n = 0; for (let r = ROWS - 1; r >= 0; r--) { if (this.board[r + 2].every(c => c !== null)) { this.board.splice(r + 2, 1); this.board.unshift(Array(COLS).fill(null)); n++; r++; this.dirty = true; } } return n; }
-      _addGarb(n) { if (n <= 0) return; const h = Math.floor(Math.random() * COLS); for (let i = 0; i < n; i++) { this.board.shift(); const r = Array(COLS).fill('G'); r[h] = null; this.board.push(r); } this.dirty = true; }
+      _addGarb(n) {
+        if (n <= 0) return;
+        let h = this.lastGarbHole;
+        if (h === -1 || Math.random() < 0.1) h = Math.floor(Math.random() * COLS);
+        this.lastGarbHole = h;
+        for (let i = 0; i < n; i++) { this.board.shift(); const r = Array(COLS).fill('G'); r[h] = null; this.board.push(r); }
+        this.dirty = true;
+      }
       hold() {
         if (!this.canHold || this.waiting) return false;
         const name = this.current.name;
@@ -1758,7 +1809,7 @@
     let statMaxCombo = 0, statAtkSent = 0, statAtkRecv = 0, statTetris = 0;
     let softDropInterval = null;
     let _prevScore = 0, _prevCombo = -1;
-    const uiCache = { score: -1, level: -1, lines: -1, combo: -1, b2b: null, sent: -1, recv: -1, pg: -1 };
+    const uiCache = { score: -1, level: -1, lines: -1, combo: -1, b2b: null, sent: -1, recv: -1, pg: -1, burst: -1, canBurst: null };
 
     function resetState() {
       gameRunning = false; endedOnce = false;
@@ -1780,6 +1831,8 @@
       document.getElementById('pendGarbCells').innerHTML = '';
       document.getElementById('garbBar').innerHTML = '';
       document.getElementById('attackBadge').classList.remove('show');
+      const bar = document.getElementById('burstGaugeBar'); if (bar) bar.style.width = '0%';
+      const rt = document.getElementById('burstReadyText'); if (rt) rt.style.display = 'none';
       statMaxCombo = 0; statAtkSent = 0; statAtkRecv = 0; statTetris = 0;
       Object.keys(uiCache).forEach(k => { uiCache[k] = -1 }); uiCache.b2b = null;
       ['rs-score', 'rs-level', 'rs-lines', 'rs-combo', 'rs-atk', 'rs-tetris'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '0'; });
@@ -1968,6 +2021,7 @@
           break;
         case 'KeyC': case 'ShiftLeft': case 'ShiftRight': case 'Shift':
           e.preventDefault(); game.hold(); break;
+        case 'KeyV': triggerBurst(); break;
       }
     });
     document.addEventListener('keyup', e => {
@@ -2000,6 +2054,7 @@
     setupMobile('btnRotateL', () => game?.rotate(-1), false);
     setupMobile('btnHardDrop', () => { if (game && !game.waiting) game.hardDrop(); }, false);
     setupMobile('btnHold', () => game?.hold(), false);
+    setupMobile('btnBurst', () => triggerBurst(), false);
 
     (function () {
       let tx0 = 0, ty0 = 0; const cvs = document.getElementById('myCanvas');
@@ -2012,6 +2067,19 @@
     })();
 
     // ═══ UI HELPERS ═══
+    function triggerBurst() {
+      if (!game || !gameRunning || game.over) return;
+      const atk = game.useBurst();
+      if (atk > 0) {
+        statAtkSent += atk;
+        botGame.pendGarb += atk;
+        const bf = document.createElement('div'); bf.style.cssText = 'position:fixed;inset:0;background:rgba(0,245,255,0.25);z-index:30;pointer-events:none;';
+        document.body.appendChild(bf); setTimeout(() => bf.remove(), 400);
+        const bw = document.querySelector('.board-wrap');
+        if (bw) { bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(() => bw.classList.remove('shake'), 300); }
+        showActionPopup("NEON BURST!!"); updateGameUI();
+      }
+    }
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
@@ -2022,6 +2090,16 @@
 
     function updateGameUI() {
       if (!game) return;
+      const bg = game.burstGauge || 0;
+      const canB = game.canBurst();
+      if (bg !== uiCache.burst || canB !== uiCache.canBurst) {
+        const bar = document.getElementById('burstGaugeBar');
+        if (bar) bar.style.width = bg + '%';
+        document.getElementById('burstReadyText').style.display = canB ? 'block' : 'none';
+        const btnB = document.getElementById('btnBurst');
+        if (btnB) btnB.style.display = canB ? 'flex' : 'none';
+        uiCache.burst = bg; uiCache.canBurst = canB;
+      }
       if (game.score !== uiCache.score) { const sd = document.getElementById('scoreDisplay'); sd.classList.remove('score-pop'); void sd.offsetWidth; sd.classList.add('score-pop'); sd.textContent = game.score; uiCache.score = game.score; }
       if (game.level !== uiCache.level) { document.getElementById('levelDisplay').textContent = game.level; uiCache.level = game.level; }
       if (game.lines !== uiCache.lines) { document.getElementById('linesDisplay').textContent = game.lines; uiCache.lines = game.lines; }

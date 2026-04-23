@@ -876,6 +876,24 @@
       background: rgba(255, 170, 0, .9)
     }
 
+    .burst-gauge-wrap {
+      width: 100%;
+      height: 8px;
+      background: rgba(0, 0, 0, .4);
+      border: 1px solid #1a2540;
+      border-radius: 1px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .burst-gauge-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0080ff, var(--accent));
+      transition: width .2s ease-out;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
     .rank-panel {
       background: rgba(255, 215, 0, .06);
       border: 1px solid rgba(255, 215, 0, .3);
@@ -1658,9 +1676,12 @@
                   id="pendGarbDisplay">0</span></div>
               <div class="pending-garb-row" id="pendGarbCells"></div>
             </div>
-            <div class="panel-box" id="burstPanel" style="border-color:var(--accent); display:none;">
-              <div class="panel-box-title">SPECIAL</div>
-              <div style="font-family:'Press Start 2P', monospace; font-size:8px; color:var(--accent); animation: plBlink 1s step-end infinite;">NEON BURST!!</div>
+            <div class="panel-box" style="border-color:var(--accent);">
+              <div class="panel-box-title">BURST</div>
+              <div class="burst-gauge-wrap">
+                <div class="burst-gauge-bar" id="burstGaugeBar"></div>
+              </div>
+              <div id="burstReadyText" style="font-family:'Press Start 2P', monospace; font-size:7px; color:var(--accent); animation: plBlink 1s step-end infinite; margin-top:5px; display:none;">READY!! (V)</div>
             </div>
             <div class="rank-panel">
               <div class="panel-box-title">RANK</div>
@@ -1858,11 +1879,20 @@
         this.held = null; this.canHold = true; this.score = 0; this.lines = 0; this.level = 1; this.combo = 0; this.b2b = false;
         this.over = false; this.spd = 800; this.lastDrop = 0; this.lockTm = null; this.lockRst = 0; this._lockRstPnd = false; this.onGnd = false;
         this.waiting = false; this.nextTs = 0; this.dirty = true; this.lastAct = null; this.pendGarb = 0; this.results = [];
-        this.burstUsed = false;
+        this.burstGauge = 0; this.lastGarbHole = -1;
       }
       isPinch() { for (let r = 0; r < 6; r++) { for (let c = 0; c < COLS; c++) { if (this.board[r + 2][c]) return true; } } return false; }
-      canBurst() { return !this.burstUsed && (this.pendGarb >= 8 || this.isPinch()); }
-      useBurst() { if (!this.canBurst()) return 0; this.burstUsed = true; this.pendGarb = 0; this.dirty = true; playSound('tetris'); return 4; }
+      canBurst() { return this.burstGauge >= 100; }
+      useBurst() {
+        if (!this.canBurst()) return 0;
+        this.burstGauge = 0; this.pendGarb = 0;
+        // 緊急回避: 下4ライン消去
+        for (let i = 0; i < 4; i++) {
+          this.board.pop();
+          this.board.unshift(Array(COLS).fill(null));
+        }
+        this.dirty = true; playSound('tetris'); return 5; // 相手に5ライン
+      }
       _get(x, y) { if (x < 0 || x >= COLS || y < -2 || y >= ROWS) return y >= ROWS ? 'W' : null; return this.board[y + 2][x] }
       _set(x, y, v) { if (y < -2 || y >= ROWS || x < 0 || x >= COLS) return; this.board[y + 2][x] = v; this.dirty = true }
       mat(p = this.current) { return PIECES[p.name][p.rot] }
@@ -1900,13 +1930,30 @@
         if (cl > 0) { this.combo++; if (this.combo > 1) { pts += 50 * (this.combo - 1) * this.level; go += Math.floor(this.combo / 2); lbl += (lbl ? '\n' : '') + 'COMBO x' + this.combo + '!'; } } else this.combo = 0;
         this.score += pts;
         if (cl > 0) { this.lines += cl; this.level = Math.floor(this.lines / 10) + 1; this.spd = Math.max(50, 800 - (this.level - 1) * 70); if (cl === 4) playSound('tetris'); else playSound('clear1'); } else playSound('lock');
-        if (this.pendGarb > 0) { const cn = Math.min(go, this.pendGarb); go -= cn; this.pendGarb -= cn; if (this.pendGarb > 0) { this._addGarb(this.pendGarb); this.pendGarb = 0; } }
+
+        // NEON BURST Gauge update
+        let gg = 0;
+        if (ts) gg = [0, 10, 20, 30][cl] || 0;
+        else if (cl > 0) gg = [0, 2, 5, 10, 20][cl] || 0;
+        if (this.combo > 1) gg += (this.combo - 1) * 2;
+        if (this.b2b && cl > 0) gg = Math.floor(gg * 1.5);
+        this.burstGauge = Math.min(100, this.burstGauge + gg);
+
+        if (this.pendGarb > 0 && go > 0) { const cn = Math.min(go, this.pendGarb); go -= cn; this.pendGarb -= cn; }
+        if (cl === 0 && this.pendGarb > 0) { this._addGarb(this.pendGarb); this.pendGarb = 0; }
         this.waiting = true; this.nextTs = (this._lastTs || performance.now()) + 200;
         this.canHold = true; this.lockTm = null; this.lockRst = 0; this.onGnd = false; this.lastAct = null;
         this.results.push({ cleared: cl, garbageOut: go, actionLabel: lbl }); return { cleared: cl, garbageOut: go, actionLabel: lbl };
       }
       _clearLines() { let n = 0; for (let r = ROWS - 1; r >= 0; r--) { if (this.board[r + 2].every(c => c !== null)) { this.board.splice(r + 2, 1); this.board.unshift(Array(COLS).fill(null)); n++; r++; this.dirty = true; } } return n; }
-      _addGarb(n) { if (n <= 0) return; const h = Math.floor(Math.random() * COLS); for (let i = 0; i < n; i++) { this.board.shift(); const r = Array(COLS).fill('G'); r[h] = null; this.board.push(r); } this.dirty = true; }
+      _addGarb(n) {
+        if (n <= 0) return;
+        let h = this.lastGarbHole;
+        if (h === -1 || Math.random() < 0.1) h = Math.floor(Math.random() * COLS);
+        this.lastGarbHole = h;
+        for (let i = 0; i < n; i++) { this.board.shift(); const r = Array(COLS).fill('G'); r[h] = null; this.board.push(r); }
+        this.dirty = true;
+      }
       hold() {
         if (!this.canHold || this.waiting) return false;
         const name = this.current.name;
@@ -2421,11 +2468,13 @@
         game.results.push({ cleared: 0, garbageOut: atk, actionLabel: "NEON BURST!!" });
         const bf = document.getElementById('burstFlash');
         if (bf) { bf.classList.add('show'); setTimeout(() => bf.classList.remove('show'), 400); }
+        const bw = document.querySelector('.board-wrap');
+        if (bw) { bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(() => bw.classList.remove('shake'), 300); }
         updateUI();
       }
     }
 
-    const uiC = { score: -1, level: -1, lines: -1, combo: -1, b2b: null, sent: -1, pg: -1, burst: -1 };
+    const uiC = { score: -1, level: -1, lines: -1, combo: -1, b2b: null, sent: -1, pg: -1, burst: -1, canBurst: null };
     function updateUI() {
       if (!game) return;
       if (game.score !== uiC.score) { const sd = document.getElementById('scoreDisplay'); sd.classList.remove('score-pop'); void sd.offsetWidth; sd.classList.add('score-pop'); sd.textContent = game.score; uiC.score = game.score; }
@@ -2449,16 +2498,22 @@
       document.getElementById('aliveDisplay').textContent = tot + '/' + totalPlayers;
       if (myFinalRank === null) document.getElementById('rankDisplay').textContent = tot;
 
+      const bg = game.burstGauge || 0;
       const canB = game.canBurst();
-      if (canB !== uiC.burst) {
-        document.getElementById('burstPanel').style.display = canB ? 'block' : 'none';
+      if (bg !== uiC.burst || canB !== uiC.canBurst) {
+        const bar = document.getElementById('burstGaugeBar');
+        if (bar) bar.style.width = bg + '%';
+        document.getElementById('burstReadyText').style.display = canB ? 'block' : 'none';
         document.getElementById('btnBurst').style.display = canB ? 'flex' : 'none';
-        uiC.burst = canB;
+        uiC.burst = bg;
+        uiC.canBurst = canB;
       }
     }
     function clearBoards() {
       ['myCanvas', 'holdCanvas', 'nextCanvas'].forEach(id => { const el = document.getElementById(id); if (el) { const ctx = el.getContext('2d'); ctx.clearRect(0, 0, el.width, el.height); } });
       document.getElementById('scoreDisplay').textContent = '0'; document.getElementById('levelDisplay').textContent = '1'; document.getElementById('linesDisplay').textContent = '0'; document.getElementById('comboDisplay').textContent = '0'; document.getElementById('b2bBadge').className = 'b2b-badge off'; document.getElementById('atkSentDisplay').textContent = '0'; document.getElementById('pendGarbDisplay').textContent = '0'; document.getElementById('pendGarbCells').innerHTML = ''; document.getElementById('garbBar').innerHTML = ''; document.getElementById('attackBadge').classList.remove('show'); document.getElementById('rankDisplay').textContent = '?'; document.getElementById('aliveDisplay').textContent = '?'; statAtkSent = 0; myFinalRank = null;
+      const bar = document.getElementById('burstGaugeBar'); if (bar) bar.style.width = '0%';
+      const ready = document.getElementById('burstReadyText'); if (ready) ready.style.display = 'none';
       Object.keys(uiC).forEach(k => { uiC[k] = -1 }); uiC.b2b = null;
       // リマッチボタンをリセット
       const rb = document.getElementById('rematchBtn'); if (rb) rb.disabled = false;
