@@ -1486,6 +1486,7 @@
   <div class="scanlines-overlay"></div>
   <div class="scanline"></div>
   <div class="attack-flash" id="attackFlash"></div>
+  <div class="attack-flash" id="burstFlash" style="background:rgba(0,245,255,0.25)"></div>
   <div class="match-flash" id="matchFlash">
     <div class="match-text">MATCH FOUND!</div>
   </div>
@@ -1657,6 +1658,10 @@
                   id="pendGarbDisplay">0</span></div>
               <div class="pending-garb-row" id="pendGarbCells"></div>
             </div>
+            <div class="panel-box" id="burstPanel" style="border-color:var(--accent); display:none;">
+              <div class="panel-box-title">SPECIAL</div>
+              <div style="font-family:'Press Start 2P', monospace; font-size:8px; color:var(--accent); animation: plBlink 1s step-end infinite;">NEON BURST!!</div>
+            </div>
             <div class="rank-panel">
               <div class="panel-box-title">RANK</div>
               <div class="rank-val" id="rankDisplay">?</div>
@@ -1701,6 +1706,7 @@
       </div>
       <div class="mobile-row">
         <div class="mobile-btn" id="btnHardDrop" style="width:104px;font-size:10px;">▼ DROP</div>
+        <div class="mobile-btn" id="btnBurst" style="width:104px;font-size:10px;display:none;background:rgba(0,245,255,0.15);border-color:var(--accent);color:var(--accent);">BURST (V)</div>
       </div>
     </div>
   </div>
@@ -1852,7 +1858,11 @@
         this.held = null; this.canHold = true; this.score = 0; this.lines = 0; this.level = 1; this.combo = 0; this.b2b = false;
         this.over = false; this.spd = 800; this.lastDrop = 0; this.lockTm = null; this.lockRst = 0; this._lockRstPnd = false; this.onGnd = false;
         this.waiting = false; this.nextTs = 0; this.dirty = true; this.lastAct = null; this.pendGarb = 0; this.results = [];
+        this.burstUsed = false;
       }
+      isPinch() { for (let r = 0; r < 6; r++) { for (let c = 0; c < COLS; c++) { if (this.board[r + 2][c]) return true; } } return false; }
+      canBurst() { return !this.burstUsed && (this.pendGarb >= 8 || this.isPinch()); }
+      useBurst() { if (!this.canBurst()) return 0; this.burstUsed = true; this.pendGarb = 0; this.dirty = true; playSound('tetris'); return 4; }
       _get(x, y) { if (x < 0 || x >= COLS || y < -2 || y >= ROWS) return y >= ROWS ? 'W' : null; return this.board[y + 2][x] }
       _set(x, y, v) { if (y < -2 || y >= ROWS || x < 0 || x >= COLS) return; this.board[y + 2][x] = v; this.dirty = true }
       mat(p = this.current) { return PIECES[p.name][p.rot] }
@@ -2180,7 +2190,7 @@
               document.getElementById('statusRoom').textContent = 'QM: ' + code;
               // p1/p2共通のgasを使用して同期を保証
               const roomData = { p1: { name: p1Entry.name, alive: true }, p2: { name: p2Entry.name, alive: true }, status: 'started', maxPlayers: 2, gameStartAt: gsa, activeSlots: ['p1', 'p2'] };
-              startGame(roomData);
+              startGame(roomData, true);
             });
           } catch (e) {
             _matching = false;
@@ -2214,7 +2224,7 @@
                 gameStartAt: md.gameStartAt || (getServerTime() + 5000),
                 activeSlots: ['p1', 'p2']
               };
-              startGame(qmRoomData);
+              startGame(qmRoomData, true);
             });
           });
         }
@@ -2404,7 +2414,18 @@
     function flashAttack() { const f = document.getElementById('attackFlash'); f.classList.add('show'); setTimeout(() => f.classList.remove('show'), 280); const bw = document.querySelector('.board-wrap'); if (bw) { bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(() => bw.classList.remove('shake'), 260); } }
     function showAP(lbl) { const p = document.getElementById('actionPopup'); p.textContent = lbl.replace('\n', ' / '); p.classList.remove('show'); p.offsetHeight; p.classList.add('show'); }
 
-    const uiC = { score: -1, level: -1, lines: -1, combo: -1, b2b: null, sent: -1, pg: -1 };
+    function triggerBurst() {
+      if (!game || !gameRunning || game.over) return;
+      const atk = game.useBurst();
+      if (atk > 0) {
+        game.results.push({ cleared: 0, garbageOut: atk, actionLabel: "NEON BURST!!" });
+        const bf = document.getElementById('burstFlash');
+        if (bf) { bf.classList.add('show'); setTimeout(() => bf.classList.remove('show'), 400); }
+        updateUI();
+      }
+    }
+
+    const uiC = { score: -1, level: -1, lines: -1, combo: -1, b2b: null, sent: -1, pg: -1, burst: -1 };
     function updateUI() {
       if (!game) return;
       if (game.score !== uiC.score) { const sd = document.getElementById('scoreDisplay'); sd.classList.remove('score-pop'); void sd.offsetWidth; sd.classList.add('score-pop'); sd.textContent = game.score; uiC.score = game.score; }
@@ -2427,6 +2448,13 @@
       const tot = myAlive + aliveOpps;
       document.getElementById('aliveDisplay').textContent = tot + '/' + totalPlayers;
       if (myFinalRank === null) document.getElementById('rankDisplay').textContent = tot;
+
+      const canB = game.canBurst();
+      if (canB !== uiC.burst) {
+        document.getElementById('burstPanel').style.display = canB ? 'block' : 'none';
+        document.getElementById('btnBurst').style.display = canB ? 'flex' : 'none';
+        uiC.burst = canB;
+      }
     }
     function clearBoards() {
       ['myCanvas', 'holdCanvas', 'nextCanvas'].forEach(id => { const el = document.getElementById(id); if (el) { const ctx = el.getContext('2d'); ctx.clearRect(0, 0, el.width, el.height); } });
@@ -2623,6 +2651,12 @@
     // ホスト(p1): ルームを waiting にリセット → ウェイティング画面へ
     // 非ホスト: ホストのリセットを Firebase リスナーで待ってから再参加
     window.rematch = async () => {
+      if (_qmIsBot) {
+        _qmCleanup();
+        _startQmBotGame();
+        document.getElementById('resultOverlay').classList.remove('show');
+        return;
+      }
       if (!roomCode || !mySlot) return;
       const statusEl = document.getElementById('rematchStatus');
       const btn = document.getElementById('rematchBtn');
@@ -2671,6 +2705,7 @@
             game: null,
             garb: null,
             alive: null,
+            rematchReq: null,
             p1: { name: prevName, alive: true },
             p2: null,
             p3: null,
@@ -2703,6 +2738,11 @@
           _rematchActive = true;
           if (statusEl) statusEl.textContent = 'ホストのリマッチを待っています...';
           showToast('⏳ ホストのリマッチを待っています...', 'warn');
+
+          // リマッチ希望をホストに通知
+          try {
+            set(ref(db, `multi/${prevCode}/rematchReq/${prevSlot}`), true);
+          } catch (e) { }
 
           const rRef = ref(db, 'multi/' + prevCode);
           const roomData = await new Promise((resolve, reject) => {
@@ -2785,6 +2825,8 @@
             await update(ref(db, 'multi/' + code + '/alive'), { [slot]: false });
             // 非ホストの場合はスロットを null にして席を空ける
             await update(ref(db, 'multi/' + code), { [slot]: null });
+            // リマッチ希望も削除
+            try { await remove(ref(db, `multi/${code}/rematchReq/${slot}`)); } catch (e) { }
           }
         } catch (e) { }
       }
@@ -2792,7 +2834,7 @@
     };
 
     // ── START GAME ──
-    async function startGame(roomData) {
+    async function startGame(roomData, wasBot = false) {
       document.activeElement?.blur();
       const d = roomData, max = d.maxPlayers || 3;
       const active = d.activeSlots || ((['p1', 'p2', 'p3', 'p4'].slice(0, max)).filter(s => !!d[s]));
@@ -2845,6 +2887,29 @@
           }
         }));
       });
+
+      // Watch rematch requests (Host only)
+      if (mySlot === 'p1' && !wasBot) {
+        _addSub('rematchReq', onValue(ref(db, `multi/${roomCode}/rematchReq`), snap => {
+          const reqs = snap.val();
+          const statusEl = document.getElementById('rematchStatus');
+          if (!reqs) {
+            if (statusEl) statusEl.textContent = '';
+            return;
+          }
+          const slots = Object.keys(reqs).filter(s => reqs[s] === true);
+          if (slots.length > 0) {
+            const names = slots.map(s => d[s]?.name || s.toUpperCase());
+            const msg = 'REMATCH REQUESTED: ' + names.join(', ');
+            if (statusEl) statusEl.textContent = msg;
+            if (document.getElementById('resultOverlay').classList.contains('show')) {
+              showToast(msg, 'ok');
+            }
+          } else {
+            if (statusEl) statusEl.textContent = '';
+          }
+        }));
+      }
 
       // Watch incoming garbage
       const myGRef = ref(db, 'multi/' + roomCode + '/garb/' + mySlot);
@@ -2937,9 +3002,8 @@
       document.getElementById('rs-score').textContent = score; document.getElementById('rs-level').textContent = lvl; document.getElementById('rs-lines').textContent = lines; document.getElementById('rs-atk').textContent = statAtkSent;
       document.getElementById('resultSub').textContent = totalPlayers + '人中 第' + rank + '位';
       document.getElementById('rankDisplay').textContent = rank;
-      // BOTゲーム（クイックマッチフォールバック）はリマッチ不可
       const rematchBtn = document.getElementById('rematchBtn');
-      if (rematchBtn) rematchBtn.style.display = _qmIsBot ? 'none' : '';
+      if (rematchBtn) rematchBtn.style.display = '';
       document.getElementById('resultOverlay').classList.add('show');
 
       // ログイン中ユーザーの対戦履歴を Firestore に保存
@@ -2996,6 +3060,7 @@
           if (game && !game.waiting) game.hardDrop();
           break;
         case 'KeyC': case 'ShiftLeft': case 'ShiftRight': e.preventDefault(); game.hold(); break;
+        case 'KeyV': triggerBurst(); break;
       }
     });
     document.addEventListener('keyup', e => {
@@ -3034,6 +3099,7 @@
       btn.addEventListener('mouseleave', sp);
     }
     setupMob('btnLeft', () => game?.move(-1), ARR); setupMob('btnRight', () => game?.move(1), ARR); setupMob('btnDown', () => game?.softDrop(), 50); setupMob('btnRotate', () => game?.rotate(1)); setupMob('btnRotateL', () => game?.rotate(-1)); setupMob('btnHardDrop', () => { if (game && !game.waiting) game.hardDrop(); }); setupMob('btnHold', () => game?.hold());
+    setupMob('btnBurst', () => triggerBurst());
     (function () { let tx = 0, ty = 0; const c = document.getElementById('myCanvas'); c.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true }); c.addEventListener('touchend', e => { if (!game || !gameRunning || game.waiting) return; const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty; if (Math.abs(dy) > 50 && dy > 0 && Math.abs(dy) > Math.abs(dx) * 1.5) game.hardDrop(); }, { passive: true }); })();
     document.getElementById('roomCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') window.joinRoom(); });
     document.getElementById('roomCodeInput').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^0-9]/g, ''); });
