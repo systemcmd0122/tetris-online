@@ -653,6 +653,11 @@ export function mountRematchListener(db, roomCode, hostName, onAccept, onDecline
     if (!d || d.status !== 'pending') return;
     // すでにダイアログが表示中なら無視
     if (document.getElementById('tb-rematch-dialog-overlay')?.classList.contains('show')) return;
+    // tetris-multi.html の結果画面が表示されている場合のみダイアログを表示
+    const onBattlePage = location.pathname.split('/').pop().replace(/\?.*$/, '') === 'tetris-multi.html' ||
+                         location.pathname === '/' && false; // GitHub Pages等でのパス対応
+    const resultVisible = document.getElementById('resultOverlay')?.classList.contains('show');
+    if (!onBattlePage || !resultVisible) return;
     _showRematchDialog(d);
   });
 }

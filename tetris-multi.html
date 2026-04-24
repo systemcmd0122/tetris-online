@@ -2671,6 +2671,8 @@
         const rSnap = await get(ref(db, 'multi/' + prevCode));
         if (!rSnap.exists()) throw new Error('ルームが見つかりません');
 
+        // ルームをリセット。rematch_request は 'accepted' のまま残す（非ホストが検出できるよう）
+        // 非ホストは status:'waiting' を検出してスロット取得する
         const updateData = {
           status: 'waiting',
           gameStartAt: null,
@@ -2678,7 +2680,7 @@
           game: null,
           garb: null,
           alive: null,
-          rematch_request: null,
+          // rematch_request は削除せずに accepted のまま → 非ホストが room_reset ルートで参加後にクリア
           p1: { name: prevName, alive: true },
           p2: null,
           p3: null,
@@ -2686,6 +2688,12 @@
         };
 
         await update(ref(db, 'multi/' + prevCode), updateData);
+        // rematch_request を別途クリア（非ホストが 'waiting' を検出した後に null にする）
+        // 非同期で少し待ってからクリアすることで非ホストの検出を確実にする
+        setTimeout(async () => {
+          try { await update(ref(db, 'multi/' + prevCode + '/rematch_request'), { status: 'room_ready' }); } catch(e) {}
+        }, 500);
+
         onDisconnect(ref(db, 'multi/' + prevCode)).remove();
 
         roomCode = prevCode; mySlot = 'p1'; endedOnce = false;
@@ -2827,15 +2835,23 @@
           btn.style.display = 'none';
 
           // ホストの応答を監視
+          // 【設計】
+          //  ホストが承認 → nav.js が rematch_request.status='accepted' を書き込む
+          //              → _hostAcceptRematch がルームを status:'waiting' にリセット
+          //  非ホストは room.status:'waiting' を検出 → トランザクションでスロット取得
+          //  これにより accepted 書き込みとルームリセットの競合を回避する
           const reqRef = ref(db, 'multi/' + prevCode + '/rematch_request');
           const rRef = ref(db, 'multi/' + prevCode);
 
-          const response = await new Promise((resolve, reject) => {
+          await new Promise((resolve, reject) => {
             let reqUnsub = null;
             let roomUnsub = null;
             let timer = null;
+            let _settled = false;
 
             const done = (fn) => {
+              if (_settled) return;
+              _settled = true;
               clearTimeout(timer);
               if (reqUnsub) { try { reqUnsub(); } catch (e) {} reqUnsub = null; }
               if (roomUnsub) { try { roomUnsub(); } catch (e) {} roomUnsub = null; }
@@ -2845,53 +2861,56 @@
 
             timer = setTimeout(() => done(() => reject(new Error('ホストが応答しません（60秒タイムアウト）'))), 60000);
 
-            // ホストがリクエストに応答するか、ルームをリセットするかを監視
+            // rematch_request の拒否・エラー・削除を監視
             reqUnsub = onValue(reqRef, snap => {
               const d = snap.val();
-              if (!d) { done(() => reject(new Error('リクエストが削除されました'))); return; }
-              if (d.status === 'accepted') { done(() => resolve({ type: 'accepted' })); }
-              else if (d.status === 'declined') { done(() => reject(new Error('ホストがリマッチを断りました'))); }
+              if (!d) {
+                // rematch_request が削除された = ルーム削除またはホストが退出
+                // ルーム自体はまだ存在するかもしれないので roomUnsub に任せる（ここではrejectしない）
+                return;
+              }
+              if (d.status === 'declined')  { done(() => reject(new Error('ホストがリマッチを断りました'))); }
               else if (d.status === 'timeout') { done(() => reject(new Error('ホストが応答しませんでした'))); }
-              else if (d.status === 'error') { done(() => reject(new Error('リマッチ処理でエラーが発生しました'))); }
+              else if (d.status === 'error')   { done(() => reject(new Error('リマッチ処理でエラーが発生しました'))); }
+              else if (d.status === 'cancelled') { done(() => reject(new Error('リクエストがキャンセルされました'))); }
+              // 'pending' / 'accepted' / 'room_ready' はルームの status 変化で処理
             });
 
-            // ホストが自発的にルームをリセットした場合にも対応（waitingになったら参加）
+            // ルームの status:'waiting' を検出してスロット取得へ進む
             roomUnsub = onValue(rRef, snap => {
               const d = snap.val();
               if (!d) { done(() => reject(new Error('ルームが削除されました'))); return; }
-              if (d.status === 'waiting') {
-                // 既にacceptedリスナーが発火している可能性を避けるため少し待つ
-                setTimeout(() => done(() => resolve({ type: 'room_reset', data: d })), 200);
-              }
+              if (d.status === 'waiting') { done(() => resolve()); }
             });
 
-            // キャンセル可能なよう参照を保存
+            // キャンセル用
             _rematchRequestUnsub = () => done(() => reject(new Error('キャンセルされました')));
           });
 
           if (!_rematchActive) return;
 
-          // スロット書き込み
+          // ルームが waiting になったのでトランザクションでスロット取得
           const joinResult = await runTransaction(rRef, (d) => {
-            if (!d || d.status !== 'waiting') return;
+            if (!d || d.status !== 'waiting') return; // abort（まだ反映されていない場合）
             const max = d.maxPlayers || 3;
             const slots = ['p1', 'p2', 'p3', 'p4'].slice(0, max);
+            // 以前のスロットが空いていればそこを使う、他のプレイヤーが入っていたら空きへ
             let target = prevSlot;
             if (d[prevSlot] && d[prevSlot].name && d[prevSlot].name !== prevName) {
               target = slots.find(s => !d[s]) || null;
             }
-            if (!target) return;
+            if (!target) return; // abort（満員）
             d[target] = { name: prevName, alive: true };
             return d;
           });
 
-          if (!joinResult.committed) throw new Error('リマッチに参加できませんでした');
+          if (!joinResult.committed) throw new Error('リマッチに参加できませんでした（満員の可能性があります）');
 
           const finalData = joinResult.snapshot.val();
-          const max = finalData.maxPlayers || 3;
-          const slots = ['p1', 'p2', 'p3', 'p4'].slice(0, max);
-          const assigned = slots.find(s => finalData[s] && finalData[s].name === prevName);
-          if (!assigned) throw new Error('スロットの再確保に失敗しました');
+          const maxSlots = finalData.maxPlayers || 3;
+          const allSlots = ['p1', 'p2', 'p3', 'p4'].slice(0, maxSlots);
+          const assigned = allSlots.find(s => finalData[s] && finalData[s].name === prevName);
+          if (!assigned) throw new Error('スロットの確保に失敗しました');
 
           mySlot = assigned; roomCode = prevCode; endedOnce = false;
           onDisconnect(ref(db, 'multi/' + prevCode + '/' + assigned)).remove();
@@ -3104,13 +3123,14 @@
       document.getElementById('rs-score').textContent = score; document.getElementById('rs-level').textContent = lvl; document.getElementById('rs-lines').textContent = lines; document.getElementById('rs-atk').textContent = statAtkSent;
       document.getElementById('resultSub').textContent = totalPlayers + '人中 第' + rank + '位';
       document.getElementById('rankDisplay').textContent = rank;
-      // BOTゲーム（クイックマッチフォールバック）はリマッチ不可
+      // BOTゲームまたはクイックマッチ（roomCodeなし）はリマッチ不可
       const rematchBtn = document.getElementById('rematchBtn');
-      if (rematchBtn) rematchBtn.style.display = _qmIsBot ? 'none' : '';
+      const isQmGame = _qmIsBot || !roomCode;
+      if (rematchBtn) rematchBtn.style.display = isQmGame ? 'none' : '';
       document.getElementById('resultOverlay').classList.add('show');
 
-      // ホスト(p1)の場合、他ページに移動してもリマッチリクエストを受け取れるようグローバルリスナーをセット
-      if (!_qmIsBot && mySlot === 'p1' && roomCode) {
+      // ホスト(p1)かつルームありの場合のみリマッチリスナーをセット（QM・BOT除外）
+      if (!isQmGame && mySlot === 'p1' && roomCode) {
         // ゲーム終了後はルームを onDisconnect で削除しないようキャンセル（リマッチ待機中にルームが消えるのを防ぐ）
         try { onDisconnect(ref(db, 'multi/' + roomCode)).cancel(); } catch (e) {}
         mountRematchListener(
