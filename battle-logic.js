@@ -1,26 +1,12 @@
 import { mountNav, notifyOk, notifyErr, notifyWarn, notifySpecial } from './nav.js';
+import { initBgCanvas, initPageLoader, showScreen, showActionPopup } from './ui-utils.js';
 import { APP_VERSION } from './config.js';
 import { onAuthReady, getCachedProfile, mountAuthWidget, getCurrentUser } from './auth.js';
 import { upsertUserProfile } from './db.js';
 import { TetrisGame, COLS, ROWS, CELL, COLORS, PIECES, mkP } from './tetris-engine.js';
 import { BotController, BOT_DELAYS, BOT_NOISE } from './tetris-bot.js';
 
-let _loaderInstance = null;
-(function initLoader() {
-  const loader = document.getElementById('pageLoader'); const bar = document.getElementById('plBar'); const txt = document.getElementById('plText');
-  if (!loader || !bar) return;
-  const bColors = ['#00f5ff', '#ffff00', '#cc00ff', '#aaff00', '#ff0040', '#0066ff', '#ff8800', '#00f5ff', '#ffff00', '#cc00ff'];
-  const N = 10; for (let i = 0; i < N; i++) { const b = document.createElement('div'); b.className = 'pl-b'; bar.appendChild(b); }
-  let f = 0;
-  const next = () => {
-    if (f >= N) { Array.from(bar.children).forEach(b => { b.style.background = 'rgba(255,255,255,.9)'; b.style.boxShadow = '0 0 20px #fff'; }); setTimeout(() => { loader.classList.add('hide'); setTimeout(() => { try { loader.remove(); } catch (e) { } }, 500); }, 150); return; }
-    const b = bar.children[f]; b.classList.add('lit'); b.style.background = bColors[f]; b.style.boxShadow = `0 0 14px ${bColors[f]}`; b.style.borderColor = bColors[f];
-    f++; if (f === 4) txt.textContent = 'CONNECTING...'; if (f === 8) txt.textContent = 'READY!';
-    setTimeout(next, 55 + Math.random() * 75);
-  };
-  setTimeout(next, 200);
-  _loaderInstance = { loader, txt, finish: () => { if (f < N) f = N; } };
-})();
+initPageLoader('CONNECTING...', 'READY!');
 
 mountNav();
 document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
@@ -363,36 +349,6 @@ window.addEventListener('blur', () => {
   keys.clear(); dasStop(); clearInterval(softDropInterval); softDropInterval = null;
 });
 
-function setupMobile(id, fn, repeatMs = false) {
-  const btn = document.getElementById(id); if (!btn) return;
-  let iv = null, dasT = null;
-  const start = e => {
-    e.preventDefault(); if (!game || !gameRunning) return; fn();
-    if (repeatMs) { if (id === 'btnLeft' || id === 'btnRight') { dasT = setTimeout(() => { iv = setInterval(() => { if (game && gameRunning) fn(); }, ARR); }, DAS); } else { iv = setInterval(() => { if (game && gameRunning) fn(); }, repeatMs); } }
-  };
-  const stop = () => { clearTimeout(dasT); clearInterval(iv); dasT = null; iv = null; };
-  btn.addEventListener('touchstart', start, { passive: false }); btn.addEventListener('touchend', stop, { passive: true });
-  btn.addEventListener('touchcancel', stop, { passive: true }); btn.addEventListener('mousedown', start);
-  btn.addEventListener('mouseup', stop); btn.addEventListener('mouseleave', stop);
-}
-setupMobile('btnLeft', () => game?.move(-1), ARR);
-setupMobile('btnRight', () => game?.move(1), ARR);
-setupMobile('btnDown', () => game?.softDrop(), 50);
-setupMobile('btnRotate', () => game?.rotate(1), false);
-setupMobile('btnRotateL', () => game?.rotate(-1), false);
-setupMobile('btnHardDrop', () => { if (game && !game.waiting) game.hardDrop(); }, false);
-setupMobile('btnHold', () => game?.hold(), false);
-setupMobile('btnBurst', () => triggerBurst(), false);
-
-(function () {
-  let tx0 = 0, ty0 = 0; const cvs = document.getElementById('myCanvas');
-  cvs.addEventListener('touchstart', e => { tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY; }, { passive: true });
-  cvs.addEventListener('touchend', e => {
-    if (!game || !gameRunning || game.waiting) return;
-    const dx = e.changedTouches[0].clientX - tx0, dy = e.changedTouches[0].clientY - ty0;
-    if (Math.abs(dy) > 50 && dy > 0 && Math.abs(dy) > Math.abs(dx) * 1.5) game.hardDrop();
-  }, { passive: true });
-})();
 
 function triggerBurst() {
   if (!game || !gameRunning || game.over) return;
@@ -408,13 +364,7 @@ function triggerBurst() {
     showActionPopup("NEON BURST!!"); updateGameUI();
   }
 }
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  document.body.classList.toggle('game-active', id === 'gameScreen');
-}
 function flashAttack() { const f = document.getElementById('attackFlash'); f.classList.add('show'); setTimeout(() => f.classList.remove('show'), 280); const bw = document.querySelector('.board-wrap'); if (bw) { bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(() => bw.classList.remove('shake'), 260); } }
-function showActionPopup(label) { const p = document.getElementById('actionPopup'); p.textContent = label.replace('\n', ' / '); p.classList.remove('show'); p.offsetHeight; p.classList.add('show'); }
 
 function pushLog(msg, color) {
   const log = document.getElementById('gameLog');
@@ -459,21 +409,7 @@ function updateGameUI() {
 
 document.getElementById('playerName').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
 
-(function () {
-  const canvas = document.getElementById('bgCanvas'); if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const _C = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800' };
-  const _N = Object.keys(_C), BGCELL = 28;
-  const PM = { I: [[[1, 1, 1, 1]], [[1], [1], [1], [1]]], O: [[[1, 1], [1, 1]]], T: [[[0, 1, 0], [1, 1, 1]], [[1, 0], [1, 1], [1, 0]]], S: [[[0, 1, 1], [1, 1, 0]]], Z: [[[1, 1, 0], [0, 1, 1]]], J: [[[1, 0, 0], [1, 1, 1]]], L: [[[0, 0, 1], [1, 1, 1]]] };
-  let W, H; const pieces = [];
-  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-  resize(); window.addEventListener('resize', resize);
-  function spawn() { const name = _N[Math.random() * _N.length | 0]; const rots = PM[name]; const mat = rots[Math.random() * rots.length | 0]; return { mat, color: _C[name], x: Math.random() * W, y: -BGCELL * 4, vy: .4 + Math.random() * 1.2, rot: Math.random() * 360, vr: (Math.random() - .5) * .7, sc: .5 + Math.random() * .9, alpha: .1 + Math.random() * .4 }; }
-  for (let i = 0; i < 18; i++) { const p = spawn(); p.y = Math.random() * H; pieces.push(p); }
-  function drawB(bx, by, color) { ctx.fillStyle = color + 'aa'; ctx.fillRect(bx + 1, by + 1, BGCELL - 2, BGCELL - 2); ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(bx + 1, by + 1, BGCELL - 2, 5); ctx.fillRect(bx + 1, by + 1, 5, BGCELL - 2); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(bx + 2, by + BGCELL - 4, BGCELL - 3, 3); ctx.strokeStyle = color; ctx.lineWidth = .7; ctx.strokeRect(bx + .5, by + .5, BGCELL - 1, BGCELL - 1); }
-  function frame() { ctx.clearRect(0, 0, W, H); pieces.forEach((p, i) => { p.y += p.vy; p.rot += p.vr; if (p.y > H + BGCELL * p.sc * 4) pieces[i] = spawn(); ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI / 180); ctx.scale(p.sc, p.sc); ctx.globalAlpha = p.alpha; const mw = p.mat[0].length, mh = p.mat.length, ox = -mw * BGCELL / 2, oy = -mh * BGCELL / 2; p.mat.forEach((row, r) => row.forEach((cell, c) => { if (cell) drawB(ox + c * BGCELL, oy + r * BGCELL, p.color); })); ctx.restore(); }); if (Math.random() < .012 && pieces.length < 22) pieces.push(spawn()); requestAnimationFrame(frame); }
-  frame();
-})();
+initBgCanvas();
 
 (function () {
   let _fbType = null;

@@ -1,7 +1,8 @@
 import { COLS, ROWS, CELL, COLORS, PIECES, RN, LS, TS, Bag, TetrisGame, mkP } from './tetris-engine.js';
+import { FB_CONFIG } from './config.js';
+import { initBgCanvas, initPageLoader, showScreen, showActionPopup } from './ui-utils.js';
 
 // ══ Firestore Init ══
-const FB_CONFIG = { apiKey: "AIzaSyCjYKsc8eT9gDXEMQsfI0ZJ7UeuLwrDTxw", authDomain: "tetris-online-9c827.firebaseapp.com", databaseURL: "https://tetris-online-9c827-default-rtdb.firebaseio.com", projectId: "tetris-online-9c827", storageBucket: "tetris-online-9c827.firebasestorage.app", messagingSenderId: "1045054992314", appId: "1:1045054992314:web:7fea20b9be543d7cab3783" };
 let _fbApp = null, _fstore = null;
 
 async function getFS() {
@@ -16,28 +17,9 @@ async function getFS() {
 // ══ BG CANVAS ══
 const playSound = () => { };
 const toggleSound = () => { };
-(function () {
-  const c = document.getElementById('bgCanvas'); if (!c) return;
-  const ctx = c.getContext('2d'); const CS = 24;
-  function resize() { c.width = window.innerWidth; c.height = window.innerHeight; } resize();
-  window.addEventListener('resize', resize);
-  const COLS2 = Math.ceil(window.innerWidth / CS) + 1, ROWS2 = Math.ceil(window.innerHeight / CS) + 1;
-  const grid = []; const COLORS2 = ['#00f5ff', '#ffff00', '#cc00ff', '#aaff00', '#ff0040', '#0066ff', '#ff8800'];
-  for (let r = 0; r < ROWS2; r++)for (let c2 = 0; c2 < COLS2; c2++)if (Math.random() < 0.04) grid.push({ x: c2, y: r, color: COLORS2[Math.floor(Math.random() * COLORS2.length)], alpha: Math.random() * 0.3 + 0.1, spd: Math.random() * 0.005 + 0.001, phase: Math.random() * Math.PI * 2 });
-  let t = 0;
-  function draw() {
-    ctx.clearRect(0, 0, c.width, c.height);
-    for (const g of grid) { const a = g.alpha * (0.5 + 0.5 * Math.sin(t * g.spd + g.phase)); ctx.fillStyle = g.color + Math.floor(a * 255).toString(16).padStart(2, '0'); ctx.fillRect(g.x * CS, g.y * CS, CS - 2, CS - 2); }
-    t++; requestAnimationFrame(draw);
-  } draw();
-})();
+initBgCanvas();
 
 // ══ SCREEN ══
-window.showScreen = function(id) {
-  document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
-  document.body.classList.toggle('game-active', id === 'gameScreen');
-}
 function showToast(msg, ok = false, dur = 2500) {
   const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast' + (ok ? ' ok' : ''); t.classList.add('show');
   clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.remove('show'), dur);
@@ -74,13 +56,6 @@ function resetState() {
   clearInterval(timerInterval); timerInterval = null; sprintStartTs = null; elapsedMs = 0;
 }
 
-function showActionPopup(lbl) {
-  const el = document.getElementById('actionPopup');
-  if (!el) return;
-  el.textContent = lbl.split('\n')[0]; el.classList.remove('show');
-  void el.offsetWidth; el.classList.add('show');
-  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 900);
-}
 function flashLock() { const el = document.getElementById('lockFlash'); if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 60); } }
 
 function updateGameUI() {
@@ -107,7 +82,7 @@ window.startSprint = async () => {
   }
   document.getElementById('playerName').value = _playerName;
   endedOnce = false;
-  window.showScreen('gameScreen');
+  showScreen('gameScreen');
   resetState();
   updatePBDisplay();
 
@@ -147,10 +122,10 @@ window.retryGame = () => {
 window.goLobby = () => {
   document.getElementById('resultOverlay').classList.remove('show');
   resetState();
-  window.showScreen('lobbyScreen');
+  showScreen('lobbyScreen');
   updatePBDisplay();
 };
-window.quitGame = () => { resetState(); window.showScreen('lobbyScreen'); updatePBDisplay(); };
+window.quitGame = () => { resetState(); showScreen('lobbyScreen'); updatePBDisplay(); };
 
 async function endSprint(result) {
   if (endedOnce) return;
@@ -226,7 +201,7 @@ async function uploadScore(name, ms) {
 
 window.showRanking = async () => {
   document.getElementById('resultOverlay').classList.remove('show');
-  window.showScreen('rankScreen');
+  showScreen('rankScreen');
   const container = document.getElementById('rankContent');
   container.innerHTML = '<div class="rank-loading">読み込み中...</div>';
   try {
@@ -297,33 +272,10 @@ document.addEventListener('keyup', e => {
   if (e.code === 'ArrowDown') { clearInterval(softDropInterval); softDropInterval = null; }
 });
 
-(function setupMobile() {
-  document.getElementById('mbLeft')?.addEventListener('touchstart', e => { e.preventDefault(); dasStart(-1); }, { passive: false });
-  document.getElementById('mbLeft')?.addEventListener('touchend', e => { e.preventDefault(); dasStop(); }, { passive: false });
-  document.getElementById('mbRight')?.addEventListener('touchstart', e => { e.preventDefault(); dasStart(1); }, { passive: false });
-  document.getElementById('mbRight')?.addEventListener('touchend', e => { e.preventDefault(); dasStop(); }, { passive: false });
-  let sdIv = null;
-  document.getElementById('mbDown')?.addEventListener('touchstart', e => { e.preventDefault(); game?.softDrop(); sdIv = setInterval(() => game?.softDrop(), 50); }, { passive: false });
-  document.getElementById('mbDown')?.addEventListener('touchend', e => { e.preventDefault(); clearInterval(sdIv); }, { passive: false });
-  document.getElementById('mbRotR')?.addEventListener('touchstart', e => { e.preventDefault(); game?.rotate(1); }, { passive: false });
-  document.getElementById('mbRotL')?.addEventListener('touchstart', e => { e.preventDefault(); game?.rotate(-1); }, { passive: false });
-  document.getElementById('mbHard')?.addEventListener('touchstart', e => { e.preventDefault(); game?.hardDrop(); }, { passive: false });
-  document.getElementById('mbHold')?.addEventListener('touchstart', e => { e.preventDefault(); game?.hold(); }, { passive: false });
-})();
 
 (function init() {
   const saved = localStorage.getItem('sprint_playerName');
   if (saved) document.getElementById('playerName').value = saved;
   updatePBDisplay();
-  const loader = document.getElementById('pageLoader'), bar = document.getElementById('plBar'), txt = document.getElementById('plText');
-  if (!loader || !bar) return;
-  const bColors = ['#aaff00', '#00f5ff', '#ffff00', '#cc00ff', '#ff0040', '#0066ff', '#ff8800', '#aaff00', '#00f5ff', '#cc00ff'];
-  const N = 10; for (let i = 0; i < N; i++) { const b = document.createElement('div'); b.className = 'pl-b'; bar.appendChild(b); }
-  let f = 0;
-  const next = () => {
-    if (f >= N) { Array.from(bar.children).forEach(b => { b.style.background = 'rgba(255,255,255,.9)'; b.style.boxShadow = '0 0 20px #fff'; }); setTimeout(() => { loader.classList.add('hide'); setTimeout(() => { try { loader.remove(); } catch (e) { } }, 500); }, 150); return; }
-    const b = bar.children[f]; b.classList.add('lit'); b.style.background = bColors[f]; b.style.boxShadow = `0 0 14px ${bColors[f]}`; b.style.borderColor = bColors[f];
-    f++; if (f === 4) txt.textContent = 'LOADING...'; if (f === 8) txt.textContent = 'READY!';
-    setTimeout(next, 55 + Math.random() * 75);
-  }; setTimeout(next, 200);
+  initPageLoader('LOADING...', 'READY!');
 })();
