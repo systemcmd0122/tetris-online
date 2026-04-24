@@ -532,47 +532,7 @@
       font-family: monospace
     }
 
-    .mobile-controls {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      margin-top: 10px
-    }
-
-    .mobile-row {
-      display: flex;
-      gap: 6px
-    }
-
-    .mobile-btn {
-      width: 54px;
-      height: 54px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: var(--tx);
-      font-size: 20px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
-      transition: background .1s
-    }
-
-    .mobile-btn:active {
-      background: rgba(170, 255, 0, .15);
-      border-color: var(--acc3)
-    }
-
     @media(max-width:600px) {
-      .mobile-controls {
-        display: flex
-      }
-
       .controls-hint {
         display: none
       }
@@ -1071,21 +1031,6 @@
       <div class="key-hint"><span class="key">↓</span>ソフト</div>
       <div class="key-hint"><span class="key">SPACE</span>ハード</div>
       <div class="key-hint"><span class="key">Shift/C</span>ホールド</div>
-    </div>
-    <div class="mobile-controls">
-      <div class="mobile-row">
-        <button class="mobile-btn" id="mbHold">C</button>
-        <button class="mobile-btn" id="mbRotL">↺</button>
-        <button class="mobile-btn" id="mbRotR">↻</button>
-      </div>
-      <div class="mobile-row">
-        <button class="mobile-btn" id="mbLeft">◀</button>
-        <button class="mobile-btn" id="mbDown">▼</button>
-        <button class="mobile-btn" id="mbRight">▶</button>
-      </div>
-      <div class="mobile-row">
-        <button class="mobile-btn" style="width:120px;font-size:12px" id="mbHard">HARD DROP</button>
-      </div>
     </div>
   </div>
 

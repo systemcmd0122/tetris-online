@@ -1,4 +1,5 @@
 import { mountNav, notifyOk, notifyErr, notifyWarn, notifyInfo } from './nav.js';
+import { initBgCanvas, initPageLoader, showScreen, showActionPopup } from './ui-utils.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get, onValue, off, update, remove, onDisconnect, runTransaction }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -360,7 +361,7 @@ function _startQmBotGame() {
       while (game.results.length > 0) {
         const res = game.results.shift();
         if (res.garbageOut > 0) { statAtkSent += res.garbageOut; _qmBotGame.pendGarb += res.garbageOut; }
-        if (res.actionLabel) { showAP(res.actionLabel); pushLog(res.actionLabel.replace("\n", " "), "var(--accent)"); }
+        if (res.actionLabel) { showActionPopup(res.actionLabel); pushLog(res.actionLabel.replace("\n", " "), "var(--accent)"); }
       }
       while (_qmBotGame.results.length > 0) {
         const res = _qmBotGame.results.shift();
@@ -396,14 +397,8 @@ function resetState() {
   dasStop(); clearInterval(sdi); sdi = null;
   Object.keys(uiC).forEach(k => uiC[k] = -1); uiC.b2b = null;
 }
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  document.body.classList.toggle('game-active', id === 'gameScreen');
-}
 function showToast(msg, type = '') { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast' + (type ? ' ' + type : ''); t.classList.remove('show'); t.offsetHeight; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
 function flashAttack() { const f = document.getElementById('attackFlash'); f.classList.add('show'); setTimeout(() => f.classList.remove('show'), 280); const bw = document.querySelector('.board-wrap'); if (bw) { bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(() => bw.classList.remove('shake'), 260); } }
-function showAP(lbl) { const p = document.getElementById('actionPopup'); p.textContent = lbl.replace('\n', ' / '); p.classList.remove('show'); p.offsetHeight; p.classList.add('show'); }
 
 function pushLog(msg, color) {
   const log = document.getElementById("gameLog");
@@ -530,7 +525,20 @@ window.copyRoomCode = () => { if (!roomCode) return; navigator.clipboard?.writeT
 
 window.createRoom = async () => {
   const name = _getPlayerName();
-  mySlot = 'p1'; roomCode = genCode(); endedOnce = false;
+  mySlot = 'p1';
+  endedOnce = false;
+
+  // Collision check for room code
+  let code = genCode();
+  let attempts = 0;
+  while (attempts < 10) {
+    const snap = await get(ref(db, 'multi/' + code));
+    if (!snap.exists()) break;
+    code = genCode();
+    attempts++;
+  }
+  roomCode = code;
+
   const rRef = ref(db, 'multi/' + roomCode);
   await set(rRef, { p1: { name, alive: true }, status: 'waiting', maxPlayers: _maxPlayers, ts: getServerTime() });
   onDisconnect(rRef).remove();
@@ -894,7 +902,7 @@ async function startGame(roomData, wasBot = false) {
     if (!gameRunning) return;
     game._lastTs = ts;
     game.update(ts); game.draw();
-    while (game.results.length > 0) { const res = game.results.shift(); if (res.garbageOut > 0) { statAtkSent += res.garbageOut; pendOut += res.garbageOut; pushLog("ATTACK +" + res.garbageOut, "var(--accent3)"); } if (res.actionLabel) { showAP(res.actionLabel); pushLog(res.actionLabel.replace("\n", " "), "var(--accent)"); } }
+    while (game.results.length > 0) { const res = game.results.shift(); if (res.garbageOut > 0) { statAtkSent += res.garbageOut; pendOut += res.garbageOut; pushLog("ATTACK +" + res.garbageOut, "var(--accent3)"); } if (res.actionLabel) { showActionPopup(res.actionLabel); pushLog(res.actionLabel.replace("\n", " "), "var(--accent)"); } }
     updateUI();
 
     if (ts - lastPush > PUSH) {
@@ -1016,37 +1024,11 @@ window.addEventListener('blur', () => {
   keys.clear(); dasStop(); clearInterval(sdi); sdi = null;
 });
 
-function setupMob(id, fn, rep = false) {
-  const btn = document.getElementById(id); if (!btn) return;
-  let iv = null, dasT = null;
-  const st = e => {
-    e.preventDefault();
-    if (!game || !gameRunning) return;
-    fn();
-    if (rep) {
-      if (id === 'btnLeft' || id === 'btnRight') {
-        dasT = setTimeout(() => { iv = setInterval(() => { if (game && gameRunning) fn(); }, ARR); }, DAS);
-      } else {
-        iv = setInterval(() => { if (game && gameRunning) fn(); }, rep);
-      }
-    }
-  };
-  const sp = () => { clearTimeout(dasT); clearInterval(iv); dasT = null; iv = null; };
-  btn.addEventListener('touchstart', st, { passive: false });
-  btn.addEventListener('touchend', sp, { passive: true });
-  btn.addEventListener('touchcancel', sp, { passive: true });
-  btn.addEventListener('mousedown', st);
-  btn.addEventListener('mouseup', sp);
-  btn.addEventListener('mouseleave', sp);
-}
-setupMob('btnLeft', () => game?.move(-1), ARR); setupMob('btnRight', () => game?.move(1), ARR); setupMob('btnDown', () => game?.softDrop(), 50); setupMob('btnRotate', () => game?.rotate(1)); setupMob('btnRotateL', () => game?.rotate(-1)); setupMob('btnHardDrop', () => { if (game && !game.waiting) game.hardDrop(); }); setupMob('btnHold', () => game?.hold());
-setupMob('btnBurst', () => triggerBurst());
-(function () { let tx = 0, ty = 0; const c = document.getElementById('myCanvas'); c.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true }); c.addEventListener('touchend', e => { if (!game || !gameRunning || game.waiting) return; const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty; if (Math.abs(dy) > 50 && dy > 0 && Math.abs(dy) > Math.abs(dx) * 1.5) game.hardDrop(); }, { passive: true }); })();
 document.getElementById('roomCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') window.joinRoom(); });
 document.getElementById('roomCodeInput').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^0-9]/g, ''); });
 document.getElementById('playerName').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
 
-(function () { const cv = document.getElementById('bgCanvas'); if (!cv) return; const ctx = cv.getContext('2d'); const C = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800' }; const N = Object.keys(C); const SZ = 28; const PM = { I: [[[1, 1, 1, 1]]], O: [[[1, 1], [1, 1]]], T: [[[0, 1, 0], [1, 1, 1]]], S: [[[0, 1, 1], [1, 1, 0]]], Z: [[[1, 1, 0], [0, 1, 1]]], J: [[[1, 0, 0], [1, 1, 1]]], L: [[[0, 0, 1], [1, 1, 1]]] }; let W, H; const ps = []; function resize() { W = cv.width = window.innerWidth; H = cv.height = window.innerHeight; } resize(); window.addEventListener('resize', resize); function spawn() { const nm = N[Math.random() * N.length | 0]; return { mat: PM[nm][0], color: C[nm], x: Math.random() * W, y: -SZ * 4, vy: .4 + Math.random() * 1.2, rot: Math.random() * 360, vr: (Math.random() - .5) * .7, sc: .5 + Math.random() * .9, alpha: .1 + Math.random() * .4 }; } for (let i = 0; i < 18; i++) { const p = spawn(); p.y = Math.random() * H; ps.push(p); } function db2(bx, by, color) { ctx.fillStyle = color + 'aa'; ctx.fillRect(bx + 1, by + 1, SZ - 2, SZ - 2); ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(bx + 1, by + 1, SZ - 2, 5); ctx.fillRect(bx + 1, by + 1, 5, SZ - 2); ctx.strokeStyle = color; ctx.lineWidth = .7; ctx.strokeRect(bx + .5, by + .5, SZ - 1, SZ - 1); } function frame() { ctx.clearRect(0, 0, W, H); ps.forEach((p, i) => { p.y += p.vy; p.rot += p.vr; if (p.y > H + SZ * p.sc * 4) ps[i] = spawn(); ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI / 180); ctx.scale(p.sc, p.sc); ctx.globalAlpha = p.alpha; const mw = p.mat[0].length, mh = p.mat.length, ox = -mw * SZ / 2, oy = -mh * SZ / 2; p.mat.forEach((row, r) => row.forEach((cell, c) => { if (cell) db2(ox + c * SZ, oy + r * SZ, p.color); })); ctx.restore(); }); if (Math.random() < .012 && ps.length < 22) ps.push(spawn()); requestAnimationFrame(frame); } frame(); })();
+initBgCanvas();
 
 (function () {
   const FEEDBACK_TYPES = {
@@ -1204,4 +1186,4 @@ document.getElementById('playerName').addEventListener('input', e => { e.target.
   };
 })();
 
-(function () { const loader = document.getElementById('pageLoader'), bar = document.getElementById('plBar'), txt = document.getElementById('plText'); if (!loader || !bar) return; const bc = ['#00f5ff', '#ffff00', '#cc00ff', '#aaff00', '#ff0040', '#0066ff', '#ff8800', '#00f5ff', '#ffff00', '#cc00ff']; const N = 10; for (let i = 0; i < N; i++) { const b = document.createElement('div'); b.className = 'pl-b'; bar.appendChild(b); } let f = 0; const next = () => { if (f >= N) { Array.from(bar.children).forEach(b => { b.style.background = 'rgba(255,255,255,.9)'; b.style.boxShadow = '0 0 20px #fff'; }); setTimeout(() => { loader.classList.add('hide'); setTimeout(() => { try { loader.remove(); } catch (e) { } }, 500); }, 150); return; } const b = bar.children[f]; b.classList.add('lit'); b.style.background = bc[f]; b.style.boxShadow = '0 0 14px ' + bc[f]; b.style.borderColor = bc[f]; f++; if (f === 4) txt.textContent = 'CONNECTING...'; if (f === 8) txt.textContent = 'READY!'; setTimeout(next, 55 + Math.random() * 75); }; setTimeout(next, 200); })();
+initPageLoader('CONNECTING...', 'READY!');

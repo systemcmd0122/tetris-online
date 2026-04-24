@@ -647,47 +647,7 @@
       }
     }
 
-    .mobile-controls {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      margin-top: 10px
-    }
-
-    .mobile-row {
-      display: flex;
-      gap: 6px
-    }
-
-    .mobile-btn {
-      width: 54px;
-      height: 54px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: var(--text);
-      font-size: 20px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
-      transition: background .1s
-    }
-
-    .mobile-btn:active {
-      background: rgba(0, 245, 255, .15);
-      border-color: var(--accent)
-    }
-
     @media(max-width:640px) {
-      .mobile-controls {
-        display: flex
-      }
-
       .controls-hint {
         display: none
       }
@@ -1327,22 +1287,6 @@
       <div class="key-hint"><span class="key">↓</span> ソフトドロップ</div>
       <div class="key-hint"><span class="key">SPACE</span> ハードドロップ</div>
       <div class="key-hint"><span class="key">C / Shift</span> ホールド</div>
-    </div>
-    <div class="mobile-controls">
-      <div class="mobile-row">
-        <div class="mobile-btn" id="btnHold" style="width:54px;font-size:11px;">HOLD</div>
-        <div class="mobile-btn" id="btnRotate">↻</div>
-        <div class="mobile-btn" id="btnRotateL">↺</div>
-      </div>
-      <div class="mobile-row">
-        <div class="mobile-btn" id="btnLeft">←</div>
-        <div class="mobile-btn" id="btnDown">↓</div>
-        <div class="mobile-btn" id="btnRight">→</div>
-      </div>
-      <div class="mobile-row">
-        <div class="mobile-btn" id="btnHardDrop" style="width:116px;font-size:11px;letter-spacing:1px;">▼ DROP</div>
-        <div class="mobile-btn" id="btnBurst" style="width:116px;font-size:11px;display:none;background:rgba(0,245,255,0.15);border-color:var(--accent);color:var(--accent);">BURST (V)</div>
-      </div>
     </div>
   </div>
 
