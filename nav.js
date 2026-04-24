@@ -161,6 +161,154 @@ const _NAV_CSS = `
   }
 }
 
+/* ── REMATCH REQUEST DIALOG ── */
+#tb-rematch-dialog-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(2,4,8,.82);
+  backdrop-filter: blur(6px);
+  align-items: center;
+  justify-content: center;
+}
+#tb-rematch-dialog-overlay.show {
+  display: flex;
+}
+.tb-rematch-dialog {
+  background: #080d18;
+  border: 1px solid rgba(0,245,255,.35);
+  border-radius: 6px;
+  padding: 32px 36px;
+  max-width: 420px;
+  width: 90vw;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 0 60px rgba(0,245,255,.18), 0 20px 60px rgba(0,0,0,.7);
+  animation: tbRematchDialogIn .35s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes tbRematchDialogIn {
+  from { transform: scale(.82) translateY(20px); opacity: 0; }
+  to   { transform: scale(1)   translateY(0);    opacity: 1; }
+}
+.tb-rematch-dialog::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00f5ff, #ff0080);
+  border-radius: 6px 6px 0 0;
+}
+.tb-rematch-dialog-icon {
+  font-size: 38px;
+  margin-bottom: 14px;
+  display: block;
+  filter: drop-shadow(0 0 10px rgba(0,245,255,.6));
+}
+.tb-rematch-dialog-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  color: #00f5ff;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+.tb-rematch-dialog-desc {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  color: #e0f0ff;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  line-height: 1.7;
+}
+.tb-rematch-dialog-room {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #aaff00;
+  letter-spacing: 3px;
+  margin-bottom: 24px;
+  padding: 6px 14px;
+  background: rgba(170,255,0,.06);
+  border: 1px solid rgba(170,255,0,.25);
+  border-radius: 3px;
+  display: inline-block;
+}
+.tb-rematch-dialog-countdown {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  color: #4a6080;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+}
+.tb-rematch-dialog-countdown span {
+  color: #ffaa00;
+  font-weight: 700;
+}
+.tb-rematch-dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.tb-rematch-accept-btn {
+  padding: 12px 28px;
+  background: linear-gradient(135deg, #00f5ff, #0088aa);
+  color: #000;
+  border: none;
+  border-radius: 3px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  box-shadow: 0 0 18px rgba(0,245,255,.35);
+}
+.tb-rematch-accept-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 24px rgba(0,245,255,.55);
+}
+.tb-rematch-decline-btn {
+  padding: 12px 24px;
+  background: transparent;
+  color: #4a6080;
+  border: 1px solid rgba(74,96,128,.5);
+  border-radius: 3px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s;
+}
+.tb-rematch-decline-btn:hover {
+  color: #ff3355;
+  border-color: #ff3355;
+}
+.tb-rematch-pending-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: #ff0080;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255,0,128,.35);
+  border-radius: 20px;
+  background: rgba(255,0,128,.07);
+  animation: tbRematchPendingPulse 1.4s ease-in-out infinite;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+@keyframes tbRematchPendingPulse {
+  0%,100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+#tb-nav-rematch-badge {
+  display: none;
+}
+#tb-nav-rematch-badge.show {
+  display: inline-flex;
+}
+
 /* Mobile: hide text, show dots */
 @media (max-width: 480px) {
   .tb-nav-logo span { display: none; }
@@ -463,4 +611,162 @@ export function notifyInfo(title, desc = '') {
  */
 export function notifySpecial(title, desc = '', icon = '🏆') {
   return showNotify({ title, desc, icon, type: 'special', duration: 5000 });
+}
+
+// ═══ GLOBAL REMATCH REQUEST SYSTEM ═══
+// ホストがどのページにいても、非ホストからのリマッチリクエストをダイアログで受け取れるシステム
+
+let _rematchListenerUnsub = null;
+let _rematchDialogTimer = null;
+let _rematchDb = null;
+let _rematchCode = null;
+let _rematchHostName = null;
+let _rematchOnAccept = null;
+let _rematchOnDecline = null;
+
+/**
+ * リマッチリクエストのグローバルリスナーをマウントする（ホスト側で呼ぶ）
+ * @param {object} db  Firebase Realtime Database インスタンス
+ * @param {string} roomCode  ルームコード
+ * @param {string} hostName  ホストのプレイヤー名
+ * @param {Function} onAccept  承認時のコールバック (requestData) => void
+ * @param {Function} [onDecline]  拒否時のコールバック () => void
+ */
+export function mountRematchListener(db, roomCode, hostName, onAccept, onDecline) {
+  unmountRematchListener(); // 既存があれば解除
+  _rematchDb = db;
+  _rematchCode = roomCode;
+  _rematchHostName = hostName;
+  _rematchOnAccept = onAccept;
+  _rematchOnDecline = onDecline || (() => {});
+
+  // Firebase動的インポートなしで使えるように引数でdbを受け取る
+  const { ref, onValue } = _rematchFbFns || {};
+  if (!ref || !onValue) {
+    console.warn('[RematchListener] Firebase functions not registered. Call registerRematchFbFns() first.');
+    return;
+  }
+
+  const reqRef = ref(db, 'multi/' + roomCode + '/rematch_request');
+  _rematchListenerUnsub = onValue(reqRef, snap => {
+    const d = snap.val();
+    if (!d || d.status !== 'pending') return;
+    // すでにダイアログが表示中なら無視
+    if (document.getElementById('tb-rematch-dialog-overlay')?.classList.contains('show')) return;
+    _showRematchDialog(d);
+  });
+}
+
+/**
+ * リマッチリクエストリスナーを解除する
+ */
+export function unmountRematchListener() {
+  if (_rematchListenerUnsub) {
+    try { _rematchListenerUnsub(); } catch (e) {}
+    _rematchListenerUnsub = null;
+  }
+  if (_rematchDialogTimer) {
+    clearInterval(_rematchDialogTimer);
+    _rematchDialogTimer = null;
+  }
+  _hideRematchDialog();
+}
+
+// Firebase関数の参照（動的インポートなしで使えるよう登録式）
+let _rematchFbFns = null;
+
+/**
+ * Firebase関数を登録する（tetris-multi.html側から一度だけ呼ぶ）
+ * @param {{ ref, onValue, update, remove }} fns
+ */
+export function registerRematchFbFns(fns) {
+  _rematchFbFns = fns;
+}
+
+function _showRematchDialog(reqData) {
+  _ensureRematchDialogDOM();
+  const overlay = document.getElementById('tb-rematch-dialog-overlay');
+  const nameEl = document.getElementById('tb-rematch-req-name');
+  const codeEl = document.getElementById('tb-rematch-req-code');
+  const countEl = document.getElementById('tb-rematch-countdown-val');
+
+  if (nameEl) nameEl.textContent = reqData.fromName || '対戦相手';
+  if (codeEl) codeEl.textContent = 'ROOM: ' + (_rematchCode || '----');
+
+  overlay.classList.add('show');
+
+  // 60秒カウントダウン
+  let remaining = 60;
+  if (countEl) countEl.textContent = remaining;
+  if (_rematchDialogTimer) clearInterval(_rematchDialogTimer);
+  _rematchDialogTimer = setInterval(() => {
+    remaining--;
+    if (countEl) countEl.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(_rematchDialogTimer);
+      _rematchDialogTimer = null;
+      _declineRematch(true);
+    }
+  }, 1000);
+}
+
+function _hideRematchDialog() {
+  const overlay = document.getElementById('tb-rematch-dialog-overlay');
+  if (overlay) overlay.classList.remove('show');
+  if (_rematchDialogTimer) {
+    clearInterval(_rematchDialogTimer);
+    _rematchDialogTimer = null;
+  }
+}
+
+async function _acceptRematch() {
+  _hideRematchDialog();
+  const { ref, update } = _rematchFbFns || {};
+  if (_rematchDb && _rematchCode && ref && update) {
+    try {
+      await update(ref(_rematchDb, 'multi/' + _rematchCode + '/rematch_request'), { status: 'accepted', acceptedAt: Date.now() });
+    } catch (e) { console.error('[RematchListener] accept error:', e); }
+  }
+  if (_rematchOnAccept) _rematchOnAccept({ roomCode: _rematchCode });
+}
+
+async function _declineRematch(isTimeout = false) {
+  _hideRematchDialog();
+  const { ref, update } = _rematchFbFns || {};
+  if (_rematchDb && _rematchCode && ref && update) {
+    try {
+      await update(ref(_rematchDb, 'multi/' + _rematchCode + '/rematch_request'), { status: isTimeout ? 'timeout' : 'declined', declinedAt: Date.now() });
+    } catch (e) { console.error('[RematchListener] decline error:', e); }
+  }
+  if (_rematchOnDecline) _rematchOnDecline(isTimeout);
+}
+
+function _ensureRematchDialogDOM() {
+  if (document.getElementById('tb-rematch-dialog-overlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'tb-rematch-dialog-overlay';
+  overlay.innerHTML = `
+    <div class="tb-rematch-dialog" role="dialog" aria-modal="true" aria-labelledby="tb-rematch-dialog-title">
+      <span class="tb-rematch-dialog-icon">🎮</span>
+      <div class="tb-rematch-dialog-title" id="tb-rematch-dialog-title">REMATCH REQUEST</div>
+      <div class="tb-rematch-dialog-desc">
+        <strong id="tb-rematch-req-name">対戦相手</strong> からリマッチリクエストが届いています
+      </div>
+      <div class="tb-rematch-dialog-room" id="tb-rematch-req-code">ROOM: ----</div>
+      <div class="tb-rematch-dialog-countdown">
+        <span id="tb-rematch-countdown-val">60</span> 秒以内に応答してください
+      </div>
+      <div class="tb-rematch-dialog-actions">
+        <button class="tb-rematch-accept-btn" id="tb-rematch-accept-btn">▶ REMATCH</button>
+        <button class="tb-rematch-decline-btn" id="tb-rematch-decline-btn">断る</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.getElementById('tb-rematch-accept-btn').addEventListener('click', () => _acceptRematch());
+  document.getElementById('tb-rematch-decline-btn').addEventListener('click', () => _declineRematch(false));
+  // 背景クリックで拒否
+  overlay.addEventListener('click', e => { if (e.target === overlay) _declineRematch(false); });
 }

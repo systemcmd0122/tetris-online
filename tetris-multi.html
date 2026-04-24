@@ -1731,6 +1731,7 @@
     <div style="font-size:11px;color:var(--dim);letter-spacing:2px;" id="resultSub"></div>
     <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;justify-content:center;">
       <button class="btn btn-primary" style="width:180px;" onclick="rematch()" id="rematchBtn">▶ REMATCH</button>
+      <button class="btn btn-secondary" style="width:180px;margin-top:0;display:none;" onclick="cancelRematchRequest()" id="cancelRematchBtn">✕ リクエスト取消</button>
       <button class="btn btn-secondary" style="width:180px;margin-top:0;" onclick="leaveRoom()">BACK TO LOBBY</button>
     </div>
     <div id="rematchStatus"
@@ -1753,7 +1754,7 @@
   <div class="toast" id="toast"></div>
 
   <script type="module">
-    import { mountNav, notifyOk, notifyErr, notifyWarn, notifyInfo } from './nav.js';
+    import { mountNav, notifyOk, notifyErr, notifyWarn, notifyInfo, mountRematchListener, unmountRematchListener, registerRematchFbFns } from './nav.js';
     mountNav();
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1765,6 +1766,8 @@
 
     const fbApp = initializeApp(FB_CONFIG);
     const db = getDatabase(fbApp);
+    // リマッチシステムにFirebase関数を登録（nav.jsのグローバルリスナーで使用）
+    registerRematchFbFns({ ref, onValue, update, remove });
     let serverTimeOffset = 0;
     onValue(ref(db, '.info/serverTimeOffset'), snap => { serverTimeOffset = snap.val() || 0; });
     const getServerTime = () => Date.now() + serverTimeOffset;
@@ -1965,6 +1968,7 @@
     // ── GAME STATE ──
     let roomCode = null, mySlot = null, game = null, gameRunning = false, animId = null;
     let _rematchActive = false; // 非ホストのリマッチ待機中フラグ
+    let _rematchRequestUnsub = null; // 非ホスト：ホスト応答リスナーのキャンセル関数
     let endedOnce = false, _maxPlayers = 3, totalPlayers = 0, myFinalRank = null, statAtkSent = 0;
     const oppInfo = {};
     // ─── Firebase v10 リスナー管理 (unsubscribe関数を保持) ───────────────────
@@ -2388,6 +2392,8 @@
     function resetState() {
       offAll(); gameRunning = false; endedOnce = false;
       _rematchActive = false; // リマッチ待機をキャンセル
+      if (_rematchRequestUnsub) { try { _rematchRequestUnsub(); } catch(e){} _rematchRequestUnsub = null; }
+      unmountRematchListener(); // ホスト側グローバルリスナーも解除
       if (animId) { cancelAnimationFrame(animId); animId = null; }
       roomCode = null; mySlot = null; game = null; myFinalRank = null; totalPlayers = 0; statAtkSent = 0;
       Object.keys(oppInfo).forEach(k => delete oppInfo[k]);
@@ -2433,7 +2439,8 @@
       document.getElementById('scoreDisplay').textContent = '0'; document.getElementById('levelDisplay').textContent = '1'; document.getElementById('linesDisplay').textContent = '0'; document.getElementById('comboDisplay').textContent = '0'; document.getElementById('b2bBadge').className = 'b2b-badge off'; document.getElementById('atkSentDisplay').textContent = '0'; document.getElementById('pendGarbDisplay').textContent = '0'; document.getElementById('pendGarbCells').innerHTML = ''; document.getElementById('garbBar').innerHTML = ''; document.getElementById('attackBadge').classList.remove('show'); document.getElementById('rankDisplay').textContent = '?'; document.getElementById('aliveDisplay').textContent = '?'; statAtkSent = 0; myFinalRank = null;
       Object.keys(uiC).forEach(k => { uiC[k] = -1 }); uiC.b2b = null;
       // リマッチボタンをリセット
-      const rb = document.getElementById('rematchBtn'); if (rb) rb.disabled = false;
+      const rb = document.getElementById('rematchBtn'); if (rb) { rb.disabled = false; rb.style.display = ''; }
+      const cancelRb = document.getElementById('cancelRematchBtn'); if (cancelRb) cancelRb.style.display = 'none';
       const rs = document.getElementById('rematchStatus'); if (rs) rs.textContent = '';
     }
     function buildOppArea(activeSlots) {
@@ -2619,9 +2626,99 @@
       showScreen('lobbyScreen');
     };
 
+    // ── CANCEL REMATCH REQUEST（非ホスト用） ──
+    window.cancelRematchRequest = async () => {
+      if (!_rematchActive || !roomCode) return;
+      _rematchActive = false;
+      if (_rematchRequestUnsub) { try { _rematchRequestUnsub(); } catch(e){} _rematchRequestUnsub = null; }
+      // Firebase のリクエストをキャンセル状態に
+      try {
+        await update(ref(db, 'multi/' + roomCode + '/rematch_request'), { status: 'cancelled' });
+      } catch (e) {}
+      // UIを元に戻す
+      const btn = document.getElementById('rematchBtn');
+      const cancelBtn = document.getElementById('cancelRematchBtn');
+      const statusEl = document.getElementById('rematchStatus');
+      if (btn) { btn.disabled = false; btn.style.display = ''; }
+      if (cancelBtn) cancelBtn.style.display = 'none';
+      if (statusEl) statusEl.textContent = '';
+      showToast('リマッチリクエストを取り消しました', 'warn');
+    };
+
     // ── REMATCH ──
-    // ホスト(p1): ルームを waiting にリセット → ウェイティング画面へ
-    // 非ホスト: ホストのリセットを Firebase リスナーで待ってから再参加
+    // ホスト(p1): ルームを waiting にリセット → ウェイティング画面へ。
+    //             他ページにいても nav.js のグローバルダイアログが届いた瞬間に受け入れ可。
+    // 非ホスト:   Firebase に rematch_request を書き込み、ホストの応答を待機。
+    //             ホストが承認したら listenWait() で待機画面に自動移行。
+
+    // ホストリマッチ承認ハンドラ（nav.js から呼ばれる）
+    async function _hostAcceptRematch({ roomCode: code }) {
+      // ホストがダイアログで承認 → ルームをリセットして待機画面へ
+      const prevCode = code || roomCode;
+      const prevSlot = mySlot || 'p1';
+      const prevName = _getPlayerName();
+
+      try {
+        // ゲーム状態クリア
+        offAll();
+        gameRunning = false; endedOnce = false;
+        if (animId) { cancelAnimationFrame(animId); animId = null; }
+        game = null; myFinalRank = null; totalPlayers = 0; statAtkSent = 0;
+        Object.keys(oppInfo).forEach(k => delete oppInfo[k]);
+        dasStop(); clearInterval(sdi); sdi = null;
+        Object.keys(uiC).forEach(k => uiC[k] = -1); uiC.b2b = null;
+
+        const rSnap = await get(ref(db, 'multi/' + prevCode));
+        if (!rSnap.exists()) throw new Error('ルームが見つかりません');
+
+        const updateData = {
+          status: 'waiting',
+          gameStartAt: null,
+          activeSlots: null,
+          game: null,
+          garb: null,
+          alive: null,
+          rematch_request: null,
+          p1: { name: prevName, alive: true },
+          p2: null,
+          p3: null,
+          p4: null
+        };
+
+        await update(ref(db, 'multi/' + prevCode), updateData);
+        onDisconnect(ref(db, 'multi/' + prevCode)).remove();
+
+        roomCode = prevCode; mySlot = 'p1'; endedOnce = false;
+        document.getElementById('displayRoomCode').textContent = prevCode;
+        document.getElementById('statusRoom').textContent = 'MULTI: ' + prevCode;
+        document.getElementById('resultOverlay').classList.remove('show');
+        showScreen('waitingScreen');
+        listenWait();
+
+        unmountRematchListener(); // ダイアログを解除
+        notifyOk('REMATCH START!', 'ルームをリセットしました。参加を待っています…');
+      } catch (err) {
+        notifyErr('リマッチ失敗', err.message);
+        // rematch_requestをキャンセル状態に戻す
+        try {
+          await update(ref(db, 'multi/' + prevCode + '/rematch_request'), { status: 'error' });
+        } catch (e) {}
+      }
+    }
+
+    // ホストリマッチ拒否ハンドラ
+    async function _hostDeclineRematch(isTimeout) {
+      const prevCode = roomCode;
+      if (prevCode) {
+        try {
+          // declinedはFirebase側で既に書き込み済み（nav.jsのdeclineRematch内）
+        } catch (e) {}
+      }
+      if (isTimeout) {
+        notifyWarn('リマッチリクエスト', 'タイムアウトしました。リクエストを拒否しました。');
+      }
+    }
+
     window.rematch = async () => {
       if (!roomCode || !mySlot) return;
       const statusEl = document.getElementById('rematchStatus');
@@ -2631,10 +2728,11 @@
 
       const prevCode = roomCode;
       const prevSlot = mySlot;
-      const prevName = (document.getElementById('myNameTag')?.textContent || 'PLAYER').split(' ')[0] || 'PLAYER';
+      const prevName = _getPlayerName();
 
       try {
         if (prevSlot === 'p1') {
+          // ══ ホスト ══
           // 他のプレイヤーがまだプレイ中か確認
           const roomSnap = await get(ref(db, 'multi/' + prevCode));
           const roomVal = roomSnap.val();
@@ -2650,7 +2748,12 @@
             }
           }
 
-          // ゲーム状態クリア（Firebaseリスナーは止めるがルームは消さない）
+          // 非ホストからのリマッチリクエストが既にあるか確認
+          const reqSnap = await get(ref(db, 'multi/' + prevCode + '/rematch_request'));
+          const reqVal = reqSnap.val();
+          const hasPendingRequest = reqVal && reqVal.status === 'pending';
+
+          // ゲーム状態クリア
           offAll();
           gameRunning = false; endedOnce = false;
           if (animId) { cancelAnimationFrame(animId); animId = null; }
@@ -2659,34 +2762,38 @@
           dasStop(); clearInterval(sdi); sdi = null;
           Object.keys(uiC).forEach(k => uiC[k] = -1); uiC.b2b = null;
 
-          // ══ ホスト ══
-          // ① 前のゲームデータを削除 & ルームをatomicにリセット：status=waiting、非p1スロットをnull
-          const rSnap = await get(ref(db, 'multi/' + prevCode));
-          if (!rSnap.exists()) throw new Error('ルームが見つかりません');
+          if (hasPendingRequest) {
+            // 既にリクエストがある→即座にルームリセット
+            await _hostAcceptRematch({ roomCode: prevCode });
+          } else {
+            // 自発的なリマッチ→ルームをリセット & グローバルリスナーをセット（非ホストが参加してくるのを待つ）
+            const rSnap = await get(ref(db, 'multi/' + prevCode));
+            if (!rSnap.exists()) throw new Error('ルームが見つかりません');
 
-          const updateData = {
-            status: 'waiting',
-            gameStartAt: null,
-            activeSlots: null,
-            game: null,
-            garb: null,
-            alive: null,
-            p1: { name: prevName, alive: true },
-            p2: null,
-            p3: null,
-            p4: null
-          };
+            const updateData = {
+              status: 'waiting',
+              gameStartAt: null,
+              activeSlots: null,
+              game: null,
+              garb: null,
+              alive: null,
+              rematch_request: null,
+              p1: { name: prevName, alive: true },
+              p2: null,
+              p3: null,
+              p4: null
+            };
 
-          await update(ref(db, 'multi/' + prevCode), updateData);
-          onDisconnect(ref(db, 'multi/' + prevCode)).remove();
+            await update(ref(db, 'multi/' + prevCode), updateData);
+            onDisconnect(ref(db, 'multi/' + prevCode)).remove();
 
-          // ③ 待機画面に移行
-          roomCode = prevCode; mySlot = 'p1'; endedOnce = false;
-          document.getElementById('displayRoomCode').textContent = prevCode;
-          document.getElementById('statusRoom').textContent = 'MULTI: ' + prevCode;
-          document.getElementById('resultOverlay').classList.remove('show');
-          showScreen('waitingScreen');
-          listenWait();
+            roomCode = prevCode; mySlot = 'p1'; endedOnce = false;
+            document.getElementById('displayRoomCode').textContent = prevCode;
+            document.getElementById('statusRoom').textContent = 'MULTI: ' + prevCode;
+            document.getElementById('resultOverlay').classList.remove('show');
+            showScreen('waitingScreen');
+            listenWait();
+          }
 
         } else {
           // ══ 非ホスト ══
@@ -2699,37 +2806,77 @@
           dasStop(); clearInterval(sdi); sdi = null;
           Object.keys(uiC).forEach(k => uiC[k] = -1); uiC.b2b = null;
 
-          // ホストがリセットするまでFirebaseをリアルタイム監視（最大30秒）
-          _rematchActive = true;
-          if (statusEl) statusEl.textContent = 'ホストのリマッチを待っています...';
-          showToast('⏳ ホストのリマッチを待っています...', 'warn');
+          // ルームが存在するか確認
+          const rSnap = await get(ref(db, 'multi/' + prevCode));
+          if (!rSnap.exists()) throw new Error('ルームが見つかりません（ホストが退出した可能性があります）');
 
-          const rRef = ref(db, 'multi/' + prevCode);
-          const roomData = await new Promise((resolve, reject) => {
-            let unsub = null;
-            const done = (fn) => {
-              clearTimeout(timer);
-              if (unsub) { try { unsub(); } catch (e) { } unsub = null; }
-              fn();
-            };
-            const timer = setTimeout(() => done(() => reject(new Error('ホストが応答しません（30秒タイムアウト）'))), 30000);
-            unsub = onValue(rRef, snap => {
-              const d = snap.val();
-              if (!d) { done(() => reject(new Error('ルームが削除されました'))); return; }
-              if (d.status === 'waiting') { done(() => resolve(d)); }
-            });
+          // Firebase にリマッチリクエストを書き込む
+          await update(ref(db, 'multi/' + prevCode + '/rematch_request'), {
+            status: 'pending',
+            from: prevSlot,
+            fromName: prevName,
+            ts: Date.now()
           });
 
-          // BACK TO LOBBY が押された場合は中断
+          _rematchActive = true;
+          if (statusEl) statusEl.textContent = 'ホストのリマッチを待っています...';
+          showToast('⏳ リマッチリクエストを送信しました', 'warn');
+          // キャンセルボタンを表示、リマッチボタンを非表示
+          const cancelBtn = document.getElementById('cancelRematchBtn');
+          if (cancelBtn) cancelBtn.style.display = '';
+          btn.style.display = 'none';
+
+          // ホストの応答を監視
+          const reqRef = ref(db, 'multi/' + prevCode + '/rematch_request');
+          const rRef = ref(db, 'multi/' + prevCode);
+
+          const response = await new Promise((resolve, reject) => {
+            let reqUnsub = null;
+            let roomUnsub = null;
+            let timer = null;
+
+            const done = (fn) => {
+              clearTimeout(timer);
+              if (reqUnsub) { try { reqUnsub(); } catch (e) {} reqUnsub = null; }
+              if (roomUnsub) { try { roomUnsub(); } catch (e) {} roomUnsub = null; }
+              _rematchRequestUnsub = null;
+              fn();
+            };
+
+            timer = setTimeout(() => done(() => reject(new Error('ホストが応答しません（60秒タイムアウト）'))), 60000);
+
+            // ホストがリクエストに応答するか、ルームをリセットするかを監視
+            reqUnsub = onValue(reqRef, snap => {
+              const d = snap.val();
+              if (!d) { done(() => reject(new Error('リクエストが削除されました'))); return; }
+              if (d.status === 'accepted') { done(() => resolve({ type: 'accepted' })); }
+              else if (d.status === 'declined') { done(() => reject(new Error('ホストがリマッチを断りました'))); }
+              else if (d.status === 'timeout') { done(() => reject(new Error('ホストが応答しませんでした'))); }
+              else if (d.status === 'error') { done(() => reject(new Error('リマッチ処理でエラーが発生しました'))); }
+            });
+
+            // ホストが自発的にルームをリセットした場合にも対応（waitingになったら参加）
+            roomUnsub = onValue(rRef, snap => {
+              const d = snap.val();
+              if (!d) { done(() => reject(new Error('ルームが削除されました'))); return; }
+              if (d.status === 'waiting') {
+                // 既にacceptedリスナーが発火している可能性を避けるため少し待つ
+                setTimeout(() => done(() => resolve({ type: 'room_reset', data: d })), 200);
+              }
+            });
+
+            // キャンセル可能なよう参照を保存
+            _rematchRequestUnsub = () => done(() => reject(new Error('キャンセルされました')));
+          });
+
           if (!_rematchActive) return;
 
-          // スロット書き込み (runTransactionで確実に確保)
+          // スロット書き込み
           const joinResult = await runTransaction(rRef, (d) => {
             if (!d || d.status !== 'waiting') return;
             const max = d.maxPlayers || 3;
             const slots = ['p1', 'p2', 'p3', 'p4'].slice(0, max);
             let target = prevSlot;
-            // 以前のスロットが他人に使われていれば別の空きを探す
             if (d[prevSlot] && d[prevSlot].name && d[prevSlot].name !== prevName) {
               target = slots.find(s => !d[s]) || null;
             }
@@ -2746,20 +2893,28 @@
           const assigned = slots.find(s => finalData[s] && finalData[s].name === prevName);
           if (!assigned) throw new Error('スロットの再確保に失敗しました');
 
-          // スロット書き込み
           mySlot = assigned; roomCode = prevCode; endedOnce = false;
           onDisconnect(ref(db, 'multi/' + prevCode + '/' + assigned)).remove();
 
           if (!_rematchActive) return;
           _rematchActive = false;
+          // UIリセット
+          const cancelBtnPost = document.getElementById('cancelRematchBtn');
+          if (cancelBtnPost) cancelBtnPost.style.display = 'none';
           document.getElementById('displayRoomCode').textContent = prevCode;
           document.getElementById('statusRoom').textContent = 'MULTI: ' + prevCode;
           document.getElementById('resultOverlay').classList.remove('show');
           showScreen('waitingScreen');
           listenWait();
+          notifyOk('リマッチ参加！', 'ゲーム開始を待っています...');
         }
       } catch (err) {
         _rematchActive = false;
+        if (_rematchRequestUnsub) { try { _rematchRequestUnsub(); } catch(e){} _rematchRequestUnsub = null; }
+        // UIリセット
+        const cancelBtnErr = document.getElementById('cancelRematchBtn');
+        if (cancelBtnErr) cancelBtnErr.style.display = 'none';
+        btn.style.display = '';
         if (statusEl) statusEl.textContent = '⚠ ' + err.message;
         btn.disabled = false;
         roomCode = prevCode; mySlot = prevSlot;
@@ -2779,6 +2934,14 @@
             // ホストが退出する場合はルームごと削除して残骸を残さない
             await remove(ref(db, 'multi/' + code));
           } else {
+            // 非ホストが退出する場合、送信済みのリマッチリクエストをキャンセル
+            try {
+              const reqSnap = await get(ref(db, 'multi/' + code + '/rematch_request'));
+              const reqVal = reqSnap.val();
+              if (reqVal && reqVal.from === slot && reqVal.status === 'pending') {
+                await update(ref(db, 'multi/' + code + '/rematch_request'), { status: 'cancelled' });
+              }
+            } catch (e) {}
             // gameOver を記録して他プレイヤーに通知
             await update(ref(db, 'multi/' + code + '/game'), { [slot]: { gameOver: true, score: 0, board: [] } });
             // alive を false にする
@@ -2941,6 +3104,17 @@
       const rematchBtn = document.getElementById('rematchBtn');
       if (rematchBtn) rematchBtn.style.display = _qmIsBot ? 'none' : '';
       document.getElementById('resultOverlay').classList.add('show');
+
+      // ホスト(p1)の場合、他ページに移動してもリマッチリクエストを受け取れるようグローバルリスナーをセット
+      if (!_qmIsBot && mySlot === 'p1' && roomCode) {
+        mountRematchListener(
+          db,
+          roomCode,
+          _getPlayerName(),
+          _hostAcceptRematch,
+          _hostDeclineRematch
+        );
+      }
 
       // ログイン中ユーザーの対戦履歴を Firestore に保存
       const _u = getCurrentUser();
