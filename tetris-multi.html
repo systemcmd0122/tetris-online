@@ -3032,6 +3032,10 @@
       const myAliveRef = ref(db, 'multi/' + roomCode + '/alive/' + mySlot);
       set(myAliveRef, true).catch(() => { });
       onDisconnect(myAliveRef).set(false);
+      // ホストがゲーム開始後に切断してもルームが消えないよう、ルーム全体の onDisconnect.remove() をキャンセル
+      if (mySlot === 'p1') {
+        try { onDisconnect(ref(db, 'multi/' + roomCode)).cancel(); } catch (e) {}
+      }
 
       const aborted = await doCountdown(gsa); if (aborted) return;
 
@@ -3107,6 +3111,8 @@
 
       // ホスト(p1)の場合、他ページに移動してもリマッチリクエストを受け取れるようグローバルリスナーをセット
       if (!_qmIsBot && mySlot === 'p1' && roomCode) {
+        // ゲーム終了後はルームを onDisconnect で削除しないようキャンセル（リマッチ待機中にルームが消えるのを防ぐ）
+        try { onDisconnect(ref(db, 'multi/' + roomCode)).cancel(); } catch (e) {}
         mountRematchListener(
           db,
           roomCode,
