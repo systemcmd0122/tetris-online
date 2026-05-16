@@ -2549,6 +2549,11 @@
       clearSession();
       stopSpec();
       stopBotSpec();
+      if (roomsUnsub) { try { roomsUnsub(); } catch (e) { } roomsUnsub = null; }
+      if (logsUnsub) { try { logsUnsub(); } catch (e) { } logsUnsub = null; }
+      if (botSessionsUnsub) { try { botSessionsUnsub(); } catch (e) { } botSessionsUnsub = null; }
+      if (botConfigUnsub) { try { botConfigUnsub(); } catch (e) { } botConfigUnsub = null; }
+      if (_fbUnsub) { try { _fbUnsub(); } catch (e) { } _fbUnsub = null; }
       document.getElementById('shell').classList.remove('active');
       document.getElementById('loginWrap').classList.remove('hidden');
       document.getElementById('pwIn').value = '';
@@ -2557,6 +2562,7 @@
     // ══ TETRIS BOARD RENDERER ══
     const COLS = 10, ROWS = 20, CELL = 20;
     const COLORS = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800', G: '#888888' };
+    const COLORS_A = ['#00f5ff', '#ff0080', '#aaff00', '#ff8800'];
     const PIECES = {
       I: [[[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]], [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]],
       O: [[[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]]],
@@ -2616,7 +2622,7 @@
 
     // ══ ADMIN STATE ══
     let roomsData = {}; let specRoom = null, specUnsub = {}, specStartTs = null, specTimerIv = null;
-    let roomsListener = null; let logsUnsub = null; let defaultForceMsg = '管理者によってこのルームは強制終了されました';
+    let roomsUnsub = null; let logsUnsub = null; let defaultForceMsg = '管理者によってこのルームは強制終了されました';
     let totalRooms = 0;
 
     function initAdmin() {
@@ -2636,8 +2642,8 @@
     }
 
     function startRoomsListener() {
-      if (roomsListener) try { off(ref(db, 'multi')); } catch (e) { }
-      onValue(ref(db, 'multi'), snap => {
+      if (roomsUnsub) { try { roomsUnsub(); } catch (e) { } roomsUnsub = null; }
+      roomsUnsub = onValue(ref(db, 'multi'), snap => {
         const prev = Object.keys(roomsData).length;
         roomsData = snap.val() || {};
         const curr = Object.keys(roomsData).length;
@@ -2645,7 +2651,6 @@
         totalRooms = Math.max(totalRooms, curr);
         updateStats(); renderTables();
       });
-      roomsListener = true;
       addLog('Firebaseリスナー開始', 'info');
     }
 
@@ -2941,7 +2946,7 @@
 
     // ══ BOT SESSION SPECTATE ══
     let botSessionsData = {};
-    let botSessionsListener = null;
+    let botSessionsUnsub = null;
     let botSpecSid = null;
     let botSpecUnsub = null;
     let botSpecTimerIv = null;
@@ -2950,9 +2955,9 @@
     const DIFF_COLORS = ['', 'var(--acc3)', 'var(--acc)', 'var(--warn)', 'var(--red)'];
 
     function startBotSessionsListener() {
-      if (botSessionsListener) return;
+      if (botSessionsUnsub) { try { botSessionsUnsub(); } catch (e) { } botSessionsUnsub = null; }
       const bsRef = ref(db, 'bot_sessions');
-      onValue(bsRef, snap => {
+      botSessionsUnsub = onValue(bsRef, snap => {
         botSessionsData = snap.val() || {};
         renderBotTable();
         updateBotBadge();
@@ -2963,7 +2968,6 @@
           showToast('観戦中のセッションが終了しました', 'warn');
         }
       });
-      botSessionsListener = true;
       addLog('BotSessionsリスナー開始', 'info');
     }
 
@@ -3207,8 +3211,10 @@
       showToast(`${n}件のルームを削除`, n > 0 ? 'ok' : 'warn');
     };
 
+    let botConfigUnsub = null;
     function startBotConfigListener() {
-      onValue(ref(db, 'config/bot'), snap => {
+      if (botConfigUnsub) { try { botConfigUnsub(); } catch (e) { } botConfigUnsub = null; }
+      botConfigUnsub = onValue(ref(db, 'config/bot'), snap => {
         const d = snap.val();
         if (d) {
           if (d.delays) {
@@ -3351,12 +3357,12 @@
     // ══════════════════════════════════════════════════════
     let _fbData = {};       // id -> report object
     let _fbFilter = 'all';
-    let _fbListener = null;
+    let _fbUnsub = null;
 
     function startFeedbackListener() {
-      if (_fbListener) _fbListener();
+      if (_fbUnsub) { try { _fbUnsub(); } catch (e) { } _fbUnsub = null; }
       const q = query(collection(fs, 'reports'), orderBy('ts', 'desc'), limit(100));
-      _fbListener = onSnapshot(q, snap => {
+      _fbUnsub = onSnapshot(q, snap => {
         _fbData = {};
         snap.forEach(docSnap => {
           _fbData[docSnap.id] = docSnap.data();
