@@ -381,6 +381,103 @@
       box-shadow: 0 1px 0 rgba(100, 30, 0, .8);
     }
 
+    /* ── NETWORK LOBBY ── */
+    .lobby-network-card {
+      margin-top: 24px;
+      max-width: 500px;
+    }
+    .room-list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(0, 245, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+      text-align: left;
+    }
+    .room-list-item:hover {
+      background: rgba(0, 245, 255, 0.08);
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(0, 245, 255, 0.15);
+    }
+    .room-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .room-host {
+      font-size: 11px;
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .room-meta {
+      font-size: 8px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .room-status-tag {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px;
+      padding: 3px 6px;
+      border-radius: 2px;
+    }
+    .status-waiting { color: var(--accent3); border: 1px solid var(--accent3); background: rgba(170, 255, 0, 0.05); }
+    .status-live { color: var(--accent2); border: 1px solid var(--accent2); background: rgba(255, 0, 128, 0.05); }
+
+    .privacy-sel {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .privacy-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      background: transparent;
+      color: var(--dim);
+      transition: all .15s;
+    }
+    .privacy-btn.sel {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0, 245, 255, 0.08);
+      box-shadow: 0 0 10px rgba(0, 245, 255, 0.2);
+    }
+
+    /* Spectator UI */
+    .spectator-banner {
+      background: rgba(255, 0, 128, 0.15);
+      border: 1px solid var(--accent2);
+      color: var(--accent2);
+      padding: 8px 16px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      text-align: center;
+      width: 100%;
+      max-width: 800px;
+      animation: specPulse 2s ease-in-out infinite;
+    }
+    @keyframes specPulse {
+      0%, 100% { opacity: 0.8; box-shadow: 0 0 10px rgba(255, 0, 128, 0.2); }
+      50% { opacity: 1; box-shadow: 0 0 25px rgba(255, 0, 128, 0.5); }
+    }
+
     /* Matching screen */
     .match-timer-wrap {
       width: 100%;
@@ -393,7 +490,7 @@
 
     .match-timer-bar {
       height: 100%;
-      background: linear-gradient(90deg, var(--acc3), var(--acc));
+      background: linear-gradient(90deg, var(--accent3), var(--acc));
       border-radius: 3px;
       transition: width .5s linear;
       width: 100%;
@@ -406,7 +503,7 @@
     .match-status-text {
       font-family: 'Press Start 2P', monospace;
       font-size: 9px;
-      color: var(--acc3);
+      color: var(--accent3);
       letter-spacing: 2px;
       text-align: center;
       min-height: 22px;
@@ -415,7 +512,7 @@
     .match-found-flash {
       font-family: 'Press Start 2P', monospace;
       font-size: 18px;
-      color: var(--acc3);
+      color: var(--accent3);
       text-shadow: 0 0 20px rgba(170, 255, 0, .8);
       letter-spacing: 4px;
       text-align: center;
@@ -1510,17 +1607,34 @@
         <label>PLAYER NAME</label>
         <input type="text" id="playerName" placeholder="YOUR NAME" maxlength="12" value="PLAYER">
       </div>
-      <!-- QUICK MATCH -->
-      <button class="btn btn-match" onclick="quickMatch()" style="margin-bottom:4px;">
-        <span style="display:flex;align-items:center;justify-content:center;gap:8px;">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-            <path d="M7 1l1.8 3.6L13 5.1l-3 2.9.7 4.1L7 10.2l-3.7 1.9.7-4.1-3-2.9 4.2-.6z" />
-          </svg>
-          クイックマッチ（自動マッチング）
-        </span>
-      </button>
-      <div style="font-size:9px;color:var(--dim);letter-spacing:1px;text-align:center;margin-bottom:14px;">
-        対戦相手を自動で探してマッチングします</div>
+      <!-- QUICK MATCH / RANDOM JOIN -->
+      <div style="display:flex; gap:8px; margin-bottom:4px;">
+        <button class="btn btn-match" onclick="quickMatch()" style="flex:1;">
+          <span style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:9px;">
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="currentColor">
+              <path d="M7 1l1.8 3.6L13 5.1l-3 2.9.7 4.1L7 10.2l-3.7 1.9.7-4.1-3-2.9 4.2-.6z" />
+            </svg>
+            QUICK MATCH
+          </span>
+        </button>
+        <button class="btn btn-match" onclick="quickJoin()" style="flex:1; background:linear-gradient(135deg, #00f5ff, #0080ff); box-shadow:0 4px 0 rgba(0,40,100,.8);">
+          <span style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:9px;">
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V5h2v4z"/>
+            </svg>
+            RANDOM JOIN
+          </span>
+        </button>
+      </div>
+      <div style="font-size:8px;color:var(--dim);letter-spacing:1px;text-align:center;margin-bottom:14px;">
+        対戦相手を自動検索、または公開ルームにランダム参加します</div>
+      <div class="input-group">
+        <div class="max-players-label">ROOM PRIVACY</div>
+        <div class="privacy-sel">
+          <button class="privacy-btn sel" id="privacyPublic" onclick="setPrivacy(true)">PUBLIC</button>
+          <button class="privacy-btn" id="privacyPrivate" onclick="setPrivacy(false)">PRIVATE</button>
+        </div>
+      </div>
       <div class="input-group">
         <div class="max-players-label">最大プレイヤー数（ルーム作成時）</div>
         <div class="max-players-sel">
@@ -1538,6 +1652,23 @@
       </div>
       <button class="btn btn-secondary" onclick="joinRoom()">→ ルームに参加</button>
       <a href="index.html" class="btn btn-danger" style="display:block;margin-top:12px;">← メニューに戻る</a>
+    </div>
+
+    <!-- NETWORK LOBBY -->
+    <div class="card lobby-network-card">
+      <div class="px-corner tl"></div>
+      <div class="px-corner tr"></div>
+      <div class="px-corner bl"></div>
+      <div class="px-corner br"></div>
+      <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>▶ NETWORK LOBBY</span>
+        <span id="lobbySyncStatus" style="font-size:8px; color:var(--accent3); opacity:0.7; letter-spacing:1px;">● LIVE SYNC</span>
+      </div>
+      <div id="publicRoomList" style="min-height:80px; max-height:300px; overflow-y:auto; padding-right:4px;">
+        <div style="text-align:center; padding:30px; color:var(--dim); font-size:10px; letter-spacing:2px;">
+          SCANNING FOR PUBLIC NODES...
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1775,6 +1906,86 @@
     document.getElementById('statusText').className = 'status-online';
     document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
 
+    // ── NETWORK LOBBY LISTENER ──
+    (function initNetworkLobby() {
+      const lobbyRef = ref(db, 'multi');
+      onValue(lobbyRef, (snap) => {
+        const data = snap.val();
+        const listEl = document.getElementById('publicRoomList');
+        if (!listEl) return;
+
+        if (!data) {
+          listEl.innerHTML = '<div style="text-align:center; padding:30px; color:var(--dim); font-size:10px; letter-spacing:2px;">NO PUBLIC NODES FOUND</div>';
+          return;
+        }
+
+        const rooms = Object.entries(data)
+          .filter(([code, r]) => r && r.isPublic === true)
+          .sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+
+        if (rooms.length === 0) {
+          listEl.innerHTML = '<div style="text-align:center; padding:30px; color:var(--dim); font-size:10px; letter-spacing:2px;">NO PUBLIC NODES FOUND</div>';
+          return;
+        }
+
+        listEl.innerHTML = rooms.map(([code, r]) => {
+          const max = r.maxPlayers || 3;
+          const slots = ['p1', 'p2', 'p3', 'p4'].slice(0, max);
+          const count = slots.filter(s => !!r[s]).length;
+          const isLive = r.status === 'started' || r.status === 'ready';
+          const hostName = r.p1?.name || 'UNKNOWN';
+
+          return `
+            <div class="room-list-item">
+              <div class="room-info">
+                <div class="room-host">HOST: ${hostName}</div>
+                <div class="room-meta">
+                  <span class="room-status-tag ${isLive ? 'status-live' : 'status-waiting'}">
+                    ${isLive ? 'LIVE' : 'WAITING'}
+                  </span>
+                  <span>ID: ${code}</span>
+                  <span>${count} / ${max} PLAYERS</span>
+                </div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                ${!isLive && count < max ?
+                  `<button class="btn btn-primary" style="padding:6px 12px; font-size:8px; width:auto;" onclick="joinSpecificRoom('${code}')">JOIN</button>` : ''
+                }
+                <button class="btn btn-secondary" style="padding:6px 12px; font-size:8px; width:auto; border-color:var(--accent2); color:var(--accent2);" onclick="spectateRoom('${code}')">WATCH</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      });
+    })();
+
+    window.joinSpecificRoom = (code) => {
+      document.getElementById('roomCodeInput').value = code;
+      window.joinRoom();
+    };
+
+    window.quickJoin = async () => {
+      const snap = await get(ref(db, 'multi'));
+      const data = snap.val();
+      if (!data) { showToast('公開ルームが見つかりません', 'warn'); return; }
+
+      const available = Object.entries(data).filter(([code, r]) => {
+        if (!r.isPublic || r.status !== 'waiting') return false;
+        const max = r.maxPlayers || 3;
+        const count = ['p1', 'p2', 'p3', 'p4'].slice(0, max).filter(s => !!r[s]).length;
+        return count < max;
+      });
+
+      if (available.length === 0) {
+        showToast('参加可能な公開ルームがありません', 'warn');
+        return;
+      }
+
+      // ランダムに1つ選んで参加
+      const [code] = available[Math.floor(Math.random() * available.length)];
+      window.joinSpecificRoom(code);
+    };
+
     // ── BOT CONFIG SYNC ──
     let BOT_DELAYS = [750, 400, 80];
     let BOT_NOISE = [0.4, 0.15, 0.0];
@@ -1968,6 +2179,7 @@
 
     // ── GAME STATE ──
     let roomCode = null, mySlot = null, game = null, gameRunning = false, animId = null;
+    let _isSpectating = false;
     let _rematchActive = false; // 非ホストのリマッチ待機中フラグ
     let _rematchRequestUnsub = null; // 非ホスト：ホスト応答リスナーのキャンセル関数
     let endedOnce = false, _maxPlayers = 3, totalPlayers = 0, myFinalRank = null, statAtkSent = 0;
@@ -2392,6 +2604,7 @@
     }
     function resetState() {
       offAll(); gameRunning = false; endedOnce = false;
+      document.getElementById('specBanner')?.remove();
       _rematchActive = false; // リマッチ待機をキャンセル
       if (_rematchRequestUnsub) { try { _rematchRequestUnsub(); } catch(e){} _rematchRequestUnsub = null; }
       unmountRematchListener(); // ホスト側グローバルリスナーも解除
@@ -2413,7 +2626,7 @@
 
     const uiC = { score: -1, level: -1, lines: -1, combo: -1, b2b: null, sent: -1, pg: -1 };
     function updateUI() {
-      if (!game) return;
+      if (!game || _isSpectating) return;
       if (game.score !== uiC.score) { const sd = document.getElementById('scoreDisplay'); sd.classList.remove('score-pop'); void sd.offsetWidth; sd.classList.add('score-pop'); sd.textContent = game.score; uiC.score = game.score; }
       if (game.level !== uiC.level) { document.getElementById('levelDisplay').textContent = game.level; uiC.level = game.level; }
       if (game.lines !== uiC.lines) { document.getElementById('linesDisplay').textContent = game.lines; uiC.lines = game.lines; }
@@ -2448,7 +2661,7 @@
       const area = document.getElementById('opponentsArea');
       area.innerHTML = '';
       Object.keys(oppInfo).forEach(k => delete oppInfo[k]);
-      const ops = activeSlots.filter(s => s !== mySlot);
+      const ops = _isSpectating ? activeSlots : activeSlots.filter(s => s !== mySlot);
       const W = 200, H = 400; // Full size — same as player board
       ops.forEach(sk => {
         const idx = parseInt(sk.replace('p', ''));
@@ -2505,6 +2718,13 @@
     }
     window.addEventListener('resize', scaleGameLayout);
 
+    let _isPublic = true;
+    window.setPrivacy = (isPub) => {
+      _isPublic = isPub;
+      document.getElementById('privacyPublic').className = 'privacy-btn' + (isPub ? ' sel' : '');
+      document.getElementById('privacyPrivate').className = 'privacy-btn' + (!isPub ? ' sel' : '');
+    };
+
     window.setMaxPlayers = (n) => { _maxPlayers = n;[2, 3, 4].forEach(x => { const b = document.getElementById('maxBtn' + x); if (b) b.className = 'max-btn' + (x === n ? ' sel' : ''); }); };
     window.copyRoomCode = () => { if (!roomCode) return; navigator.clipboard?.writeText(roomCode).then(() => showToast('コードをコピーしました！', 'ok')).catch(() => showToast('コード: ' + roomCode)); };
 
@@ -2519,7 +2739,13 @@
       const name = _getPlayerName();
       mySlot = 'p1'; roomCode = genCode(); endedOnce = false;
       const rRef = ref(db, 'multi/' + roomCode);
-      await set(rRef, { p1: { name, alive: true }, status: 'waiting', maxPlayers: _maxPlayers, ts: getServerTime() });
+      await set(rRef, {
+        p1: { name, alive: true },
+        status: 'waiting',
+        maxPlayers: _maxPlayers,
+        isPublic: _isPublic,
+        ts: getServerTime()
+      });
       onDisconnect(rRef).remove();
       showScreen('waitingScreen');
       document.getElementById('displayRoomCode').textContent = roomCode;
@@ -2946,14 +3172,26 @@
       }
     };
 
+    window.spectateRoom = async (code) => {
+      const snap = await get(ref(db, 'multi/' + code));
+      if (!snap.exists()) { showToast('ルームが見つかりません', 'warn'); return; }
+      const d = snap.val();
+      roomCode = code;
+      mySlot = null;
+      _isSpectating = true;
+      endedOnce = false;
+      document.getElementById('statusRoom').textContent = 'WATCHING: ' + code;
+      startGame(d);
+    };
+
     // ── LEAVE ROOM ──
     window.leaveRoom = async () => {
-      const code = roomCode, slot = mySlot, wasBot = _qmIsBot;
+      const code = roomCode, slot = mySlot, wasBot = _qmIsBot, wasSpec = _isSpectating;
       document.getElementById('resultOverlay').classList.remove('show');
       document.getElementById('countdownOverlay').classList.remove('show');
-      _qmBotStop(); _qmIsBot = false;
+      _qmBotStop(); _qmIsBot = false; _isSpectating = false;
       resetState();
-      if (!wasBot && code && slot && db) {
+      if (!wasBot && !wasSpec && code && slot && db) {
         try {
           if (slot === 'p1') {
             // ホストが退出する場合はルームごと削除して残骸を残さない
@@ -2986,13 +3224,26 @@
       const active = d.activeSlots || ((['p1', 'p2', 'p3', 'p4'].slice(0, max)).filter(s => !!d[s]));
       totalPlayers = active.length;
       showScreen('gameScreen'); clearBoards();
-      const myIdx = parseInt(mySlot.replace('p', ''));
-      document.getElementById('myNameTag').textContent = d[mySlot]?.name || 'YOU';
-      document.getElementById('myLabel').className = 'player-label ' + SLCLS[myIdx];
-      document.getElementById('myLabel').textContent = 'P' + myIdx;
-      document.getElementById('myCanvas').style.cssText = `display:block;image-rendering:pixelated;border:1px solid ${SBORDER[myIdx]};box-shadow:0 0 16px ${SGLOW[myIdx]}`;
+
+      const myOuter = document.querySelector('.my-outer');
+      if (_isSpectating) {
+        if (myOuter) myOuter.style.display = 'none';
+        const banner = document.createElement('div');
+        banner.className = 'spectator-banner';
+        banner.id = 'specBanner';
+        banner.textContent = '▶ SPECTATOR MODE — 観戦中 ◀';
+        document.getElementById('gameScreen').insertBefore(banner, document.getElementById('gameScaleWrap'));
+      } else {
+        if (myOuter) myOuter.style.display = 'flex';
+        const myIdx = parseInt(mySlot.replace('p', ''));
+        document.getElementById('myNameTag').textContent = d[mySlot]?.name || 'YOU';
+        document.getElementById('myLabel').className = 'player-label ' + SLCLS[myIdx];
+        document.getElementById('myLabel').textContent = 'P' + myIdx;
+        document.getElementById('myCanvas').style.cssText = `display:block;image-rendering:pixelated;border:1px solid ${SBORDER[myIdx]};box-shadow:0 0 16px ${SGLOW[myIdx]}`;
+      }
+
       buildOppArea(active);
-      active.filter(s => s !== mySlot).forEach(s => { const el = document.getElementById('oppName_' + s); if (el) el.textContent = d[s]?.name || s.toUpperCase(); });
+      active.filter(s => s !== mySlot || _isSpectating).forEach(s => { const el = document.getElementById('oppName_' + s); if (el) el.textContent = d[s]?.name || s.toUpperCase(); });
 
       // システムメッセージ（管理者ブロードキャスト）を監視
       const sysMsgRef = ref(db, 'multi/' + roomCode + '/sysMsgTs');
@@ -3034,37 +3285,47 @@
         }));
       });
 
-      // Watch incoming garbage
-      const myGRef = ref(db, 'multi/' + roomCode + '/garb/' + mySlot);
-      _addSub('garb_my', onValue(myGRef, snap => {
-        const v = snap.val(); if (!v || !v.n || !game) return;
-        if (v.n > 0) {
-          const toAdd = v.n;
-          runTransaction(myGRef, cur => cur && cur.n > 0 ? { n: 0 } : cur).catch(() => { });
-          game.pendGarb += toAdd;
-          const badge = document.getElementById('attackBadge'); badge.textContent = '+' + v.n + ' !'; badge.classList.remove('show'); void badge.offsetWidth; badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 1200);
-          flashAttack(); playSound('attack');
-        }
-      }));
-
-      // Match flash
-      const mf = document.getElementById('matchFlash'); mf.classList.add('show'); setTimeout(() => mf.classList.remove('show'), 2000);
-
-      // Countdown
-      const gsa = d.gameStartAt || (getServerTime() + 5000);
-
-      // ゲーム開始直後に生存フラグを立て、切断時は自動でfalseになるよう設定
-      const myAliveRef = ref(db, 'multi/' + roomCode + '/alive/' + mySlot);
-      set(myAliveRef, true).catch(() => { });
-      onDisconnect(myAliveRef).set(false);
-      // ホストがゲーム開始後に切断してもルームが消えないよう、ルーム全体の onDisconnect.remove() をキャンセル
-      if (mySlot === 'p1') {
-        try { onDisconnect(ref(db, 'multi/' + roomCode)).cancel(); } catch (e) {}
+      // Watch incoming garbage (Players only)
+      if (!_isSpectating) {
+        const myGRef = ref(db, 'multi/' + roomCode + '/garb/' + mySlot);
+        _addSub('garb_my', onValue(myGRef, snap => {
+          const v = snap.val(); if (!v || !v.n || !game) return;
+          if (v.n > 0) {
+            const toAdd = v.n;
+            runTransaction(myGRef, cur => cur && cur.n > 0 ? { n: 0 } : cur).catch(() => { });
+            game.pendGarb += toAdd;
+            const badge = document.getElementById('attackBadge'); badge.textContent = '+' + v.n + ' !'; badge.classList.remove('show'); void badge.offsetWidth; badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 1200);
+            flashAttack(); playSound('attack');
+          }
+        }));
       }
 
-      const aborted = await doCountdown(gsa); if (aborted) return;
+      // Match flash (Skipped for mid-game spectators)
+      if (!_isSpectating || d.status !== 'started') {
+        const mf = document.getElementById('matchFlash'); mf.classList.add('show'); setTimeout(() => mf.classList.remove('show'), 2000);
+      }
 
-      game = new TetrisGame('myCanvas', 'holdCanvas', 'nextCanvas');
+      // Countdown (Skipped for mid-game spectators)
+      const gsa = d.gameStartAt || (getServerTime() + 5000);
+
+      if (!_isSpectating) {
+        // ゲーム開始直後に生存フラグを立て、切断時は自動でfalseになるよう設定
+        const myAliveRef = ref(db, 'multi/' + roomCode + '/alive/' + mySlot);
+        set(myAliveRef, true).catch(() => { });
+        onDisconnect(myAliveRef).set(false);
+        // ホストがゲーム開始後に切断してもルームが消えないよう、ルーム全体の onDisconnect.remove() をキャンセル
+        if (mySlot === 'p1') {
+          try { onDisconnect(ref(db, 'multi/' + roomCode)).cancel(); } catch (e) {}
+        }
+      }
+
+      if (!_isSpectating || d.status !== 'started') {
+        const aborted = await doCountdown(gsa); if (aborted) return;
+      }
+
+      if (!_isSpectating) {
+        game = new TetrisGame('myCanvas', 'holdCanvas', 'nextCanvas');
+      }
       gameRunning = true; endedOnce = false;
 
       const PUSH = 50; let lastPush = 0, pendOut = 0;
