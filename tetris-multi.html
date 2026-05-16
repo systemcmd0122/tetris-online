@@ -1908,6 +1908,7 @@
         this.lastDrop = performance.now(); playSound('move'); return true;
       }
       update(ts) {
+        this._lastTs = ts;
         if (this.over) return null;
         if (this.waiting) { if (ts >= this.nextTs) { this.waiting = false; this.current = mkP(this.bag.next()); while (!this.valid(this.current) && this.current.y > -4) this.current.y--; if (!this.valid(this.current)) this.over = true; } return null; }
         const og = !this.valid(this.current, 0, 1);
@@ -2510,6 +2511,11 @@
 
     // ── CREATE ROOM ──
     window.createRoom = async () => {
+      const { getCurrentUser } = await import('./auth.js');
+      if (!getCurrentUser()) {
+        showToast('ルームを作成するには Google アカウントでログインしてください', 'err');
+        return;
+      }
       const name = _getPlayerName();
       mySlot = 'p1'; roomCode = genCode(); endedOnce = false;
       const rRef = ref(db, 'multi/' + roomCode);

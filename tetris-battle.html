@@ -1627,6 +1627,7 @@
         this.lastDrop = performance.now(); playSound('move'); return true;
       }
       update(ts) {
+        this._lastTs = ts;
         if (this.over) return null;
         if (this.waiting) {
           if (ts >= this.nextTs) { this.waiting = false; this.current = mkP(this.bag.next()); while (!this.valid(this.current) && this.current.y > -4) this.current.y--; if (!this.valid(this.current)) this.over = true; }

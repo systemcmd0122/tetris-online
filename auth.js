@@ -36,6 +36,7 @@ function _notify() {
 
 onAuthStateChanged(_auth, async (user) => {
   _currentUser = user;
+  window._current_user_cached = user; // HTML側から同期的に参照できるようにセット
   if (user) { await _loadProfile(user.uid); }
   else { _cachedProfile = null; }
   _authResolved = true;
