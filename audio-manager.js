@@ -20,6 +20,7 @@ class AudioManager {
         };
         this.gains = {};
         this.isMuted = false;
+        this.soundMode = 'neon'; // 'neon' or 'soft'
         this.initialized = false;
         this.compressor = null;
 
@@ -74,6 +75,7 @@ class AudioManager {
                 const data = JSON.parse(saved);
                 this.categories = { ...this.categories, ...data.volumes };
                 this.isMuted = data.isMuted || false;
+                this.soundMode = data.soundMode || 'neon';
             } catch (e) { console.warn("Failed to load audio settings", e); }
         }
     }
@@ -81,7 +83,8 @@ class AudioManager {
     saveSettings() {
         localStorage.setItem('tb_audio_settings', JSON.stringify({
             volumes: this.categories,
-            isMuted: this.isMuted
+            isMuted: this.isMuted,
+            soundMode: this.soundMode
         }));
     }
 
@@ -110,6 +113,11 @@ class AudioManager {
         this.updateMasterVolume();
         this.saveSettings();
         return this.isMuted;
+    }
+
+    setSoundMode(mode) {
+        this.soundMode = mode;
+        this.saveSettings();
     }
 
     // --- SFX Generation ---
@@ -211,11 +219,15 @@ class AudioManager {
     // --- Specific Game Sounds ---
 
     playMove() {
-        this._playNote({ freq: 440, type: 'square', duration: 0.04, gain: 0.1, category: 'sfx' });
+        const type = this.soundMode === 'soft' ? 'sine' : 'square';
+        const gain = this.soundMode === 'soft' ? 0.07 : 0.1;
+        this._playNote({ freq: 440, type, duration: 0.04, gain, category: 'sfx' });
     }
 
     playRotate() {
-        this._playNote({ freq: 660, type: 'triangle', duration: 0.06, gain: 0.15, category: 'sfx', pitchSlide: 220 });
+        const type = this.soundMode === 'soft' ? 'sine' : 'triangle';
+        const gain = this.soundMode === 'soft' ? 0.1 : 0.15;
+        this._playNote({ freq: 660, type, duration: 0.06, gain, category: 'sfx', pitchSlide: 220 });
     }
 
     playSoftDrop() {
@@ -223,12 +235,16 @@ class AudioManager {
     }
 
     playHardDrop() {
-        this._playNote({ freq: 110, type: 'square', duration: 0.15, gain: 0.3, category: 'sfx', pitchSlide: -50 });
-        this._playNoise({ duration: 0.1, gain: 0.1, filterFreq: 500 });
+        const type = this.soundMode === 'soft' ? 'sine' : 'square';
+        const gain = this.soundMode === 'soft' ? 0.2 : 0.3;
+        const noiseGain = this.soundMode === 'soft' ? 0.05 : 0.1;
+        this._playNote({ freq: 110, type, duration: 0.15, gain, category: 'sfx', pitchSlide: -50 });
+        this._playNoise({ duration: 0.1, gain: noiseGain, filterFreq: 500 });
     }
 
     playLock() {
-        this._playNote({ freq: 150, type: 'triangle', duration: 0.1, gain: 0.2, category: 'sfx' });
+        const type = this.soundMode === 'soft' ? 'sine' : 'triangle';
+        this._playNote({ freq: 150, type, duration: 0.1, gain: 0.2, category: 'sfx' });
     }
 
     playHold() {
@@ -243,30 +259,33 @@ class AudioManager {
     playClear(lines, combo = 0, isB2B = false) {
         const baseFreq = 440 * Math.pow(1.059, combo); // コンボでピッチ上昇
         const duration = 0.2 + (lines * 0.1);
-        const gain = 0.3 + (lines * 0.05);
+        const gain = (this.soundMode === 'soft' ? 0.2 : 0.3) + (lines * 0.05);
+        const type = this.soundMode === 'soft' ? 'sine' : 'square';
 
         // 基本音
-        this._playNote({ freq: baseFreq, type: 'square', duration, gain, category: 'sfx', pitchSlide: baseFreq });
+        this._playNote({ freq: baseFreq, type, duration, gain, category: 'sfx', pitchSlide: baseFreq });
 
         // 高音の装飾
         this._playNote({ freq: baseFreq * 2, type: 'sine', duration: duration * 0.8, gain: gain * 0.5 });
 
         if (lines >= 4) { // Tetris
-            this._playNote({ freq: 55, type: 'sawtooth', duration: 0.4, gain: 0.5, category: 'sfx' }); // 重低音
-            this._playNoise({ duration: 0.5, gain: 0.3, filterFreq: 2000 });
+            const lowType = this.soundMode === 'soft' ? 'triangle' : 'sawtooth';
+            this._playNote({ freq: 55, type: lowType, duration: 0.4, gain: 0.5, category: 'sfx' }); // 重低音
+            this._playNoise({ duration: 0.5, gain: 0.2, filterFreq: 1500 });
         }
 
         if (isB2B) {
             setTimeout(() => {
-                this._playNote({ freq: baseFreq * 1.5, type: 'square', duration: 0.2, gain: 0.2, pitchSlide: 200 });
+                this._playNote({ freq: baseFreq * 1.5, type, duration: 0.2, gain: 0.2, pitchSlide: 200 });
             }, 50);
         }
     }
 
     playTSpin(lines = 0) {
-        this._playNote({ freq: 80, type: 'sawtooth', duration: 0.4, gain: 0.6, category: 'sfx', pitchSlide: 40 });
+        const type = this.soundMode === 'soft' ? 'triangle' : 'sawtooth';
+        this._playNote({ freq: 80, type, duration: 0.4, gain: 0.6, category: 'sfx', pitchSlide: 40 });
         this._playNote({ freq: 40, type: 'sine', duration: 0.5, gain: 0.8 }); // サブベース
-        this._playNoise({ duration: 0.3, gain: 0.2, filterFreq: 100 }); // 低域の衝撃
+        this._playNoise({ duration: 0.3, gain: 0.1, filterFreq: 100 }); // 低域の衝撃
 
         if (lines > 0) {
             setTimeout(() => this.playClear(lines, 0, false), 100);
