@@ -380,6 +380,7 @@ const _PAGES = [
   { id: 'home', href: 'index.html', label: 'HOME', cls: 'home' },
   { id: 'battle', href: 'tetris-multi.html', label: 'ONLINE', cls: 'battle' },
   { id: 'bot', href: 'tetris-battle.html', label: 'VS BOT', cls: 'bot' },
+  { id: 'ai', href: 'ai-battle.html', label: 'AI LEAGUE', cls: 'ai', isNew: true },
   { id: 'sprint', href: 'sprint.html', label: 'SPRINT', cls: 'sprint' },
   { id: 'exam', href: 'exam.html', label: '検定', cls: 'exam', isNew: true },
   { id: 'profile', href: 'profile.html', label: 'PROFILE', cls: 'profile', authOnly: true },
