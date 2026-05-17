@@ -70,7 +70,6 @@ const _NAV_CSS = `
 .tb-nav-link-battle .tb-nav-dot { background: #ff0080; box-shadow: 0 0 4px #ff0080; }
 .tb-nav-link-bot .tb-nav-dot    { background: #cc00ff; box-shadow: 0 0 4px #cc00ff; }
 .tb-nav-link-sprint .tb-nav-dot { background: #aaff00; box-shadow: 0 0 4px #aaff00; }
-.tb-nav-link-exam .tb-nav-dot   { background: #ffd700; box-shadow: 0 0 4px #ffd700; }
 .tb-nav-link-profile .tb-nav-dot{ background: #ff8800; box-shadow: 0 0 4px #ff8800; }
 
 /* NEW badge */
@@ -382,7 +381,6 @@ const _PAGES = [
   { id: 'bot', href: 'tetris-battle.html', label: 'VS BOT', cls: 'bot' },
   { id: 'ai', href: 'ai-battle.html', label: 'AI LEAGUE', cls: 'ai', isNew: true },
   { id: 'sprint', href: 'sprint.html', label: 'SPRINT', cls: 'sprint' },
-  { id: 'exam', href: 'exam.html', label: '検定', cls: 'exam', isNew: true },
   { id: 'profile', href: 'profile.html', label: 'PROFILE', cls: 'profile', authOnly: true },
 ];
 

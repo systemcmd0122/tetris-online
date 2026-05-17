@@ -613,168 +613,6 @@
       background: radial-gradient(ellipse at 50% 100%, rgba(255, 215, 0, .07), transparent 70%)
     }
 
-    /* EXAM BADGES */
-    .badges-section {
-      margin-bottom: 24px
-    }
-
-    .badges-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-      position: relative
-    }
-
-    .badges-header::after {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 0;
-      width: 48px;
-      height: 2px;
-      background: #ffd700;
-      border-radius: 2px
-    }
-
-    .badges-title {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 10px;
-      color: #ffd700;
-      letter-spacing: 2px
-    }
-
-    .badges-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px
-    }
-
-    .badge-chip {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--s0);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px 14px;
-      transition: transform .2s, border-color .2s, box-shadow .2s;
-      cursor: default;
-      position: relative;
-      overflow: hidden
-    }
-
-    .badge-chip::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px
-    }
-
-    .badge-chip:hover {
-      transform: translateY(-2px)
-    }
-
-    .badge-chip.bc-lv1::before {
-      background: #cd7f32
-    }
-
-    .badge-chip.bc-lv1:hover {
-      border-color: rgba(205, 127, 50, .5);
-      box-shadow: 0 4px 14px rgba(205, 127, 50, .15)
-    }
-
-    .badge-chip.bc-lv2::before {
-      background: #c0c0c0
-    }
-
-    .badge-chip.bc-lv2:hover {
-      border-color: rgba(192, 192, 192, .5);
-      box-shadow: 0 4px 14px rgba(192, 192, 192, .12)
-    }
-
-    .badge-chip.bc-lv3::before {
-      background: #ffd700
-    }
-
-    .badge-chip.bc-lv3:hover {
-      border-color: rgba(255, 215, 0, .5);
-      box-shadow: 0 4px 14px rgba(255, 215, 0, .15)
-    }
-
-    .badge-chip.bc-lv4::before {
-      background: #00f5ff
-    }
-
-    .badge-chip.bc-lv4:hover {
-      border-color: rgba(0, 245, 255, .5);
-      box-shadow: 0 4px 14px rgba(0, 245, 255, .15)
-    }
-
-    .badge-chip.bc-lv5::before {
-      background: linear-gradient(90deg, #ff0080, #cc00ff, #00f5ff);
-      animation: rainbowShift 3s linear infinite;
-      background-size: 300% 100%
-    }
-
-    .badge-chip.bc-lv5:hover {
-      border-color: rgba(204, 0, 255, .5);
-      box-shadow: 0 4px 20px rgba(204, 0, 255, .2)
-    }
-
-    .badge-icon {
-      font-size: 22px;
-      flex-shrink: 0;
-      filter: drop-shadow(0 0 5px currentColor)
-    }
-
-    .badge-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px
-    }
-
-    .badge-name {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 8px;
-      letter-spacing: 1px
-    }
-
-    .bc-lv1 .badge-name {
-      color: #cd7f32
-    }
-
-    .bc-lv2 .badge-name {
-      color: #c0c0c0
-    }
-
-    .bc-lv3 .badge-name {
-      color: #ffd700
-    }
-
-    .bc-lv4 .badge-name {
-      color: #00f5ff
-    }
-
-    .bc-lv5 .badge-name {
-      color: #cc00ff
-    }
-
-    .badge-score {
-      font-size: 8px;
-      color: var(--dim);
-      letter-spacing: 1px
-    }
-
-    .badge-date {
-      font-size: 7px;
-      color: var(--dim);
-      letter-spacing: .5px
-    }
 
     /* TITLES */
     .titles-section {
@@ -860,9 +698,6 @@
       background: linear-gradient(90deg, #aaff00, #00ff88)
     }
 
-    .title-chip.tc-exam::before {
-      background: linear-gradient(90deg, #ffd700, #ffaa00)
-    }
 
     .title-chip.tc-streak::before {
       background: linear-gradient(90deg, #ff8800, #ff4400)
@@ -1699,16 +1534,6 @@
         <div class="titles-grid" id="titlesGrid"></div>
       </div>
 
-      <!-- EXAM BADGES -->
-      <div class="badges-section" id="badgesSection" style="display:none">
-        <div class="badges-header">
-          <div class="badges-title">▶ 検定バッジ</div>
-          <a href="exam.html"
-            style="font-size:8px;color:var(--dim);text-decoration:none;letter-spacing:1px;transition:color .2s"
-            onmouseover="this.style.color='#ffd700'" onmouseout="this.style.color=''">検定を受ける ▶</a>
-        </div>
-        <div class="badges-grid" id="badgesGrid"></div>
-      </div>
 
       <div class="tab-bar">
         <button class="tab-btn active" id="tabBtnMulti" onclick="switchTab('multi')" aria-label="マルチ対戦履歴">
@@ -1862,7 +1687,7 @@
     import { mountNav, notifyOk, notifyErr, notifyInfo, notifySpecial } from './nav.js';
     mountNav();
     import { onAuthReady, signIn, signOut, refreshProfile } from './auth.js';
-    import { upsertUserProfile, getUserProfile, getMultiHistory, getSprintHistory, updateUserName, updateUserAvatar, getExamBadges, getUserTitles, watchUserTitles, watchUserProfile, AVAILABLE_TITLES } from './db.js';
+    import { upsertUserProfile, getUserProfile, getMultiHistory, getSprintHistory, updateUserName, updateUserAvatar, getUserTitles, watchUserTitles, watchUserProfile, AVAILABLE_TITLES } from './db.js';
 
     const stateMsg = document.getElementById('stateMsg'), mainContent = document.getElementById('mainContent'), loader = document.getElementById('pageLoader');
     function hideLoader() { loader.classList.add('hide'); setTimeout(() => loader.remove(), 500); }
@@ -2016,14 +1841,12 @@
     async function loadProfile(user) {
       mainContent.style.display = 'block'; stateMsg.innerHTML = '';
       await upsertUserProfile(user).catch(() => { });
-      const [profile, multiHistory, sprintHistory, examBadges, userTitles] = await Promise.all([
+      const [profile, multiHistory, sprintHistory, userTitles] = await Promise.all([
         getUserProfile(user.uid), getMultiHistory(user.uid, 50), getSprintHistory(user.uid, 50),
-        getExamBadges(user.uid).catch(() => []),
         getUserTitles(user.uid).catch(() => []),
       ]);
       renderHeader(user, profile); renderStats(profile, multiHistory);
       renderTitles(userTitles);
-      renderBadges(examBadges);
       renderMultiHistory(multiHistory); renderSprintHistory(sprintHistory);
       wireNameEdit(user); wireAvatarEdit(user);
       document.getElementById('logoutBtnProf')?.addEventListener('click', async () => await signOut());
@@ -2053,39 +1876,6 @@
       }).join('');
     }
 
-    function renderBadges(badges) {
-      const BADGE_META = {
-        lv1: { cls: 'bc-lv1', icon: '<svg width="18" height="18" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#cd7f32"/></svg>', name: '入門合格', color: '#cd7f32' },
-        lv2: { cls: 'bc-lv2', icon: '⬜', name: '初級合格', color: '#c0c0c0' },
-        lv3: { cls: 'bc-lv3', icon: '1ST', name: '中級合格', color: '#ffd700' },
-        lv4: { cls: 'bc-lv4', icon: '<svg width="18" height="18" viewBox="0 0 20 20"><polygon points="10,2 17,10 10,18 3,10" fill="#00f5ff"/></svg>', name: '上級合格', color: '#00f5ff' },
-        lv5: { cls: 'bc-lv5', icon: '<svg width="18" height="18" viewBox="0 0 20 20"><path d="M10 2l2 5h5l-4 3 1.5 5L10 12l-4 3 1.5-5-4-3h5z" fill="#cc00ff"/></svg>', name: '名人合格', color: '#cc00ff' },
-      };
-      const section = document.getElementById('badgesSection');
-      const grid = document.getElementById('badgesGrid');
-      if (!section || !grid) return;
-      section.style.display = '';
-
-      if (!badges || badges.length === 0) {
-        grid.innerHTML = `<div class="badge-empty">まだバッジなし&nbsp; <a href="exam.html">検定を受ける ▶</a></div>`;
-        return;
-      }
-      const ORDER = ['lv1', 'lv2', 'lv3', 'lv4', 'lv5'];
-      const map = {};
-      badges.forEach(b => map[b.levelId || b.id] = b);
-      grid.innerHTML = ORDER.filter(id => map[id]).map(id => {
-        const b = map[id], m = BADGE_META[id] || {};
-        const earned = b.earnedAt ? fmtDateFull(b.earnedAt) : '---';
-        return `<div class="badge-chip ${m.cls || ''}" title="${m.name}">
-          <span class="badge-icon" aria-hidden="true">${m.icon || '★'}</span>
-          <div class="badge-info">
-            <div class="badge-name">${m.name}</div>
-            <div class="badge-score">${b.score || '?'}/10点</div>
-            <div class="badge-date">${earned}</div>
-          </div>
-        </div>`;
-      }).join('');
-    }
 
     onAuthReady(async user => {
       if (user) {

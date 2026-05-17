@@ -198,63 +198,6 @@ export async function getMultiHistory(uid, n = 50) {
   }
 }
 
-// ── テトリス検定 ──────────────────────────────────────────
-
-/**
- * 検定結果を保存する。合格した場合のみ users/{uid}/exam_badges に記録。
- * 同じレベルの最高スコアのみ保存する。
- * @param {string} uid
- * @param {{ levelId: string, score: number, passed: boolean }} data
- */
-export async function saveExamResult(uid, data) {
-  try {
-    const fs = await _getFS();
-    const { doc, setDoc, getDoc, serverTimestamp, addDoc, collection } =
-      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-
-    // 全結果ログに追記
-    await addDoc(collection(fs, 'users', uid, 'exam_history'), {
-      levelId: data.levelId,
-      score: data.score,
-      passed: data.passed,
-      ts: serverTimestamp(),
-    }).catch((err) => { console.error('[db.js] saveExamResult addDoc failed:', err); });
-
-    // 合格の場合はバッジドキュメントを upsert
-    if (data.passed) {
-      const badgeRef = doc(fs, 'users', uid, 'exam_badges', data.levelId);
-      const snap = await getDoc(badgeRef);
-      const prev = snap.exists() ? snap.data().score : -1;
-      if (data.score > prev) {
-        await setDoc(badgeRef, {
-          levelId: data.levelId,
-          score: data.score,
-          earnedAt: serverTimestamp(),
-        });
-      }
-    }
-  } catch (e) {
-    console.error('[db.js] saveExamResult failed:', e);
-  }
-}
-
-/**
- * ユーザーの取得済みバッジ一覧を返す。
- * @param {string} uid
- * @returns {Promise<Array<{levelId:string, score:number, earnedAt:*}>>}
- */
-export async function getExamBadges(uid) {
-  try {
-    const fs = await _getFS();
-    const { collection, getDocs } =
-      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    const snap = await getDocs(collection(fs, 'users', uid, 'exam_badges'));
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (e) {
-    console.error('[db.js] getExamBadges failed:', e);
-    return [];
-  }
-}
 
 export async function getSprintHistory(uid, n = 50) {
   try {
@@ -287,90 +230,7 @@ export async function getAllUsers() {
     limit(1000)
   ));
 
-  // For each user, try to get badge count
-  const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-  // Fetch badge count for each user (async, but don't block the main list)
-  for (const user of users) {
-    try {
-      const badgeSnap = await getDocs(collection(fs, 'users', user.id, 'exam_badges'));
-      user.exam_badges_count = badgeSnap.size;
-    } catch (e) {
-      user.exam_badges_count = 0;
-    }
-  }
-
-  return users;
-}
-
-/**
- * ユーザーの検定情報を取得する（管理者用）。
- * プロフィール + 取得済みバッジを返す。
- * @param {string} uid
- * @returns {Promise<{profile: object, badges: Array<{levelId:string, score:number, earnedAt:*}>}>}
- */
-export async function getUserExamInfo(uid) {
-  const profile = await getUserProfile(uid);
-  const badges = await getExamBadges(uid);
-  return { profile, badges };
-}
-
-/**
- * 管理者による検定バッジの更新。スコアと合格状況を変更できる。
- * @param {string} uid
- * @param {string} levelId  (lv1, lv2, etc.)
- * @param {number} newScore  新しいスコア (0-10)
- * @param {boolean} passed  合格/不合格フラグ
- */
-export async function adminUpdateExamBadge(uid, levelId, newScore, passed) {
-  const fs = await _getFS();
-  const { doc, setDoc, deleteDoc } =
-    await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-
-  const badgeRef = doc(fs, 'users', uid, 'exam_badges', levelId);
-
-  if (passed) {
-    // 合格: バッジを作成/更新
-    await setDoc(badgeRef, {
-      levelId: levelId,
-      score: newScore,
-      earnedAt: new Date(),
-    });
-  } else {
-    // 不合格: バッジを削除
-    try {
-      await deleteDoc(badgeRef);
-    } catch (e) {
-      // すでに削除されていた場合は無視
-    }
-  }
-}
-
-/**
- * 管理者による全検定レベルの管理。
- * @param {string} uid
- * @param {Object} badgesData  { lv1: {score: 8, passed: true}, lv2: {...}, ... }
- */
-export async function adminUpdateAllExamBadges(uid, badgesData) {
-  const fs = await _getFS();
-  const { writeBatch, doc } =
-    await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-  const batch = writeBatch(fs);
-
-  for (const [levelId, data] of Object.entries(badgesData)) {
-    const badgeRef = doc(fs, 'users', uid, 'exam_badges', levelId);
-    if (data.passed) {
-      batch.set(badgeRef, {
-        levelId: levelId,
-        score: data.score,
-        earnedAt: new Date(),
-      });
-    } else {
-      batch.delete(badgeRef);
-    }
-  }
-
-  await batch.commit();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
 /**
@@ -424,9 +284,6 @@ export const AVAILABLE_TITLES = {
   'sprint-silver': { name: 'スプリント銀猫', emoji: '🥈', category: 'sprint', label: 'スプリント50秒台達成' },
   'sprint-bronze': { name: 'スプリント銅猫', emoji: '🥉', category: 'sprint', label: 'スプリント60秒台達成' },
 
-  // 検定系
-  'exam-all-lv': { name: '検定マスター', emoji: '📜', category: 'exam', label: '全検定レベル合格' },
-  'exam-perfect': { name: '完璧主義者', emoji: '💯', category: 'exam', label: '全検定で満点取得' },
 
   // その他
   'first-login': { name: 'ようこそ', emoji: '👋', category: 'other', label: '初ログイン' },
