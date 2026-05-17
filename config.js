@@ -1,4 +1,4 @@
-export const APP_VERSION = "3.7.0";
+export const APP_VERSION = "3.8.0";
 
 /** Firebase設定 — auth.js / db.js / フィードバックウィジェットで共有 */
 export const FB_CONFIG = {
@@ -12,6 +12,18 @@ export const FB_CONFIG = {
 };
 
 export const UPDATE_LOG = [
+  {
+    version: "3.8.0",
+    title: "CYBER AI LEAGUE (BOT VS BOT) モード追加",
+    changes: [
+      "【新モード】「CYBER AI LEAGUE」を実装しました。AI同士の超高速対戦を観戦・予想するシミュレーターモードです。",
+      "【AI Personality】AGGRESSIVE、MACHINE GOD、GLITCHEDなど、6種類の異なる性格を持つAIが登場。それぞれの思考アルゴリズムや速度が異なります。",
+      "【観戦UI】eスポーツ配信風のUIを構築。リアルタイムAPMグラフ、推定勝率、ダメージメーター、AIログなどを表示します。",
+      "【ベッティング】ゲーム内クレジットを使用して、どのBOTが勝つか予想するシステムを追加しました（※リアルマネーではありません）。",
+      "【演出】Matrix風デジタル背景、グリッチエフェクト、オーバーヒート警告、シネマティックイベント演出を追加しました。",
+      "【進化システム】試合に勝利したBOTはレベルアップし、思考速度が恒久的に強化されていきます。ランキングは全ユーザーで共有されます。"
+    ]
+  },
   {
     version: "3.7.0",
     title: "マルチ対戦攻撃システム刷新・ターゲット機能廃止",
