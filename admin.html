@@ -2224,7 +2224,7 @@
           <div class="ph">
             <div class="ph-left">
               <div class="ph-title">USERS</div>
-              <div class="ph-sub">全ユーザー一覧・検定管理</div>
+              <div class="ph-sub">全ユーザー一覧</div>
             </div>
             <div style="display:flex;gap:8px;align-items:center;">
               <input type="text" id="userSearchInput" class="cf-input"
@@ -2242,7 +2242,6 @@
                   <th>CREATED</th>
                   <th>LAST SEEN</th>
                   <th>GAMES</th>
-                  <th>EXAM BADGES</th>
                   <th>ACTIONS</th>
                 </tr>
               </thead>
@@ -2305,21 +2304,6 @@
             </div>
           </div>
 
-          <!-- Exam Badges -->
-          <div style="margin-top:20px">
-            <div class="ph">
-              <div class="ph-left">
-                <div class="ph-title">EXAM BADGES</div>
-                <div class="ph-sub">テトリス検定の取得状況・スコア管理</div>
-              </div>
-            </div>
-            <div id="examBadgesContainer"
-              style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
-              <div
-                style="background:var(--s1);border:1px solid var(--b0);border-radius:4px;padding:20px;text-align:center;color:var(--dim)">
-                読み込み中...</div>
-            </div>
-          </div>
 
           <!-- Actions -->
           <div style="margin-top:28px;display:flex;gap:10px;flex-wrap:wrap">
@@ -2447,31 +2431,6 @@
     </div>
   </div>
 
-  <!-- Exam Score Modal -->
-  <div class="modal-bg" id="examScoreModal">
-    <div class="modal">
-      <div class="modal-title">検定スコア編集</div>
-      <div style="font-size:7px;color:var(--dim);letter-spacing:2px;margin-bottom:14px">
-        レベル: <span id="examScoreLevelName"
-          style="color:var(--acc);font-family:'Press Start 2P',monospace;letter-spacing:2px">---</span>
-      </div>
-      <div style="margin-bottom:16px">
-        <div style="font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:8px">スコア (0-10)</div>
-        <input type="number" id="examScoreInput" class="modal-input" min="0" max="10" placeholder="7"
-          style="font-size:16px;text-align:center">
-      </div>
-      <div style="margin-bottom:16px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-          <input type="checkbox" id="examScorePassed" style="width:18px;height:18px;cursor:pointer">
-          <span style="font-size:11px;color:var(--tx);letter-spacing:1px">合格として記録</span>
-        </label>
-      </div>
-      <div class="modal-btns">
-        <button class="modal-cancel" onclick="closeExamScoreModal()">キャンセル</button>
-        <button class="modal-send" onclick="saveExamScore()">保存</button>
-      </div>
-    </div>
-  </div>
 
   <div class="toast" id="toast"></div>
 
@@ -3552,7 +3511,6 @@
       }
 
       tbody.innerHTML = filtered.map(u => {
-        const badges = u.exam_badges_count || 0;
         const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ja-JP') : '—';
         const lastSeen = u.lastSeen ? new Date(u.lastSeen).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '—';
         const games = (u.totalMultiGames || 0);
@@ -3563,7 +3521,6 @@
       <td style="font-size:10px;color:var(--dim)">${created}</td>
       <td style="font-size:10px;color:var(--dim)">${lastSeen}</td>
       <td style="color:var(--acc3);font-family:'Press Start 2P',monospace;font-size:9px">${games}</td>
-      <td style="color:var(--gold);font-family:'Press Start 2P',monospace;font-size:9px">${badges}/5</td>
       <td><button class="abtn abtn-watch" onclick="viewUserDetail('${u.id}')">DETAIL</button></td>
     </tr>`;
       }).join('');
@@ -3574,10 +3531,8 @@
     window.viewUserDetail = async (uid) => {
       try {
         _selectedUserId = uid;
-        const { getUserExamInfo } = await import('./db.js');
-        const info = await getUserExamInfo(uid);
-        const profile = info.profile;
-        const badges = info.badges;
+        const { getUserProfile } = await import('./db.js');
+        const profile = await getUserProfile(uid);
 
         // Update UI
         document.getElementById('detailUserName').textContent = profile.displayName || '(未設定)';
@@ -3589,74 +3544,6 @@
         document.getElementById('detailTotalWins').textContent = profile.totalWins || 0;
         document.getElementById('detailTotalSprintGames').textContent = profile.totalSprintGames || 0;
         document.getElementById('detailBestSprintMs').textContent = profile.bestSprintMs ? (profile.bestSprintMs / 1000).toFixed(2) + 's' : '—';
-
-        // Render exam badges
-        const LEVELS = [
-          { id: 'lv1', name: '入門', icon: '🥉', color: '#cd7f32', passMark: 7 },
-          { id: 'lv2', name: '初級', icon: '⬜', color: '#c0c0c0', passMark: 7 },
-          { id: 'lv3', name: '中級', icon: '1ST', color: '#ffd700', passMark: 7 },
-          { id: 'lv4', name: '上級', icon: '◇', color: '#00f5ff', passMark: 8 },
-          { id: 'lv5', name: '名人', icon: '★', color: '#cc00ff', passMark: 8 }
-        ];
-
-        const badgeMap = {};
-        badges.forEach(b => badgeMap[b.id] = b);
-
-        const container = document.getElementById('examBadgesContainer');
-        container.innerHTML = LEVELS.map((lv) => {
-          const badge = badgeMap[lv.id];
-          const isPassed = !!badge;
-          const score = badge ? badge.score : 0;
-          const statusColor = isPassed ? 'var(--acc3)' : 'var(--dim)';
-          const statusText = isPassed ? '✓ 合格' : '✗ 未取得';
-          const statusBgColor = isPassed ? 'rgba(170,255,0,.08)' : 'rgba(74,96,128,.08)';
-
-          return `<div style="background:var(--s1);border:1px solid var(--b0);border-left:3px solid ${lv.color};border-radius:4px;padding:18px;display:flex;flex-direction:column;gap:14px">
-            <!-- Header -->
-            <div style="display:flex;justify-content:space-between;align-items:flex-start">
-              <div style="display:flex;align-items:center;gap:12px">
-                <div style="font-size:28px">${lv.icon}</div>
-                <div>
-                  <div style="font-size:12px;font-weight:700;color:var(--tx)">${lv.name}</div>
-                  <div style="font-size:10px;color:var(--dim);letter-spacing:1px;margin-top:2px">${lv.id}</div>
-                </div>
-              </div>
-              <div style="background:${statusBgColor};border:1px solid var(--b1);border-radius:3px;padding:5px 10px;text-align:center">
-                <div style="font-size:11px;color:${statusColor};font-weight:700">${statusText}</div>
-              </div>
-            </div>
-            
-            <!-- Score Display -->
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(0,0,0,.3);border-radius:3px">
-              <div>
-                <div style="font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:4px">SCORE</div>
-                <div style="font-family:'Press Start 2P',monospace;font-size:18px;color:${statusColor}">${score}</div>
-              </div>
-              <div style="font-size:24px;color:var(--dim2)">/</div>
-              <div>
-                <div style="font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:4px">PASS MARK</div>
-                <div style="font-family:'Press Start 2P',monospace;font-size:18px;color:var(--dim)">${lv.passMark}</div>
-              </div>
-            </div>
-
-            <!-- Progress Bar -->
-            <div>
-              <div style="background:var(--b1);height:8px;border-radius:4px;overflow:hidden">
-                <div style="background:${lv.color};height:100%;width:${Math.min(score / 10 * 100, 100)}%;transition:width .3s"></div>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div style="display:flex;gap:8px">
-              <button class="sbtn" onclick="openExamScoreModal('${lv.id}', '${lv.name}', ${score}, ${isPassed})" style="flex:1">
-                EDIT スコア編集
-              </button>
-              <button class="sbtn ${isPassed ? 'sbtn-red' : ''}" onclick="quickToggleExam('${lv.id}', ${!isPassed}, ${score})" style="min-width:60px">
-                ${isPassed ? '取消' : '付与'}
-              </button>
-            </div>
-          </div>`;
-        }).join('');
 
         gotoPanel('user-detail', null);
         addLog(`ユーザー詳細表示: ${profile.displayName}`, 'info');
@@ -3670,82 +3557,6 @@
       _selectedUserId = null;
       gotoPanel('users', document.querySelector('[onclick="gotoPanel(\'users\')"]'));
     };
-
-    // ── EXAM SCORE MODAL ──
-    let _examScoreModal_LevelId = null;
-
-    window.openExamScoreModal = (levelId, levelName, currentScore, isPassed) => {
-      _examScoreModal_LevelId = levelId;
-      document.getElementById('examScoreLevelName').textContent = levelName;
-      document.getElementById('examScoreInput').value = currentScore || 7;
-      document.getElementById('examScorePassed').checked = isPassed;
-      document.getElementById('examScoreModal').classList.add('show');
-      setTimeout(() => document.getElementById('examScoreInput').focus(), 50);
-    };
-
-    window.closeExamScoreModal = () => {
-      document.getElementById('examScoreModal').classList.remove('show');
-      _examScoreModal_LevelId = null;
-    };
-
-    window.saveExamScore = async () => {
-      if (!_selectedUserId || !_examScoreModal_LevelId) return;
-      try {
-        const score = parseInt(document.getElementById('examScoreInput').value) || 7;
-        const passed = document.getElementById('examScorePassed').checked;
-
-        if (score < 0 || score > 10) {
-          showToast('スコアは0～10の範囲で入力してください', 'err');
-          return;
-        }
-
-        const { adminUpdateExamBadge } = await import('./db.js');
-        await adminUpdateExamBadge(_selectedUserId, _examScoreModal_LevelId, score, passed);
-        addLog(`検定更新: ${_examScoreModal_LevelId} スコア=${score} 合格=${passed}`, 'admin');
-        persistLog(`Updated exam badge`, 'admin', {
-          uid: _selectedUserId,
-          levelId: _examScoreModal_LevelId,
-          score,
-          passed
-        });
-        showToast(`${_examScoreModal_LevelId} を更新しました`, 'ok');
-        closeExamScoreModal();
-        // Reload the badge UI
-        viewUserDetail(_selectedUserId);
-      } catch (e) {
-        addLog('検定更新失敗: ' + e.message, 'error');
-        showToast('更新失敗: ' + e.message, 'err');
-      }
-    };
-
-    window.quickToggleExam = async (levelId, shouldPass, currentScore = 0) => {
-      if (!_selectedUserId) return;
-      try {
-        const { adminUpdateExamBadge } = await import('./db.js');
-        const newScore = shouldPass ? (currentScore > 0 ? currentScore : 8) : 0;
-        await adminUpdateExamBadge(_selectedUserId, levelId, newScore, shouldPass);
-        addLog(`検定変更: ${levelId} -> ${shouldPass ? '合格' : '取消'}`, 'admin');
-        persistLog(`Quick toggled exam badge`, 'admin', {
-          uid: _selectedUserId,
-          levelId,
-          passed: shouldPass
-        });
-        showToast(`${levelId} を${shouldPass ? '付与' : '取消'}しました`, 'ok');
-        viewUserDetail(_selectedUserId);
-      } catch (e) {
-        addLog('検定変更失敗: ' + e.message, 'error');
-        showToast('変更失敗: ' + e.message, 'err');
-      }
-    };
-
-    // Modal close events
-    document.getElementById('examScoreModal').addEventListener('click', e => {
-      if (e.target === document.getElementById('examScoreModal')) closeExamScoreModal();
-    });
-    document.getElementById('examScoreInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') window.saveExamScore();
-      if (e.key === 'Escape') window.closeExamScoreModal();
-    });
 
     window.deleteUser = async () => {
       if (!_selectedUserId) return;
