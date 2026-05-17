@@ -1653,6 +1653,8 @@
   <script type="module">
     import { mountNav, notifyOk, notifyErr, notifySpecial } from './nav.js';
     mountNav();
+    // Expose to global for non-module scripts (endSprint etc.)
+    Object.assign(window, { notifyOk, notifyErr, notifySpecial });
 
     import { onAuthReady, getCachedProfile, mountAuthWidget, getCurrentUser } from './auth.js';
     import { saveSprintResult, upsertUserProfile } from './db.js';
