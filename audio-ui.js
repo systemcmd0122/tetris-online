@@ -72,6 +72,19 @@ const AUDIO_UI_CSS = `
 }
 input:checked + .audio-toggle-box { background: #00f5ff44; }
 input:checked + .audio-toggle-box::after { left: 22px; background: #00f5ff; box-shadow: 0 0 10px #00f5ff; }
+
+.audio-mode-selector {
+    display: flex; gap: 8px; margin-bottom: 24px;
+}
+.audio-mode-btn {
+    flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #1a2540;
+    background: transparent; color: #4a6080; font-family: 'Orbitron';
+    font-size: 10px; cursor: pointer; transition: all 0.2s; letter-spacing: 1px;
+}
+.audio-mode-btn.active {
+    border-color: #00f5ff; color: #00f5ff; background: #00f5ff11;
+    box-shadow: 0 0 10px #00f5ff33;
+}
 `;
 
 class AudioUI {
@@ -100,6 +113,12 @@ class AudioUI {
             <div class="audio-card">
                 <button class="audio-close">&times;</button>
                 <div class="audio-title">SOUND SETTINGS</div>
+
+                <div class="audio-label"><span>SOUND MODE</span></div>
+                <div class="audio-mode-selector">
+                    <button class="audio-mode-btn ${am.soundMode === 'neon' ? 'active' : ''}" data-mode="neon">NEON (CYBER)</button>
+                    <button class="audio-mode-btn ${am.soundMode === 'soft' ? 'active' : ''}" data-mode="soft">SOFT (GENTLE)</button>
+                </div>
 
                 ${['master', 'sfx', 'ui', 'voice', 'ambient'].map(cat => `
                     <div class="audio-row">
@@ -144,6 +163,19 @@ class AudioUI {
             am.playClick();
         });
 
+        const modeBtns = overlay.querySelectorAll('.audio-mode-btn');
+        modeBtns.forEach(btn => {
+            btn.onclick = () => {
+                const mode = btn.dataset.mode;
+                am.setSoundMode(mode);
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                am.playClick();
+                if (mode === 'soft') am.playMove(); // Test sound
+                else am.playHardDrop();
+            };
+        });
+
         overlay.querySelector('#audioTestBtn').addEventListener('click', () => {
             am.playClear(4, 0, true);
         });
@@ -166,6 +198,9 @@ class AudioUI {
         // 最新の状態を反映
         const am = audioManager;
         this.modal.querySelector('#muteToggle').checked = am.isMuted;
+        this.modal.querySelectorAll('.audio-mode-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.mode === am.soundMode);
+        });
         this.modal.querySelectorAll('.audio-slider').forEach(s => {
             s.value = am.categories[s.dataset.cat];
             document.getElementById(`val-${s.dataset.cat}`).textContent = `${Math.round(s.value * 100)}%`;
@@ -178,4 +213,5 @@ import { audioManager } from './audio-manager.js';
 // インスタンスの作成
 const instance = new AudioUI();
 
+window.audioUI = instance;
 export const audioUI = instance;

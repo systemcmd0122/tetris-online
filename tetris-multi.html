@@ -1726,6 +1726,12 @@
             <path d="M3 3V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H8" />
           </svg>クリックしてコピー</div>
       </div>
+      <button class="btn btn-secondary" onclick="copyInviteLink()" style="margin-bottom:16px; border-color:var(--accent3); color:var(--accent3);">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+        </svg>招待リンクをコピー
+      </button>
       <div class="player-count-info" id="playerCountInfo">1 / 3 人が参加中</div>
       <div class="player-list" id="playerList"></div>
       <div class="waiting-indicator">
@@ -1899,6 +1905,23 @@
 
     const fbApp = initializeApp(FB_CONFIG);
     const db = getDatabase(fbApp);
+
+    // ── URL PARAMETER AUTO-JOIN ──
+    (function checkUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      const room = params.get('room');
+      if (room && /^[0-9]{4}$/.test(room)) {
+        const inp = document.getElementById('roomCodeInput');
+        if (inp) inp.value = room;
+        // 少し遅延させて入室を試みる（auth準備を待つ）
+        setTimeout(() => {
+          if (typeof window.joinRoom === 'function') {
+            window.joinRoom();
+          }
+        }, 800);
+      }
+    })();
+
     // リマッチシステムにFirebase関数を登録（nav.jsのグローバルリスナーで使用）
     registerRematchFbFns({ ref, onValue, update, remove });
     let serverTimeOffset = 0;
@@ -2645,7 +2668,7 @@
       dasStop(); clearInterval(sdi); sdi = null;
       Object.keys(uiC).forEach(k => uiC[k] = -1); uiC.b2b = null;
     }
-    function showScreen(id) {
+    window.showScreen = function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
       // ゲーム画面中はbodyスクロールを完全に無効化
@@ -2758,6 +2781,12 @@
 
     window.setMaxPlayers = (n) => { _maxPlayers = n;[2, 3, 4].forEach(x => { const b = document.getElementById('maxBtn' + x); if (b) b.className = 'max-btn' + (x === n ? ' sel' : ''); }); };
     window.copyRoomCode = () => { if (!roomCode) return; navigator.clipboard?.writeText(roomCode).then(() => showToast('コードをコピーしました！', 'ok')).catch(() => showToast('コード: ' + roomCode)); };
+    window.copyInviteLink = () => {
+      if (!roomCode) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', roomCode);
+      navigator.clipboard?.writeText(url.toString()).then(() => showToast('招待リンクをコピーしました！', 'ok')).catch(() => showToast('リンク: ' + url));
+    };
 
 
     // ── CREATE ROOM ──

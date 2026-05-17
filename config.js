@@ -1,4 +1,4 @@
-export const APP_VERSION = "3.8.0";
+export const APP_VERSION = "3.9.0";
 
 /** Firebase設定 — auth.js / db.js / フィードバックウィジェットで共有 */
 export const FB_CONFIG = {
@@ -12,6 +12,16 @@ export const FB_CONFIG = {
 };
 
 export const UPDATE_LOG = [
+  {
+    version: "3.9.0",
+    title: "耳にやさしい「SOFT」音色 & 招待リンク機能追加",
+    changes: [
+      "【新機能】サウンド設定に「SOFT (GENTLE)」モードを追加しました。従来の鋭いサイバーパンクな音（NEON）に対し、正弦波をメインとした耳に負担の少ない柔らかい音色でプレイ可能です。",
+      "【新機能】マルチ対戦の待機画面に「招待リンクをコピー」ボタンを追加しました。コピーしたリンクを友達に送るだけで、ルームへ直接参加してもらえるようになります。",
+      "【改善】URLパラメータ（?room=ルームコード）による自動入室機能を実装しました。招待リンクからアクセスした場合、ルームコードの手入力が不要になります。",
+      "【改善】内部的に UI コンポーネントの操作性を向上させ、よりスムーズなページ遷移と設定変更が可能になりました。"
+    ]
+  },
   {
     version: "3.8.0",
     title: "CYBER AI LEAGUE (BOT VS BOT) モード追加",
