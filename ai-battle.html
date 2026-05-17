@@ -712,14 +712,14 @@
         let bumpiness = 0;
         for (let col = 0; col < COLS - 1; col++) bumpiness += Math.abs(heights[col] - heights[col + 1]);
 
+        // Scoring based on personality
+        const w = this.personality.weights;
+        let score = (aggHeight * w.height) + (holes * w.holes) + (bumpiness * w.bump);
+
         // Misdrop simulation
         if (Math.random() < (this.personality.misdropRate || 0)) {
           score -= 50; // Penalty for bad move
         }
-
-        // Scoring based on personality
-        const w = this.personality.weights;
-        let score = (aggHeight * w.height) + (holes * w.holes) + (bumpiness * w.bump);
         if (isTSpin) score += (cleared + 1) * w.tetris * 0.8;
         if (cleared === 4) score += w.tetris;
         else if (cleared > 0) score += cleared * w.clear;
@@ -1338,14 +1338,14 @@
       setInterval(drawBG, 50);
     })();
 
-    initArena();
-    requestAnimationFrame(loop);
-
     const sysLog = document.getElementById('systemLog');
     function log(msg) {
       const time = new Date().toLocaleTimeString('ja-JP', { hour12: false });
       sysLog.innerHTML = `[${time}] ${msg}<br>` + sysLog.innerHTML;
     }
+
+    initArena();
+    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
