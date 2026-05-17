@@ -1010,6 +1010,9 @@
       <div class="game-title">SPRINT — 40 LINES</div>
       <div class="game-header-right">
         <button
+          style="background:transparent;border:1px solid var(--accent3);color:var(--accent3);font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;padding:5px 10px;border-radius:2px;cursor:pointer;margin-right:8px;"
+          onclick="audioUI.show()">SOUND</button>
+        <button
           style="background:transparent;border:1px solid var(--dim);color:var(--dim);font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;padding:5px 10px;border-radius:2px;cursor:pointer"
           onclick="quitGame()">QUIT</button>
       </div>
@@ -1157,7 +1160,26 @@
     }
 
     // ══ BG CANVAS ══
-    const playSound = () => { }; // Dummy function - sound disabled
+    import { audioManager } from './audio-manager.js';
+    import { audioUI } from './audio-ui.js';
+
+    const playSound = (id, params = {}) => {
+      if (id === 'move') audioManager.playMove();
+      if (id === 'rotate') audioManager.playRotate();
+      if (id === 'harddrop') audioManager.playHardDrop();
+      if (id === 'softdrop') audioManager.playSoftDrop();
+      if (id === 'lock') audioManager.playLock();
+      if (id === 'hold') audioManager.playHold();
+      if (id === 'spawn') audioManager.playSpawn();
+      if (id === 'clear1' || id === 'clear2' || id === 'clear3') audioManager.playClear(params.lines || 1, params.combo || 0, params.isB2B || false);
+      if (id === 'tetris') audioManager.playClear(4, params.combo || 0, params.isB2B || false);
+      if (id === 'tspin') audioManager.playTSpin(params.lines || 0);
+      if (id === 'pc') audioManager.playPerfectClear();
+      if (id === 'complete') audioManager.playWin();
+      if (id === 'fail') audioManager.playLose();
+      if (id === 'countdown') audioManager.playCountdown(params.n);
+      if (id === 'go') audioManager.playCountdown(0);
+    };
     const toggleSound = () => { }; // Dummy function - sound disabled
     (function () {
       const c = document.getElementById('bgCanvas'); if (!c) return;
@@ -1272,7 +1294,14 @@
         else if (cl > 0 && !ts) this.b2b = false;
         if (cl > 0) { this.combo++; if (this.combo > 1) { pts += 50 * (this.combo - 1) * this.level; lbl += (lbl ? '\n' : '') + 'COMBO x' + this.combo + '!'; } } else this.combo = 0;
         this.score += pts;
-        if (cl > 0) { this.lines += cl; this.level = Math.floor(this.lines / 10) + 1; this.spd = Math.max(50, 800 - (this.level - 1) * 70); if (cl === 4) { this.tetrisCount++; playSound('tetris'); } else playSound('clear1'); } else playSound('lock');
+        if (cl > 0) {
+          this.lines += cl;
+          this.level = Math.floor(this.lines / 10) + 1;
+          this.spd = Math.max(50, 800 - (this.level - 1) * 70);
+          if (ts) playSound('tspin', { lines: cl });
+          else if (cl === 4) { this.tetrisCount++; playSound('tetris', { combo: this.combo, isB2B: this.b2b }); }
+          else playSound('clear1', { lines: cl, combo: this.combo, isB2B: this.b2b });
+        } else playSound('lock');
         this.waiting = true; this.nextTs = (this._lastTs || performance.now()) + 200;
         this.canHold = true; this.lockTm = null; this.lockRst = 0; this.onGnd = false; this.lastAct = null;
         this.results.push({ cleared: cl, actionLabel: lbl });
@@ -1574,7 +1603,7 @@
         let i = 3;
         const tick = () => {
           num.style.animation = 'none'; void num.offsetHeight; num.style.animation = 'countAnim .85s ease-out forwards';
-          if (i > 0) { num.textContent = i.toString(); playSound('countdown'); i--; setTimeout(tick, 1000); }
+          if (i > 0) { num.textContent = i.toString(); playSound('countdown', { n: i }); i--; setTimeout(tick, 1000); }
           else { num.textContent = 'GO!'; playSound('go'); setTimeout(() => { ov.classList.remove('show'); resolve(false); }, 800); }
         }; tick();
       });

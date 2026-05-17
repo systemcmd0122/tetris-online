@@ -809,10 +809,32 @@
       import {mountNav} from './nav.js';
       import {APP_VERSION, UPDATE_LOG, FB_CONFIG} from './config.js';
       import {mountAuthWidget, onAuthReady, getCachedProfile} from './auth.js';
+      import {audioManager} from './audio-manager.js';
+      import {audioUI} from './audio-ui.js';
 
-      // Dummy functions - music/sound disabled
-      const playSE = () => { };
-      const toggleSE = () => { };
+      // 互換性維持
+      window.playSE = (id) => {
+        if (id === 'select' || id === 'click') audioManager.playClick();
+        if (id === 'modalOpen') audioManager.playModalOpen();
+        if (id === 'modalClose') audioManager.playModalClose();
+      };
+
+      // サウンド設定ボタンの追加
+      (function addSoundSettingsBtn() {
+        const wrap = document.querySelector('.menu');
+        if (!wrap) return;
+        const btn = document.createElement('button');
+        btn.className = 'menu-btn secondary';
+        btn.style.borderColor = 'var(--acc3)';
+        btn.style.color = 'var(--acc3)';
+        btn.innerHTML = `<span class="btn-icon-wrap"><svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.686-3.686a1 1 0 011.111-.238zm5.454 2.213a1 1 0 011.326-.442c3.01 1.505 5.087 4.59 5.087 8.153s-2.077 6.648-5.087 8.153a1 1 0 01-1.326-1.511C17.151 14.331 18.75 12.33 18.75 10c0-2.33-1.599-4.331-3.913-5.508a1 1 0 01-.442-1.326z"/>
+        </svg>サウンド設定</span>`;
+        btn.onclick = () => audioUI.show();
+        // 更新履歴の前に入れる
+        const updatesBtn = document.querySelector('a[href="updates.html"]');
+        wrap.insertBefore(btn, updatesBtn);
+      })();
 
       mountNav();
 

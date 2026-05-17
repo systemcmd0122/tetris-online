@@ -1745,6 +1745,8 @@
     <div class="game-header">
       <span class="game-title">TETRIS MULTI BATTLE</span>
       <div class="game-header-right">
+        <button class="btn btn-secondary" style="width:auto;padding:6px 12px;font-size:9px;margin-right:8px;border-color:var(--accent3);color:var(--accent3);"
+          onclick="audioUI.show()">SOUND</button>
         <button class="btn btn-secondary" style="width:auto;padding:6px 12px;font-size:9px;"
           onclick="leaveRoom()">QUIT</button>
       </div>
@@ -2040,7 +2042,29 @@
     })();
 
     // ── TETRIS ENGINE ──
-    const playSound = () => { }; // Dummy function - sound disabled
+    import { audioManager } from './audio-manager.js';
+    import { audioUI } from './audio-ui.js';
+
+    const playSound = (id, params = {}) => {
+      if (id === 'move') audioManager.playMove();
+      if (id === 'rotate') audioManager.playRotate();
+      if (id === 'harddrop') audioManager.playHardDrop();
+      if (id === 'softdrop') audioManager.playSoftDrop();
+      if (id === 'lock') audioManager.playLock();
+      if (id === 'hold') audioManager.playHold();
+      if (id === 'spawn') audioManager.playSpawn();
+      if (id === 'clear1' || id === 'clear2' || id === 'clear3') audioManager.playClear(params.lines || 1, params.combo || 0, params.isB2B || false);
+      if (id === 'tetris') audioManager.playClear(4, params.combo || 0, params.isB2B || false);
+      if (id === 'tspin') audioManager.playTSpin(params.lines || 0);
+      if (id === 'pc') audioManager.playPerfectClear();
+      if (id === 'attack') audioManager.playGarbage();
+      if (id === 'win') audioManager.playWin();
+      if (id === 'lose') audioManager.playLose();
+      if (id === 'countdown') audioManager.playCountdown(params.n);
+      if (id === 'go') audioManager.playCountdown(0);
+      if (id === 'elim') audioManager.playKO();
+    };
+
     const COLS = 10, ROWS = 20, CELL = 20;
     const COLORS = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800', GHOST: 'rgba(255,255,255,0.10)' };
     const PIECES = { I: [[[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0], [0, 0, 1, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0]], [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]], O: [[[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]], [[1, 1], [1, 1]]], T: [[[0, 1, 0], [1, 1, 1], [0, 0, 0]], [[0, 1, 0], [0, 1, 1], [0, 1, 0]], [[0, 0, 0], [1, 1, 1], [0, 1, 0]], [[0, 1, 0], [1, 1, 0], [0, 1, 0]]], S: [[[0, 1, 1], [1, 1, 0], [0, 0, 0]], [[0, 1, 0], [0, 1, 1], [0, 0, 1]], [[0, 0, 0], [0, 1, 1], [1, 1, 0]], [[1, 0, 0], [1, 1, 0], [0, 1, 0]]], Z: [[[1, 1, 0], [0, 1, 1], [0, 0, 0]], [[0, 0, 1], [0, 1, 1], [0, 1, 0]], [[0, 0, 0], [1, 1, 0], [0, 1, 1]], [[0, 1, 0], [1, 1, 0], [1, 0, 0]]], J: [[[1, 0, 0], [1, 1, 1], [0, 0, 0]], [[0, 1, 1], [0, 1, 0], [0, 1, 0]], [[0, 0, 0], [1, 1, 1], [0, 0, 1]], [[0, 1, 0], [0, 1, 0], [1, 1, 0]]], L: [[[0, 0, 1], [1, 1, 1], [0, 0, 0]], [[0, 1, 0], [0, 1, 0], [0, 1, 1]], [[0, 0, 0], [1, 1, 1], [1, 0, 0]], [[1, 1, 0], [0, 1, 0], [0, 1, 0]]] };
@@ -2103,7 +2127,14 @@
         else if (cl > 0 && !ts) this.b2b = false;
         if (cl > 0) { this.combo++; if (this.combo > 1) { pts += 50 * (this.combo - 1) * this.level; go += Math.floor(this.combo / 2); lbl += (lbl ? '\n' : '') + 'COMBO x' + this.combo + '!'; } } else this.combo = 0;
         this.score += pts;
-        if (cl > 0) { this.lines += cl; this.level = Math.floor(this.lines / 10) + 1; this.spd = Math.max(50, 800 - (this.level - 1) * 70); if (cl === 4) playSound('tetris'); else playSound('clear1'); } else playSound('lock');
+        if (cl > 0) {
+          this.lines += cl;
+          this.level = Math.floor(this.lines / 10) + 1;
+          this.spd = Math.max(50, 800 - (this.level - 1) * 70);
+          if (ts) playSound('tspin', { lines: cl });
+          else if (cl === 4) playSound('tetris', { combo: this.combo, isB2B: this.b2b });
+          else playSound('clear1', { lines: cl, combo: this.combo, isB2B: this.b2b });
+        } else playSound('lock');
         if (this.pendGarb > 0) { const cn = Math.min(go, this.pendGarb); go -= cn; this.pendGarb -= cn; if (this.pendGarb > 0) { this._addGarb(this.pendGarb); this.pendGarb = 0; } }
         this.waiting = true; this.nextTs = (this._lastTs || performance.now()) + 200;
         this.canHold = true; this.lockTm = null; this.lockRst = 0; this.onGnd = false; this.lastAct = null;
@@ -3433,7 +3464,7 @@
         function done(aborted) { if (resolved) return; resolved = true; ov.classList.remove('show'); resolve(aborted); }
         [3, 2, 1, 0].forEach((n, i) => {
           const delay = Math.max(0, startAt - (3 - i) * 1000 - getServerTime());
-          setTimeout(() => { if (resolved) return; num.style.animation = 'none'; void num.offsetHeight; num.style.animation = 'countAnim .85s ease-out forwards'; num.textContent = n > 0 ? n : 'GO!'; playSound(n > 0 ? 'countdown' : 'go'); }, delay);
+          setTimeout(() => { if (resolved) return; num.style.animation = 'none'; void num.offsetHeight; num.style.animation = 'countAnim .85s ease-out forwards'; num.textContent = n > 0 ? n : 'GO!'; playSound(n > 0 ? 'countdown' : 'go', { n }); }, delay);
         });
         setTimeout(() => done(false), Math.max(200, startAt - getServerTime() + 750));
       });
