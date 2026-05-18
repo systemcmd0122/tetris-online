@@ -10,7 +10,7 @@
 
 import { FB_CONFIG } from './config.js';
 
-let _app = null, _fs = null;
+let _app = null, _fs = null, _rtdb = null;
 
 async function _getFS() {
   if (_fs) return _fs;
@@ -19,6 +19,15 @@ async function _getFS() {
   _app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
   _fs = getFirestore(_app);
   return _fs;
+}
+
+async function _getRTDB() {
+  if (_rtdb) return _rtdb;
+  const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+  const { getDatabase } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+  _app = getApps().length ? getApps()[0] : initializeApp(FB_CONFIG);
+  _rtdb = getDatabase(_app);
+  return _rtdb;
 }
 
 // ── プロフィール ────────────────────────────────────────────
@@ -394,6 +403,71 @@ export async function watchUserTitles(uid, onNewTitle) {
   return unsubscribe;
 }
 
+// ── Ghost Room 対策 (ハートビート) ──────────────────────────
+
+/**
+ * プレイヤーのハートビートを開始する。
+ * 定期的に RTDB のルーム内自分のスロットにタイムスタンプを書き込む。
+ */
+export async function startHeartbeat(roomCode, slot) {
+    const db = await _getRTDB();
+    const { ref, update, onDisconnect, serverTimestamp } =
+        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+
+    const slotRef = ref(db, `multi/${roomCode}/${slot}`);
+
+    // 切断時に自動削除設定
+    onDisconnect(slotRef).remove();
+
+    const interval = setInterval(async () => {
+        try {
+            await update(ref(db, `multi/${roomCode}`), {
+                [`${slot}/lastActive`]: serverTimestamp()
+            });
+        } catch (e) {
+            console.warn('[db.js] Heartbeat update failed:', e);
+        }
+    }, 10000); // 10秒ごと
+
+    return () => clearInterval(interval);
+}
+
+/**
+ * 放置されたルーム（Ghost Rooms）をスキャンしてクリーンアップする。
+ * 管理者またはルーム作成者が定期的に実行することを想定。
+ */
+export async function cleanupGhostRooms() {
+    const db = await _getRTDB();
+    const { ref, get, remove } =
+        await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+
+    const roomsRef = ref(db, 'multi');
+    const snap = await get(roomsRef);
+    if (!snap.exists()) return 0;
+
+    const now = Date.now();
+    const STALE_THRESHOLD = 60 * 1000; // 1分間更新がない場合は放置とみなす
+    const rooms = snap.val();
+    let removedCount = 0;
+
+    for (const code in rooms) {
+        const room = rooms[code];
+        // 最終更新(ts)から時間が経過しすぎているか、全プレイヤーがオフラインか確認
+        const isStale = room.ts && (now - room.ts > STALE_THRESHOLD * 30); // 30分放置
+
+        const activePlayers = ['p1', 'p2', 'p3', 'p4'].filter(s => {
+            const p = room[s];
+            return p && p.lastActive && (now - p.lastActive < STALE_THRESHOLD);
+        });
+
+        if (isStale || (room.status === 'waiting' && activePlayers.length === 0)) {
+            await remove(ref(db, `multi/${code}`));
+            removedCount++;
+        }
+    }
+    return removedCount;
+}
+
 /**
  * ユーザーのプロフィールを監視し、変更時にコールバックを実行する。
  * @param {string} uid
@@ -432,4 +506,23 @@ export async function watchUserProfile(uid, onProfileChange) {
   });
 
   return unsubscribe;
+}
+/**
+ * リプレイデータを保存します (ユーザー単位)。
+ * @param {string} uid
+ * @param {Object} data
+ */
+export async function saveReplay(uid, data) {
+  try {
+    const fs = await _getFS();
+    const { collection, addDoc, serverTimestamp } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    await addDoc(collection(fs, 'users', uid, 'replays'), {
+      ...data,
+      savedAt: serverTimestamp()
+    });
+  } catch (e) {
+    console.error('[db.js] saveReplay failed:', e);
+  }
 }

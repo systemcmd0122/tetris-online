@@ -2481,21 +2481,26 @@
       try { sessionStorage.removeItem(CACHE_KEY); localStorage.removeItem(CACHE_KEY); } catch {}
     }
 
+    import { onAuthReady, getCurrentUser } from './auth.js';
+    import { verifyAdminStatus } from './security.js';
+
     // ══ AUTH ══
-    const ADMIN_PW = 'Runa1124';
-    window.doLogin = () => {
-      // キャッシュセッションがあれば即ログイン
-      if (hasCachedSession()) { enterAdmin(); return; }
-      const pw = document.getElementById('pwIn').value;
-      if (pw === ADMIN_PW) {
+    window.doLogin = async () => {
+      const user = getCurrentUser();
+      if (!user) {
+        const err = document.getElementById('pwErr');
+        err.textContent = '✗ Google アカウントでログインしてください';
+        return;
+      }
+
+      const isAdmin = await verifyAdminStatus(user);
+      if (isAdmin) {
         saveSession();
         enterAdmin();
       } else {
         const err = document.getElementById('pwErr');
-        err.textContent = '✗ パスワードが違います';
-        document.getElementById('pwIn').value = '';
-        document.getElementById('pwIn').focus();
-        setTimeout(() => err.textContent = '', 3000);
+        err.textContent = '✗ 管理者権限がありません (Custom Claims 未設定)';
+        persistLog(`Unauthorized admin access attempt: ${user.email}`, 'warn', { uid: user.uid });
       }
     };
     function enterAdmin() {
@@ -3637,23 +3642,27 @@
       const N = 8;
       for (let i = 0; i < N; i++) { const b = document.createElement('div'); b.className = 'al-b'; bar.appendChild(b); }
       let f = 0;
-      const next = () => {
+      const next = async () => {
         if (f >= N) {
           Array.from(bar.children).forEach(b => { b.style.background = 'rgba(255,255,255,.85)'; b.style.boxShadow = '0 0 16px #fff'; });
+
+          // 自動ログイン判定
+          const user = getCurrentUser();
+          const isAdmin = user ? await verifyAdminStatus(user) : false;
+
           setTimeout(() => {
             loader.classList.add('hide');
             setTimeout(() => { try { loader.remove(); } catch (e) { } }, 450);
-            // キャッシュセッションがあれば自動ログイン
-            if (hasCachedSession()) {
+
+            if (isAdmin && hasCachedSession()) {
               document.getElementById('loginWrap').classList.add('hidden');
               document.getElementById('shell').classList.add('active');
               initAdmin();
             } else {
-              // キャッシュなし → キャッシュバッジを非表示でログイン画面へ
               document.getElementById('loginWrap').classList.remove('hidden');
-              setTimeout(() => document.getElementById('pwIn').focus(), 50);
               document.getElementById('cachedSessionBadge').style.display = 'none';
-              document.getElementById('pwWrap').style.display = '';
+              document.getElementById('pwWrap').style.display = 'none'; // パスワード入力は廃止
+              document.getElementById('lc-title').textContent = user ? `Logged in as: ${user.email}` : 'Please log in with Google';
             }
           }, 130);
           return;

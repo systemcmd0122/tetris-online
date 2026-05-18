@@ -147,41 +147,41 @@ class AudioManager {
 
     _playNote(params) {
         if (!this.initialized || this.isMuted) return;
-        const { freq, type = 'sine', duration = 0.1, gain = 0.5, category = 'sfx', attack = 0.01, release = 0.05, pitchSlide = 0 } = params;
+        const { freq, type = 'sine', duration = 0.1, gain = 0.5, category = 'sfx', attack = 0.01, pitchSlide = 0 } = params;
 
         const osc = this._getOscillator();
         const g = this._getGain();
+        const now = this.ctx.currentTime;
 
         osc.type = type;
-        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(freq, now);
         if (pitchSlide !== 0) {
             try {
-                osc.frequency.exponentialRampToValueAtTime(Math.max(0.001, freq + pitchSlide), this.ctx.currentTime + duration);
+                osc.frequency.exponentialRampToValueAtTime(Math.max(0.001, freq + pitchSlide), now + duration);
             } catch(e) {}
         }
 
-        g.gain.setValueAtTime(0, this.ctx.currentTime);
-        g.gain.linearRampToValueAtTime(gain, this.ctx.currentTime + attack);
-        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        g.gain.cancelScheduledValues(now);
+        g.gain.setValueAtTime(0, now);
+        g.gain.linearRampToValueAtTime(gain, now + attack);
+        g.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
         osc.connect(g);
         g.connect(this.gains[category] || this.masterGain);
 
-        osc.start();
-        osc.stop(this.ctx.currentTime + duration);
+        osc.start(now);
+        osc.stop(now + duration);
 
         // 自動切断と回収
-        setTimeout(() => {
-            try {
-                osc.disconnect();
-                this._recycleGain(g);
-            } catch(e) {}
-        }, duration * 1000 + 100);
+        osc.onended = () => {
+            osc.disconnect();
+            this._recycleGain(g);
+        };
     }
 
     _playNoise(params) {
         if (!this.initialized || this.isMuted) return;
-        const { duration = 0.1, gain = 0.5, category = 'sfx', type = 'white', attack = 0.01, filterFreq = 1000, filterQ = 1 } = params;
+        const { duration = 0.1, gain = 0.5, category = 'sfx', attack = 0.01, filterFreq = 1000, filterQ = 1 } = params;
 
         const bufferSize = this.ctx.sampleRate * duration;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
@@ -199,21 +199,26 @@ class AudioManager {
         filter.frequency.setValueAtTime(filterFreq, this.ctx.currentTime);
         filter.Q.setValueAtTime(filterQ, this.ctx.currentTime);
 
-        const g = this.ctx.createGain();
-        g.gain.setValueAtTime(0, this.ctx.currentTime);
-        g.gain.linearRampToValueAtTime(gain, this.ctx.currentTime + attack);
-        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        const g = this._getGain(); // GainNode プーリングを使用
+        const now = this.ctx.currentTime;
+
+        g.gain.cancelScheduledValues(now);
+        g.gain.setValueAtTime(0, now);
+        g.gain.linearRampToValueAtTime(gain, now + attack);
+        g.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
         noise.connect(filter);
         filter.connect(g);
         g.connect(this.gains[category] || this.masterGain);
 
-        noise.start();
-        setTimeout(() => {
+        noise.start(now);
+        noise.stop(now + duration);
+
+        noise.onended = () => {
             noise.disconnect();
             filter.disconnect();
-            g.disconnect();
-        }, duration * 1000 + 100);
+            this._recycleGain(g);
+        };
     }
 
     // --- Specific Game Sounds ---

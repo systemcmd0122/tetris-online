@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REPLAY VIEWER — TETRIS BATTLE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap');
+        :root {
+            --bg: #020408; --surface: #0a0f1a; --border: #1a2540;
+            --accent: #00f5ff; --accent2: #ff0080; --accent3: #aaff00;
+            --text: #e0f0ff; --dim: #4a6080;
+        }
+        body {
+            background: var(--bg); color: var(--text);
+            font-family: 'Orbitron', monospace; margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .header { margin-bottom: 20px; text-align: center; }
+        .logo {
+            font-family: 'Press Start 2P', monospace; font-size: 20px;
+            color: var(--accent); text-shadow: 0 0 15px var(--accent);
+        }
+        .viewer-container {
+            display: flex; gap: 20px; background: var(--surface);
+            padding: 20px; border: 1px solid var(--border); border-radius: 4px;
+        }
+        canvas { border: 1px solid var(--accent); background: #000; image-rendering: pixelated; }
+        .controls {
+            margin-top: 20px; display: flex; gap: 10px; align-items: center;
+            background: var(--surface); padding: 15px; border-radius: 4px; border: 1px solid var(--border);
+        }
+        .btn {
+            background: transparent; border: 1px solid var(--accent); color: var(--accent);
+            padding: 8px 15px; cursor: pointer; font-family: 'Orbitron'; font-size: 12px;
+            transition: all 0.2s;
+        }
+        .btn:hover { background: rgba(0, 245, 255, 0.1); }
+        .btn.active { background: var(--accent); color: #000; }
+        .stats-panel {
+            width: 150px; display: flex; flex-direction: column; gap: 10px;
+        }
+        .stat-box {
+            background: rgba(0,0,0,0.3); padding: 10px; border: 1px solid var(--border);
+        }
+        .stat-label { font-size: 10px; color: var(--dim); margin-bottom: 5px; }
+        .stat-val { font-family: 'Press Start 2P', monospace; font-size: 12px; color: var(--accent3); }
+        .timeline {
+            width: 100%; max-width: 600px; margin-top: 20px;
+        }
+        input[type=range] {
+            width: 100%; accent-color: var(--accent);
+        }
+        .frame-info { font-size: 10px; color: var(--dim); margin-top: 5px; text-align: right; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">REPLAY VIEWER</div>
+        <div style="font-size:10px; color:var(--dim); margin-top:5px;">DETERMINISTIC PLAYBACK SYSTEM</div>
+    </div>
+
+    <div class="viewer-container">
+        <div class="stats-panel">
+            <div class="stat-box">
+                <div class="stat-label">SCORE</div>
+                <div id="scoreVal" class="stat-val">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">LINES</div>
+                <div id="linesVal" class="stat-val">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">LEVEL</div>
+                <div id="levelVal" class="stat-val">1</div>
+            </div>
+        </div>
+        <canvas id="replayCanvas" width="200" height="400"></canvas>
+        <div class="stats-panel">
+            <div class="stat-box">
+                <div class="stat-label">HOLD</div>
+                <canvas id="holdCanvas" width="60" height="60"></canvas>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">NEXT</div>
+                <canvas id="nextCanvas" width="60" height="60"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="timeline">
+        <input type="range" id="timelineRange" min="0" value="0" step="1">
+        <div class="frame-info" id="frameInfo">FRAME: 0 / 0</div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" id="playBtn">PAUSE</button>
+        <button class="btn" id="stopBtn">RESET</button>
+        <div style="width: 20px;"></div>
+        <button class="btn speed-btn" data-speed="0.5">0.5x</button>
+        <button class="btn speed-btn active" data-speed="1.0">1x</button>
+        <button class="btn speed-btn" data-speed="2.0">2x</button>
+        <button class="btn speed-btn" data-speed="4.0">4x</button>
+    </div>
+
+    <script type="module">
+        import { CoreEngine, PIECES, COLS, ROWS } from './engine.js';
+
+        let engine = null;
+        let replayData = null;
+        let currentFrame = 0;
+        let isPlaying = true;
+        let playbackSpeed = 1.0;
+        let lastTs = 0;
+        let accumulator = 0;
+
+        const cvs = document.getElementById('replayCanvas');
+        const ctx = cvs.getContext('2d');
+        const timeline = document.getElementById('timelineRange');
+        const frameInfo = document.getElementById('frameInfo');
+
+        // ダミーのリプレイデータ生成（本来は保存されたものを読み込む）
+        function createMockReplay() {
+            return {
+                seed: 12345,
+                inputs: [
+                    { f: 60, i: { left: true } },
+                    { f: 120, i: { right: true } },
+                    { f: 180, i: { hardDrop: true } }
+                ],
+                maxFrames: 600
+            };
+        }
+
+        async function init() {
+            // URLパラメータからデータを取得するか、モックを使用
+            replayData = createMockReplay();
+            engine = new CoreEngine({ seed: replayData.seed });
+            timeline.max = replayData.maxFrames;
+
+            requestAnimationFrame(loop);
+        }
+
+        function loop(ts) {
+            if (!lastTs) lastTs = ts;
+            const dt = ts - lastTs;
+            lastTs = ts;
+
+            if (isPlaying && currentFrame < replayData.maxFrames) {
+                accumulator += dt * playbackSpeed;
+                const TICK = 1000 / 60;
+
+                while (accumulator >= TICK) {
+                    currentFrame++;
+                    const input = replayData.inputs.find(entry => entry.f === currentFrame)?.i || {};
+                    engine.tick(input);
+                    accumulator -= TICK;
+
+                    if (currentFrame >= replayData.maxFrames) {
+                        isPlaying = false;
+                        document.getElementById('playBtn').textContent = 'PLAY';
+                        break;
+                    }
+                }
+                updateUI();
+            }
+
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, cvs.width, cvs.height);
+            const CELL = 20;
+            const gameBoard = engine.board.slice(2);
+            const COLORS = { I: '#00f5ff', O: '#ffff00', T: '#cc00ff', S: '#aaff00', Z: '#ff0040', J: '#0066ff', L: '#ff8800', G: '#888888' };
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const cell = gameBoard[r][c];
+                    if (cell) {
+                        ctx.fillStyle = COLORS[cell];
+                        ctx.fillRect(c * CELL + 1, r * CELL + 1, CELL - 2, CELL - 2);
+                    }
+                }
+            }
+
+            if (!engine.over && engine.current) {
+                const p = engine.current;
+                const m = PIECES[p.name][p.rot];
+                ctx.fillStyle = COLORS[p.name];
+                m.forEach((row, r) => row.forEach((cell, c) => {
+                    if (cell) {
+                        const py = p.y + r;
+                        if (py >= 0) ctx.fillRect((p.x + c) * CELL + 1, py * CELL + 1, CELL - 2, CELL - 2);
+                    }
+                }));
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('scoreVal').textContent = engine.score;
+            document.getElementById('linesVal').textContent = engine.lines;
+            document.getElementById('levelVal').textContent = engine.level;
+            timeline.value = currentFrame;
+            frameInfo.textContent = `FRAME: ${currentFrame} / ${replayData.maxFrames}`;
+        }
+
+        // コントロール
+        document.getElementById('playBtn').onclick = () => {
+            isPlaying = !isPlaying;
+            document.getElementById('playBtn').textContent = isPlaying ? 'PAUSE' : 'PLAY';
+        };
+
+        document.getElementById('stopBtn').onclick = () => {
+            currentFrame = 0;
+            engine = new CoreEngine({ seed: replayData.seed });
+            isPlaying = false;
+            document.getElementById('playBtn').textContent = 'PLAY';
+            updateUI();
+        };
+
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                playbackSpeed = parseFloat(btn.dataset.speed);
+            };
+        });
+
+        timeline.oninput = () => {
+            const targetFrame = parseInt(timeline.value);
+            // 簡易シーク（最初からシミュレートし直す）
+            // 将来的にはステートスナップショットを使用して高速化
+            engine = new CoreEngine({ seed: replayData.seed });
+            for (let f = 1; f <= targetFrame; f++) {
+                const input = replayData.inputs.find(entry => entry.f === f)?.i || {};
+                engine.tick(input);
+            }
+            currentFrame = targetFrame;
+            isPlaying = false;
+            document.getElementById('playBtn').textContent = 'PLAY';
+            updateUI();
+        };
+
+        init();
+    </script>
+</body>
+</html>
