@@ -1618,24 +1618,36 @@
       return `<svg class="medal-svg" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="10" r="5" fill="${c}22" stroke="${c}" stroke-width="1.2"/><text x="8" y="13.5" text-anchor="middle" font-size="6" font-weight="900" fill="${c}" font-family="monospace">${rank}</text><path d="M5 5.5L3 2h10L11 5.5" stroke="${c}" stroke-width="1.2" stroke-linejoin="round" fill="none"/></svg>`;
     }
 
+    function getRankName(rating) {
+      if (rating >= 2300) return { name: 'MASTER', color: 'var(--acc2)', class: 'c-acc2' };
+      if (rating >= 2100) return { name: 'DIAMOND', color: '#b9f2ff', class: 'c-acc' };
+      if (rating >= 1900) return { name: 'PLATINUM', color: '#e5e4e2', class: 'c-silver' };
+      if (rating >= 1700) return { name: 'GOLD', color: 'var(--gold)', class: 'c-gold' };
+      if (rating >= 1500) return { name: 'SILVER', color: 'var(--silver)', class: 'c-acc' };
+      return { name: 'BRONZE', color: 'var(--bronze)', class: 'c-acc4' };
+    }
+
     function renderStats(profile, multiHistory) {
       const tg = profile?.totalMultiGames || 0, tw = profile?.totalWins || 0;
       const wr = tg > 0 ? Math.round(tw / tg * 100) : 0;
       const bs = profile?.bestSprintMs, tl = profile?.totalLinesCleared || 0, ts = profile?.totalSprintGames || 0;
+      const rating = profile?.rating || 1500;
+      const rank = getRankName(rating);
+
       let streak = 0; for (const h of multiHistory) { if (h.rank === 1) streak++; else break; }
       const flameHtml = '';
       document.getElementById('statsGrid').innerHTML = `
         <div class="stat-card c-acc"><div class="stat-val" id="sc-games">0</div><div class="stat-label">MULTI GAMES</div></div>
         <div class="stat-card c-acc3"><div class="stat-val" id="sc-wr">0<span style="font-size:.5em">%</span></div><div class="stat-label">WIN RATE</div><div class="wr-bar-wrap"><div class="wr-bar" id="wrBar" style="width:0%"></div></div></div>
+        <div class="stat-card ${rank.class}"><div class="stat-val" id="sc-rating">0</div><div class="stat-label">CYBER RATING<br><span style="color:${rank.color};font-weight:900;letter-spacing:2px">${rank.name}</span></div></div>
         <div class="stat-card c-gold" style="display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:14px 8px"><div class="stat-val" style="font-size:clamp(8px,1.4vw,12px);letter-spacing:-0.5px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:clip">${bs != null ? fmtTime(bs) : '--:--.--'}</div><div class="stat-label" style="white-space:nowrap;letter-spacing:1px">BEST SPRINT</div></div>
         <div class="stat-card c-acc2"><div class="stat-val" id="sc-lines">0</div><div class="stat-label">TOTAL LINES</div></div>
-        <div class="stat-card c-acc4"><div class="stat-val" id="sc-sprint">0</div><div class="stat-label">SPRINT RUNS</div></div>
         <div class="stat-card c-purple">${flameHtml}<div class="stat-val" id="sc-streak">0</div><div class="stat-label">WIN STREAK</div></div>`;
       setTimeout(() => {
         animateCount(document.getElementById('sc-games'), tg);
         animateCount(document.getElementById('sc-wr'), wr);
+        animateCount(document.getElementById('sc-rating'), rating);
         animateCount(document.getElementById('sc-lines'), tl);
-        animateCount(document.getElementById('sc-sprint'), ts);
         animateCount(document.getElementById('sc-streak'), streak);
         setTimeout(() => { const b = document.getElementById('wrBar'); if (b) b.style.width = wr + '%'; }, 200);
       }, 300);
@@ -1652,9 +1664,14 @@
         const r = h.rank || 1, rc = r === 1 ? 'rank-1' : r === 2 ? 'rank-2' : r === 3 ? 'rank-3' : 'rank-n';
         const rl = r === 1 ? '1st' : r === 2 ? '2nd' : r === 3 ? '3rd' : r + 'th';
         const mode = h.mode || 'room', opps = (h.opponentNames || []).join(', ') || '---';
-        return `<tr><td><span class="rank-badge ${rc}">${rl}</span></td><td><span class="mode-tag ${mC[mode] || 'mode-room'}">${mL[mode] || mode}</span> <span style="font-size:8px;color:var(--dim)">${h.totalPlayers || 2}人</span></td><td style="font-family:'Press Start 2P',monospace;font-size:10px;color:var(--acc)">${(h.score || 0).toLocaleString()}</td><td style="color:var(--tx)">${h.lines || 0}</td><td><span class="opp-names" title="${opps}">${opps}</span></td><td><span class="date-cell">${fmtDate(h.ts)}</span></td></tr>`;
+
+        const rcVal = h.ratingChange || 0;
+        const rcHtml = rcVal !== 0 ? `<div style="font-size:8px; color:${rcVal > 0 ? 'var(--acc3)' : 'var(--acc2)'}; margin-top:2px">${rcVal > 0 ? '+' : ''}${rcVal}</div>` : '';
+        const ratingHtml = h.newRating ? `<div style="font-family:'Press Start 2P',monospace; font-size:8px; color:var(--dim)">${h.newRating}${rcHtml}</div>` : '---';
+
+        return `<tr><td><span class="rank-badge ${rc}">${rl}</span></td><td><span class="mode-tag ${mC[mode] || 'mode-room'}">${mL[mode] || mode}</span> <span style="font-size:8px;color:var(--dim)">${h.totalPlayers || 2}人</span></td><td style="font-family:'Press Start 2P',monospace;font-size:10px;color:var(--acc)">${(h.score || 0).toLocaleString()}</td><td>${ratingHtml}</td><td style="color:var(--tx)">${h.lines || 0}</td><td><span class="opp-names" title="${opps}">${opps}</span></td><td><span class="date-cell">${fmtDate(h.ts)}</span></td></tr>`;
       }).join('');
-      el.innerHTML = `<div class="table-wrap"><table class="hist-table"><thead><tr><th>RANK</th><th>MODE</th><th>SCORE</th><th>LINES</th><th>OPPONENT</th><th>DATE</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      el.innerHTML = `<div class="table-wrap"><table class="hist-table"><thead><tr><th>RANK</th><th>MODE</th><th>SCORE</th><th>RATING</th><th>LINES</th><th>OPPONENT</th><th>DATE</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }
 
     function renderSprintHistory(history) {

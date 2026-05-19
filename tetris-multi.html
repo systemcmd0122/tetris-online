@@ -478,6 +478,53 @@
       50% { opacity: 1; box-shadow: 0 0 25px rgba(255, 0, 128, 0.5); }
     }
 
+    /* ── SPECTATOR AI HUD ── */
+    .spec-ai-panel {
+      background: rgba(10, 15, 26, 0.8);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 10px;
+      width: 100%;
+      max-width: 800px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .spec-ai-panel.show { display: flex; }
+    .ai-row { display: flex; justify-content: space-between; align-items: center; }
+    .ai-label { font-size: 8px; color: var(--dim); letter-spacing: 1px; }
+    .win-prob-bar-wrap {
+      height: 14px; background: rgba(0,0,0,0.5); border-radius: 7px;
+      overflow: hidden; display: flex; border: 1px solid var(--border);
+    }
+    .win-prob-p1 { height: 100%; background: var(--p1c); transition: width 0.5s ease; }
+    .win-prob-p2 { height: 100%; background: var(--p2c); transition: width 0.5s ease; }
+    .ai-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .ai-stat-box { text-align: center; }
+    .ai-stat-val { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--accent3); }
+
+    /* ── NEURAL HEARTBEAT ── */
+    @keyframes neuralHeartbeat {
+      0%, 100% { box-shadow: inset 0 0 40px rgba(255, 0, 128, 0); }
+      50% { box-shadow: inset 0 0 100px rgba(255, 0, 128, 0.25); }
+    }
+    .heartbeat-active {
+      animation: neuralHeartbeat 0.8s infinite;
+    }
+
+    /* ── SYSTEM OVERLOAD GLITCH ── */
+    @keyframes systemGlitch {
+      0% { transform: translate(0); clip-path: inset(0 0 0 0); }
+      2% { transform: translate(-5px, 2px); clip-path: inset(10% 0 80% 0); }
+      4% { transform: translate(5px, -2px); clip-path: inset(40% 0 30% 0); }
+      6% { transform: translate(0); clip-path: inset(0 0 0 0); }
+    }
+    .glitch-active #myCanvas {
+      animation: systemGlitch 0.3s skew infinite;
+      filter: hue-rotate(90deg) brightness(1.5);
+    }
+
     /* Matching screen */
     .match-timer-wrap {
       width: 100%;
@@ -576,6 +623,71 @@
       flex: 1;
       height: 1px;
       background: var(--border)
+    }
+
+    /* ── LOBBY CHAT ── */
+    .lobby-chat-wrap {
+      margin-top: 16px;
+      background: rgba(0, 0, 0, .3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      height: 200px;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .chat-msg {
+      font-size: 10px;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+    .chat-msg-name {
+      color: var(--accent);
+      font-weight: 700;
+      margin-right: 6px;
+    }
+    .chat-msg-text {
+      color: var(--text);
+    }
+    .chat-msg-sys {
+      color: var(--accent3);
+      font-size: 9px;
+      font-style: italic;
+    }
+    .chat-input-row {
+      display: flex;
+      border-top: 1px solid var(--border);
+      padding: 6px;
+      gap: 6px;
+    }
+    .chat-input {
+      flex: 1;
+      background: rgba(0, 245, 255, .05);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--text);
+      font-family: 'Orbitron', monospace;
+      font-size: 11px;
+      padding: 6px 10px;
+      outline: none;
+    }
+    .chat-send-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 2px;
+      font-family: 'Orbitron', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 0 12px;
+      cursor: pointer;
     }
 
     .max-players-label {
@@ -1670,6 +1782,15 @@
         </div>
       </div>
     </div>
+
+    <!-- RATING LEADERBOARD -->
+    <div class="card lobby-network-card" style="margin-top:20px; border-color:var(--accent3);">
+      <div class="px-corner tl"></div><div class="px-corner tr"></div>
+      <div class="card-title" style="color:var(--accent3);">▶ GLOBAL RATING STANDINGS</div>
+      <div id="ratingLeaderboard" style="font-size:10px;">
+        <div style="text-align:center; padding:20px; color:var(--dim);">LOADING STANDINGS...</div>
+      </div>
+    </div>
   </div>
 
   <!-- QUICK MATCHING SCREEN -->
@@ -1734,6 +1855,18 @@
       </button>
       <div class="player-count-info" id="playerCountInfo">1 / 3 人が参加中</div>
       <div class="player-list" id="playerList"></div>
+
+      <!-- LOBBY CHAT -->
+      <div class="lobby-chat-wrap">
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-msg-sys">ハッキング防止プロトコル有効。チャットを開始します...</div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chatInput" class="chat-input" placeholder="メッセージを入力..." maxlength="50">
+          <button class="chat-send-btn" onclick="sendLobbyMsg()">SEND</button>
+        </div>
+      </div>
+
       <div class="waiting-indicator">
         <div class="dot"></div>
         <div class="dot"></div>
@@ -1758,6 +1891,24 @@
       </div>
     </div>
     <div class="game-scale-wrap" id="gameScaleWrap">
+      <!-- SPECTATOR AI PANEL -->
+      <div class="spec-ai-panel" id="specAiPanel">
+        <div class="ai-row">
+          <span class="ai-label">NEURAL WIN PROBABILITY</span>
+          <span class="ai-stat-val" style="color:var(--accent); font-size:8px;" id="aiStatus">ANALYZING...</span>
+        </div>
+        <div class="win-prob-bar-wrap">
+          <div class="win-prob-p1" id="wpBarP1" style="width:50%"></div>
+          <div class="win-prob-p2" id="wpBarP2" style="width:50%"></div>
+        </div>
+        <div class="ai-stat-grid">
+          <div class="ai-stat-box"><div class="ai-label">P1 THREAT</div><div class="ai-stat-val" id="wpThreatP1">0%</div></div>
+          <div class="ai-stat-box"><div class="ai-label">P2 THREAT</div><div class="ai-stat-val" id="wpThreatP2">0%</div></div>
+          <div class="ai-stat-box"><div class="ai-label">P1 APM</div><div class="ai-stat-val" id="wpApmP1">0</div></div>
+          <div class="ai-stat-box"><div class="ai-label">P2 APM</div><div class="ai-stat-val" id="wpApmP2">0</div></div>
+        </div>
+      </div>
+
       <div class="multi-layout" id="multiLayout">
         <div class="my-outer">
           <div class="side-col">
@@ -1795,6 +1946,18 @@
               <div class="atk-row"><span class="atk-label">! NEXT</span><span class="atk-val recv"
                   id="pendGarbDisplay">0</span></div>
               <div class="pending-garb-row" id="pendGarbCells"></div>
+            </div>
+            <!-- NEURAL ENERGY -->
+            <div class="panel-box" style="border-color:var(--accent);">
+              <div class="panel-box-title">NEURAL ENERGY</div>
+              <div style="height:10px; background:rgba(0,0,0,.5); border-radius:2px; overflow:hidden; position:relative;">
+                <div id="energyBar" style="height:100%; width:0%; background:linear-gradient(90deg, #0080ff, var(--accent)); transition:width 0.3s ease;"></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                <span style="font-size:7px; color:var(--dim);">LV.<span id="energyLevel">0</span></span>
+                <span style="font-size:7px; color:var(--dim);"><span id="energyVal">0</span>%</span>
+              </div>
+              <div id="skillHint" style="font-size:6px; color:var(--accent); margin-top:4px; opacity:0.5; text-align:center;">[V] JAMMER (40%) / [B] SHIELD (30%)</div>
             </div>
             <div class="rank-panel">
               <div class="panel-box-title">RANK</div>
@@ -1901,7 +2064,7 @@
       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
     import { APP_VERSION, FB_CONFIG } from './config.js';
     import { onAuthReady, getCachedProfile, mountAuthWidget, getCurrentUser } from './auth.js';
-    import { saveMultiResult, upsertUserProfile } from './db.js';
+    import { saveMultiResult, upsertUserProfile, getTopRatings } from './db.js';
 
     const fbApp = initializeApp(FB_CONFIG);
     const db = getDatabase(fbApp);
@@ -1930,6 +2093,26 @@
     document.getElementById('statusText').textContent = 'ONLINE';
     document.getElementById('statusText').className = 'status-online';
     document.getElementById('versionDisp').textContent = `VER ${APP_VERSION}`;
+
+    // ── LEADERBOARD ──
+    async function updateLeaderboard() {
+      try {
+        const top = await getTopRatings(5);
+        const el = document.getElementById('ratingLeaderboard');
+        if (!el) return;
+        if (!top.length) { el.innerHTML = '<div style="text-align:center;padding:10px;color:var(--dim)">NO DATA</div>'; return; }
+
+        el.innerHTML = top.map((u, i) => `
+          <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid var(--border); background:${i===0?'rgba(170,255,0,0.05)':'transparent'}">
+            <span style="color:${i===0?'var(--gold)':'var(--dim)'}; width:20px;">#${i+1}</span>
+            <span style="flex:1; color:${i===0?'var(--accent3)':'var(--text)'}">${u.displayName || 'ANON'}</span>
+            <span style="font-family:'Press Start 2P',monospace; font-size:8px; color:var(--accent);">${u.rating || 1500}</span>
+          </div>
+        `).join('');
+      } catch(e) {}
+    }
+    updateLeaderboard();
+    setInterval(updateLeaderboard, 60000);
 
     // ── NETWORK LOBBY LISTENER ──
     (function initNetworkLobby() {
@@ -2113,6 +2296,8 @@
         this.held = null; this.canHold = true; this.score = 0; this.lines = 0; this.level = 1; this.combo = 0; this.b2b = false;
         this.over = false; this.spd = 800; this.lastDrop = 0; this.lockTm = null; this.lockRst = 0; this._lockRstPnd = false; this.onGnd = false;
         this.waiting = false; this.nextTs = 0; this.dirty = true; this.lastAct = null; this.pendGarb = 0; this.results = [];
+        this.energy = 0; // 0 to 100
+        this.jammedUntil = 0; // 相手からのジャミング終了時刻
       }
       _get(x, y) { if (x < 0 || x >= COLS || y < -2 || y >= ROWS) return y >= ROWS ? 'W' : null; return this.board[y + 2][x] }
       _set(x, y, v) { if (y < -2 || y >= ROWS || x < 0 || x >= COLS) return; this.board[y + 2][x] = v; this.dirty = true }
@@ -2157,6 +2342,9 @@
           if (ts) playSound('tspin', { lines: cl });
           else if (cl === 4) playSound('tetris', { combo: this.combo, isB2B: this.b2b });
           else playSound('clear1', { lines: cl, combo: this.combo, isB2B: this.b2b });
+          // Energy charge: 4 lines = 20%, 3 lines = 10%, 2 lines = 5%, 1 line = 2%
+          const energyGains = [0, 2, 5, 10, 20];
+          this.energy = Math.min(100, this.energy + (energyGains[cl] || 0) + (ts ? 10 : 0));
         } else playSound('lock');
         if (this.pendGarb > 0) { const cn = Math.min(go, this.pendGarb); go -= cn; this.pendGarb -= cn; if (this.pendGarb > 0) { this._addGarb(this.pendGarb); this.pendGarb = 0; } }
         this.waiting = true; this.nextTs = (this._lastTs || performance.now()) + 200;
@@ -2183,7 +2371,7 @@
       }
       serialize() {
         if (this.dirty || !this._cb) { this._cb = this.board.slice(2).map(r => r.map(c => c || '')); this.dirty = false; }
-        return { board: this._cb, score: this.score, lines: this.lines, level: this.level, gameOver: this.over, cur: { name: this.current.name, rot: this.current.rot, x: this.current.x, y: this.current.y }, held: this.held || '', next: this.bag.peek(1)[0] || '', combo: this.combo, b2b: this.b2b, pendGarb: this.pendGarb };
+        return { board: this._cb, score: this.score, lines: this.lines, level: this.level, gameOver: this.over, cur: { name: this.current.name, rot: this.current.rot, x: this.current.x, y: this.current.y }, held: this.held || '', next: this.bag.peek(1)[0] || '', combo: this.combo, b2b: this.b2b, pendGarb: this.pendGarb, energy: this.energy, isJammed: getServerTime() < this.jammedUntil };
       }
       draw() {
         const ctx = this.ctx; ctx.clearRect(0, 0, this.cvs.width, this.cvs.height);
@@ -2214,7 +2402,18 @@
           this.mat().forEach((row, r) => row.forEach((cell, c) => { if (cell) { const py = this.current.y + r; if (py >= 0) this._dc(ctx, this.current.x + c, py, COLORS[this.current.name]); } }));
         }
         if (this.over) { ctx.fillStyle = 'rgba(0,0,0,.75)'; ctx.fillRect(0, 0, this.cvs.width, this.cvs.height); ctx.fillStyle = '#ff0080'; ctx.font = 'bold 13px "Press Start 2P"'; ctx.textAlign = 'center'; ctx.fillText('GAME', this.cvs.width / 2, this.cvs.height / 2 - 14); ctx.fillText('OVER', this.cvs.width / 2, this.cvs.height / 2 + 10); }
-        if (this.nCtx) this._dm(this.nCtx, mkP(this.bag.peek(1)[0]));
+        if (this.nCtx) {
+          const isJammed = getServerTime() < this.jammedUntil;
+          if (isJammed) {
+            this.nCtx.clearRect(0,0,68,68);
+            this.nCtx.fillStyle = 'rgba(255,0,128,0.5)';
+            this.nCtx.font = 'bold 8px "Press Start 2P"';
+            this.nCtx.textAlign = 'center';
+            this.nCtx.fillText('JAMMED', 34, 38);
+          } else {
+            this._dm(this.nCtx, mkP(this.bag.peek(1)[0]));
+          }
+        }
         if (this.hCtx) { this.hCtx.clearRect(0, 0, 68, 68); if (this.held) this._dm(this.hCtx, mkP(this.held), this.canHold ? 1 : .4); }
       }
       _dc(ctx, x, y, color) { ctx.fillStyle = color + 'dd'; ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, CELL - 2); ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(x * CELL + 1, y * CELL + 1, CELL - 2, 3); ctx.fillRect(x * CELL + 1, y * CELL + 1, 3, CELL - 2); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x * CELL + 3, y * CELL + CELL - 3, CELL - 3, 2); ctx.fillRect(x * CELL + CELL - 3, y * CELL + 3, 2, CELL - 3); }
@@ -2675,10 +2874,23 @@
       document.body.classList.toggle('game-active', id === 'gameScreen');
     }
     function showToast(msg, type = '') { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast' + (type ? ' ' + type : ''); t.classList.remove('show'); t.offsetHeight; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
-    function flashAttack() { const f = document.getElementById('attackFlash'); f.classList.add('show'); setTimeout(() => f.classList.remove('show'), 280); const bw = document.querySelector('.board-wrap'); if (bw) { bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); setTimeout(() => bw.classList.remove('shake'), 260); } }
+    function flashAttack(isHeavy = false) {
+      const f = document.getElementById('attackFlash');
+      f.classList.add('show');
+      setTimeout(() => f.classList.remove('show'), 280);
+      const bw = document.querySelector('.board-wrap');
+      if (bw) {
+        bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake');
+        setTimeout(() => bw.classList.remove('shake'), 260);
+      }
+      if (isHeavy) {
+        document.body.classList.add('glitch-active');
+        setTimeout(() => document.body.classList.remove('glitch-active'), 500);
+      }
+    }
     function showAP(lbl) { const p = document.getElementById('actionPopup'); p.textContent = lbl.replace('\n', ' / '); p.classList.remove('show'); p.offsetHeight; p.classList.add('show'); }
 
-    const uiC = { score: -1, level: -1, lines: -1, combo: -1, b2b: null, sent: -1, pg: -1 };
+    const uiC = { score: -1, level: -1, lines: -1, combo: -1, b2b: null, sent: -1, pg: -1, energy: -1, jammed: null };
     function updateUI() {
       if (!game || _isSpectating) return;
       if (game.score !== uiC.score) { const sd = document.getElementById('scoreDisplay'); sd.classList.remove('score-pop'); void sd.offsetWidth; sd.classList.add('score-pop'); sd.textContent = game.score; uiC.score = game.score; }
@@ -2695,6 +2907,26 @@
         const gb = document.getElementById('garbBar'); gb.innerHTML = '';
         for (let i = 0; i < Math.min(pg, 20); i++) { const d = document.createElement('div'); d.className = 'garb-cell' + (pg >= 10 ? ' warn' : ''); gb.appendChild(d); }
         uiC.pg = pg;
+      }
+      if (game.energy !== uiC.energy) {
+        document.getElementById('energyBar').style.width = game.energy + '%';
+        document.getElementById('energyVal').textContent = game.energy;
+        document.getElementById('energyLevel').textContent = Math.floor(game.energy / 40);
+        const hint = document.getElementById('skillHint');
+        hint.style.opacity = game.energy >= 40 ? '1' : '0.5';
+        if (game.energy >= 40) {
+          hint.style.textShadow = '0 0 8px var(--accent)';
+          hint.style.fontWeight = '700';
+        } else {
+          hint.style.textShadow = 'none';
+          hint.style.fontWeight = '400';
+        }
+        uiC.energy = game.energy;
+      }
+      const jammed = getServerTime() < game.jammedUntil;
+      if (jammed !== uiC.jammed) {
+        document.getElementById('myCanvas').style.filter = jammed ? 'sepia(1) saturate(2) hue-rotate(290deg) blur(1px)' : '';
+        uiC.jammed = jammed;
       }
       const aliveOpps = Object.values(oppInfo).filter(d => d.alive).length;
       const myAlive = game.over ? 0 : 1;
@@ -2811,6 +3043,7 @@
       document.getElementById('displayRoomCode').textContent = roomCode;
       document.getElementById('statusRoom').textContent = 'MULTI: ' + roomCode;
       listenWait();
+      initLobbyChat();
     };
     function listenWait() {
       _removeSub('room'); // 既存のリスナーを確実に解除してから登録
@@ -2893,6 +3126,7 @@
         document.getElementById('displayRoomCode').textContent = code;
         document.getElementById('statusRoom').textContent = 'MULTI: ' + code;
         showScreen('waitingScreen'); listenWait();
+        initLobbyChat();
       } catch (e) {
         showToast('接続エラー: ' + e.message, 'warn');
       }
@@ -3305,6 +3539,10 @@
       buildOppArea(active);
       active.filter(s => s !== mySlot || _isSpectating).forEach(s => { const el = document.getElementById('oppName_' + s); if (el) el.textContent = d[s]?.name || s.toUpperCase(); });
 
+      if (_isSpectating) {
+        document.getElementById('specAiPanel').style.display = (active.length === 2) ? 'flex' : 'none';
+      }
+
       // システムメッセージ（管理者ブロードキャスト）を監視
       const sysMsgRef = ref(db, 'multi/' + roomCode + '/sysMsgTs');
       const _joinTs = getServerTime();
@@ -3332,6 +3570,7 @@
         const oRef = ref(db, 'multi/' + roomCode + '/game/' + sk);
         _addSub('opp_' + sk, onValue(oRef, snap => {
           const od = snap.val(); if (!od) return;
+          oppInfo[sk].lastData = od; // Save for AI analysis
           const oc = oppInfo[sk]; if (oc) TetrisGame.drawOpp(oc.canvas, od, oc.W, oc.H);
           const ns = document.getElementById('oppName_' + sk); if (ns) ns.textContent = (d[sk]?.name || sk) + ' (' + od.score + ')';
           const sc = document.getElementById('oppScore_' + sk); if (sc) sc.textContent = od.score + ' pts';
@@ -3355,7 +3594,18 @@
             runTransaction(myGRef, cur => cur && cur.n > 0 ? { n: 0 } : cur).catch(() => { });
             game.pendGarb += toAdd;
             const badge = document.getElementById('attackBadge'); badge.textContent = '+' + v.n + ' !'; badge.classList.remove('show'); void badge.offsetWidth; badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 1200);
-            flashAttack(); playSound('attack');
+            flashAttack(toAdd >= 4); playSound('attack');
+          }
+        }));
+
+        // Watch incoming Jammer
+        const myJRef = ref(db, 'multi/' + roomCode + '/jammer/' + mySlot);
+        _addSub('jammer_my', onValue(myJRef, snap => {
+          const until = snap.val();
+          if (until && until > getServerTime()) {
+            game.jammedUntil = Math.max(game.jammedUntil, until);
+            showToast("⚠️ SYSTEM JAMMED!", "warn");
+            remove(myJRef); // 一度受け取ったら削除
           }
         }));
       }
@@ -3388,6 +3638,37 @@
       }
       gameRunning = true; endedOnce = false;
 
+      // ── SPECTATOR AI TICK ──
+      let lastAiTs = 0;
+      function updateSpecAI() {
+        if (!_isSpectating || totalPlayers !== 2) return;
+        const slots = active;
+        const p1Data = (slots[0] === mySlot && game) ? game.serialize() : oppInfo[slots[0]]?.lastData;
+        const p2Data = (slots[1] === mySlot && game) ? game.serialize() : oppInfo[slots[1]]?.lastData;
+        if (!p1Data || !p2Data) return;
+
+        const calcScore = (data) => {
+          if (data.gameOver) return -10000;
+          const height = data.board ? data.board.reduce((a, r) => a + (r.some(c => c !== '') ? 1 : 0), 0) : 0;
+          const holes = 0; // 簡易版では省略
+          return (data.score * 0.1) + (data.lines * 10) - (height * 50);
+        };
+
+        const s1 = calcScore(p1Data), s2 = calcScore(p2Data);
+        const total = Math.abs(s1) + Math.abs(s2) || 1;
+        const p1Prob = Math.max(5, Math.min(95, 50 + (s1 - s2) / 100));
+
+        document.getElementById('wpBarP1').style.width = p1Prob + '%';
+        document.getElementById('wpBarP2').style.width = (100 - p1Prob) + '%';
+        document.getElementById('wpApmP1').textContent = p1Data.score;
+        document.getElementById('wpApmP2').textContent = p2Data.score;
+        const h1 = p1Data.board ? p1Data.board.reduce((a, r) => a + (r.some(c => c !== '') ? 1 : 0), 0) : 0;
+        const h2 = p2Data.board ? p2Data.board.reduce((a, r) => a + (r.some(c => c !== '') ? 1 : 0), 0) : 0;
+        document.getElementById('wpThreatP1').textContent = Math.round((h1 / 20) * 100) + '%';
+        document.getElementById('wpThreatP2').textContent = Math.round((h2 / 20) * 100) + '%';
+        document.getElementById('aiStatus').textContent = p1Prob > 60 ? 'P1 DOMINATING' : (p1Prob < 40 ? 'P2 DOMINATING' : 'EVEN MATCH');
+      }
+
       const PUSH = 50; let lastPush = 0, pendOut = 0;
       const loop = ts => {
         if (!gameRunning) return;
@@ -3411,6 +3692,19 @@
             }
           }
         }
+        if (ts - lastAiTs > 1000) {
+          lastAiTs = ts;
+          updateSpecAI();
+        }
+
+        // Neural Heartbeat
+        if (!game.over) {
+          const h = game.board.slice(2).reduce((a, r) => a + (r.some(c => c) ? 1 : 0), 0);
+          document.body.classList.toggle('heartbeat-active', h >= 14);
+        } else {
+          document.body.classList.remove('heartbeat-active');
+        }
+
         if (game.over && !endedOnce) {
           set(ref(db, 'multi/' + roomCode + '/game/' + mySlot), game.serialize()).catch(() => { });
           update(ref(db, 'multi/' + roomCode + '/alive'), { [mySlot]: false }).catch(() => { });
@@ -3485,6 +3779,40 @@
       }
     }
 
+    // ── LOBBY CHAT SYSTEM ──
+    function initLobbyChat() {
+      const chatRef = ref(db, 'multi/' + roomCode + '/chat');
+      const msgBox = document.getElementById('chatMessages');
+      msgBox.innerHTML = '<div class="chat-msg-sys">システムに接続しました。</div>';
+
+      _addSub('lobby_chat', onValue(chatRef, snap => {
+        const data = snap.val();
+        if (!data) return;
+        msgBox.innerHTML = '';
+        Object.values(data).sort((a,b) => a.ts - b.ts).slice(-20).forEach(m => {
+          const div = document.createElement('div');
+          div.className = 'chat-msg';
+          div.innerHTML = `<span class="chat-msg-name">${m.name}:</span><span class="chat-msg-text">${m.text}</span>`;
+          msgBox.appendChild(div);
+        });
+        msgBox.scrollTop = msgBox.scrollHeight;
+      }));
+    }
+
+    window.sendLobbyMsg = async () => {
+      const inp = document.getElementById('chatInput');
+      const text = inp.value.trim();
+      if (!text || !roomCode) return;
+      inp.value = '';
+      const name = _getPlayerName();
+      const msgRef = ref(db, 'multi/' + roomCode + '/chat');
+      const newMsgRef = push(ref(db, 'multi/' + roomCode + '/chat')); // Note: need to import 'push'
+      await set(newMsgRef, { name, text, ts: getServerTime() });
+    };
+    document.getElementById('chatInput')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') window.sendLobbyMsg();
+    });
+
     // ── COUNTDOWN ──
     function doCountdown(startAt) {
       return new Promise(resolve => {
@@ -3498,6 +3826,31 @@
         setTimeout(() => done(false), Math.max(200, startAt - getServerTime() + 750));
       });
     }
+
+    // ── ICE HACKING ──
+    window.useSkill = async () => {
+      if (!game || game.over || !gameRunning || game.energy < 40) return;
+      game.energy -= 40;
+      // JAMMER: 相手全員のNEXTを6秒間隠す
+      const aliveOpps = Object.keys(oppInfo).filter(s => s !== mySlot && oppInfo[s].alive);
+      aliveOpps.forEach(oslot => {
+        const jRef = ref(db, 'multi/' + roomCode + '/jammer/' + oslot);
+        set(jRef, getServerTime() + 6000).catch(() => {});
+      });
+      showAP("JAMMER ACTIVATED!!");
+      audioManager.playPerfectClear(); // 仮
+      flashAttack(true); // 自分にも一瞬フラッシュ
+    };
+
+    window.useSkillShield = async () => {
+      if (!game || game.over || !gameRunning || game.energy < 30) return;
+      game.energy -= 30;
+      const prev = game.pendGarb;
+      game.pendGarb = Math.max(0, game.pendGarb - 6);
+      const cleared = prev - game.pendGarb;
+      showAP(`SHIELD: -${cleared} GARBAGE`);
+      audioManager.playLock();
+    };
 
     // ── INPUT ──
     const DAS = 167, ARR = 33, keys = new Set();
@@ -3523,6 +3876,8 @@
           if (game && !game.waiting) game.hardDrop();
           break;
         case 'KeyC': case 'ShiftLeft': case 'ShiftRight': e.preventDefault(); game.hold(); break;
+        case 'KeyV': window.useSkill(); break;
+        case 'KeyB': window.useSkillShield(); break;
       }
     });
     document.addEventListener('keyup', e => {
