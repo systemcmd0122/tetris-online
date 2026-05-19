@@ -48,6 +48,7 @@ export async function upsertUserProfile(user) {
         lastSeen: serverTimestamp(),
         totalMultiGames: 0,
         totalWins: 0,
+        rating: 1500,           // ELO レーティング初期値
         totalSprintGames: 0,
         bestSprintMs: null,
         totalLinesCleared: 0,
@@ -113,8 +114,36 @@ export async function updateUserAvatar(uid, photoURL) {
 export async function saveMultiResult(uid, data) {
   try {
     const fs = await _getFS();
-    const { doc, addDoc, collection, updateDoc, increment, serverTimestamp } =
+    const { doc, addDoc, collection, updateDoc, increment, getDoc, serverTimestamp } =
       await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+    // 1. 現在のレートを取得
+    const userRef = doc(fs, 'users', uid);
+    const userSnap = await getDoc(userRef);
+    let oldRating = 1500;
+    if (userSnap.exists()) {
+      oldRating = userSnap.data().rating || 1500;
+    }
+
+    // 2. 簡易 ELO 計算 (多人数対応)
+    // 順位に基づいてレート変動値を決定
+    // 1位: +30, 2位: +10, 3位: -10, 4位: -30 (4人対戦の場合)
+    // 2人対戦なら 1位: +20, 2位: -20
+    let ratingChange = 0;
+    if (data.totalPlayers >= 2) {
+      if (data.totalPlayers === 2) {
+        ratingChange = (data.rank === 1) ? 20 : -20;
+      } else {
+        // 多人数用の簡易傾斜
+        const mid = (data.totalPlayers + 1) / 2;
+        ratingChange = Math.round((mid - data.rank) * 15);
+      }
+    }
+    // クイックマッチボット戦などはレート変動を抑えるか無効にする設計も可能だが、
+    // ここでは一律適用とする（data.mode で判定可能）
+    if (data.mode === 'bot') ratingChange = Math.floor(ratingChange * 0.5);
+
+    const newRating = Math.max(0, oldRating + ratingChange);
 
     await addDoc(collection(fs, 'users', uid, 'multi_history'), {
       rank: data.rank,
@@ -125,17 +154,24 @@ export async function saveMultiResult(uid, data) {
       attackSent: data.attackSent || 0,
       mode: data.mode || 'room',
       opponentNames: data.opponentNames || [],
+      oldRating: oldRating,
+      newRating: newRating,
+      ratingChange: ratingChange,
       ts: serverTimestamp(),
     });
 
-    await updateDoc(doc(fs, 'users', uid), {
+    await updateDoc(userRef, {
       totalMultiGames: increment(1),
       totalWins: data.rank === 1 ? increment(1) : increment(0),
       totalLinesCleared: increment(data.lines || 0),
+      rating: newRating,
       lastSeen: serverTimestamp(),
     }).catch((err) => { console.error('[db.js] saveMultiResult updateDoc failed:', err); });
+
+    return { oldRating, newRating, ratingChange };
   } catch (e) {
     console.error('[db.js] saveMultiResult failed:', e);
+    return null;
   }
 }
 
@@ -214,6 +250,24 @@ export async function getSprintHistory(uid, n = 50) {
   }
 }
 
+/**
+ * レーティング上位ユーザーを取得。
+ */
+export async function getTopRatings(n = 10) {
+  try {
+    const fs = await _getFS();
+    const { collection, getDocs, query, orderBy, limit } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const snap = await getDocs(query(
+      collection(fs, 'users'), orderBy('rating', 'desc'), limit(n)
+    ));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.error('[db.js] getTopRatings failed:', e);
+    return [];
+  }
+}
+
 // ── 管理者用: ユーザー管理 ───────────────────────────────────
 
 /**
@@ -236,7 +290,7 @@ export async function getAllUsers() {
 /**
  * ユーザーの主要データを管理者が編集。
  * @param {string} uid
- * @param {Object} updates  { displayName, totalMultiGames, totalWins, totalSprintGames, bestSprintMs, ...}
+ * @param {Object} updates  { displayName, totalMultiGames, totalWins, rating, totalSprintGames, bestSprintMs, ...}
  */
 export async function adminUpdateUserProfile(uid, updates) {
   const fs = await _getFS();
@@ -244,7 +298,7 @@ export async function adminUpdateUserProfile(uid, updates) {
     await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
 
   const cleanUpdates = {};
-  const allowedFields = ['displayName', 'totalMultiGames', 'totalWins', 'totalSprintGames', 'bestSprintMs', 'totalLinesCleared'];
+  const allowedFields = ['displayName', 'totalMultiGames', 'totalWins', 'rating', 'totalSprintGames', 'bestSprintMs', 'totalLinesCleared'];
 
   for (const field of allowedFields) {
     if (field in updates) {

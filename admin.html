@@ -2293,6 +2293,11 @@
                   id="detailTotalWins">0</div>
               </div>
               <div>
+                <div style="font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:6px">RATING</div>
+                <div style="font-size:14px;color:var(--acc);font-family:'Press Start 2P',monospace"
+                  id="detailRating">1500</div>
+              </div>
+              <div>
                 <div style="font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:6px">SPRINT GAMES</div>
                 <div style="font-size:14px;color:var(--acc3);font-family:'Press Start 2P',monospace"
                   id="detailTotalSprintGames">0</div>
@@ -3542,6 +3547,7 @@
         document.getElementById('detailLastSeen').textContent = profile.lastSeen ? new Date(profile.lastSeen).toLocaleTimeString('ja-JP') : '—';
         document.getElementById('detailTotalMultiGames').textContent = profile.totalMultiGames || 0;
         document.getElementById('detailTotalWins').textContent = profile.totalWins || 0;
+        document.getElementById('detailRating').textContent = profile.rating || 1500;
         document.getElementById('detailTotalSprintGames').textContent = profile.totalSprintGames || 0;
         document.getElementById('detailBestSprintMs').textContent = profile.bestSprintMs ? (profile.bestSprintMs / 1000).toFixed(2) + 's' : '—';
 
